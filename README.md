@@ -9,7 +9,7 @@ Go library for reading and writing MP4 (ISO Base Media File Format)
 _, err := mp4.ReadBoxStructure(file, func(h *mp4.ReadHandle) (interface{}, error) {
 	fmt.Println("depth", len(h.Path))
 
-	// Box Type ("mdhd", "tfdt", "mdat", etc.)
+	// Box Type (e.g. "mdhd", "tfdt", "mdat")
 	fmt.Println(h.BoxInfo.Type.String())
 
 	// Box Size
