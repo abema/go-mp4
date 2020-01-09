@@ -3,7 +3,9 @@ go-mp4
 
 Go library for reading and writing MP4 (ISO Base Media File Format)
 
-## Parse MP4 file
+## Library
+
+### Parse MP4 file
 
 ```
 _, err := mp4.ReadBoxStructure(file, func(h *mp4.ReadHandle) (interface{}, error) {
@@ -26,7 +28,7 @@ _, err := mp4.ReadBoxStructure(file, func(h *mp4.ReadHandle) (interface{}, error
 })
 ```
 
-## Edit MP4 file
+### Edit MP4 file
 
 Refer to `mp4tool/edit/mp4edit.go`
 
