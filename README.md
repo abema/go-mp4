@@ -5,7 +5,36 @@ Go library for reading and writing MP4 (ISO Base Media File Format)
 
 # Usage
 
-## Integrate to your Go application
+## Command Line Tool
+
+### Install
+
+```
+cd mp4tool
+make install
+
+mp4tool -help
+```
+
+### Dump
+
+```
+mp4tool dump sample.mp4
+```
+
+Output example:
+
+```
+[moof] Size=504
+  [mfhd] Size=16 Version=0 Flags=0x000000 SequenceNumber=1
+  [traf] Size=480
+    [tfhd] Size=28 Version=0 Flags=0x020038 TrackID=1 DefaultSampleDuration=9000 DefaultSampleSize=33550 DefaultSampleFlags=0x1010000
+    [tfdt] Size=20 Version=1 Flags=0x000000 BaseMediaDecodeTimeV1=0
+    [trun] Size=424 ... (use -a option to show all)
+[mdat] Size=44569 Data=[...] (use -mdat option to expand)
+```
+
+## Integration with your Go application
 
 ### Parse MP4 file
 
@@ -52,33 +81,4 @@ type Xxxx struct {
 func (*Xxxx) GetType() BoxType {
 	return BoxTypeXxxx()
 }
-```
-
-## Command Line Tool
-
-### Install
-
-```
-cd mp4tool
-make install
-
-mp4tool -help
-```
-
-### Dump
-
-```
-mp4tool dump sample.mp4
-```
-
-Output example:
-
-```
-[moof] Size=504
-  [mfhd] Size=16 Version=0 Flags=0x000000 SequenceNumber=1
-  [traf] Size=480
-    [tfhd] Size=28 Version=0 Flags=0x020038 TrackID=1 DefaultSampleDuration=9000 DefaultSampleSize=33550 DefaultSampleFlags=0x1010000
-    [tfdt] Size=20 Version=1 Flags=0x000000 BaseMediaDecodeTimeV1=0
-    [trun] Size=424 ... (use -a option to show all)
-[mdat] Size=44569 Data=[...] (use -mdat option to expand)
 ```
