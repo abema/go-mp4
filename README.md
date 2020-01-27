@@ -1,7 +1,7 @@
 go-mp4
-======
+------
 
-Go library for reading and writing MP4 (ISO Base Media File Format)
+go-mp4 is Go library for reading and writing MP4 (ISO Base Media File Format).
 
 ## Usage
 
