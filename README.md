@@ -3,11 +3,11 @@ go-mp4
 
 Go library for reading and writing MP4 (ISO Base Media File Format)
 
-# Usage
+## Usage
 
-## Command Line Tool
+### Command Line Tool
 
-### Install
+Install mp4tool as follows:
 
 ```
 cd mp4tool
@@ -16,13 +16,7 @@ make install
 mp4tool -help
 ```
 
-### Dump
-
-```
-mp4tool dump sample.mp4
-```
-
-Output example:
+For example, `mp4tool dump MP4_FILE_NAME` command prints MP4 box tree as follows:
 
 ```
 [moof] Size=504
@@ -34,9 +28,9 @@ Output example:
 [mdat] Size=44569 Data=[...] (use -mdat option to expand)
 ```
 
-## Integration with your Go application
+### Integration with your Go application
 
-### Parse MP4 file
+You can parse MP4 file as follows:
 
 ```
 _, err := mp4.ReadBoxStructure(file, func(h *mp4.ReadHandle) (interface{}, error) {
@@ -59,11 +53,7 @@ _, err := mp4.ReadBoxStructure(file, func(h *mp4.ReadHandle) (interface{}, error
 })
 ```
 
-### Edit MP4 file
-
-Refer to `mp4tool/edit/mp4edit.go`
-
-### Add box definition
+You can create additional box definition as follows:
 
 ```
 func BoxTypeXxxx() BoxType { return StrToBoxType("xxxx") }
