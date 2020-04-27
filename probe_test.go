@@ -9,13 +9,13 @@ import (
 )
 
 func TestProbeFra(t *testing.T) {
-	f, err := os.Open("../_examples/kojikoji_fragmented.mp4")
+	f, err := os.Open("./_examples/sample_fragmented.mp4")
 	require.NoError(t, err)
 	defer f.Close()
 
 	info, err := ProbeFra(f)
 	require.NoError(t, err)
 
-	assert.Equal(t, 4, len(info.Tracks))
-	assert.Equal(t, 10, len(info.Segments))
+	assert.Equal(t, 2, len(info.Tracks))
+	assert.Equal(t, 8, len(info.Segments))
 }

@@ -32,13 +32,13 @@ func TestExtractBox(t *testing.T) {
 		{
 			name:  "multi hit",
 			path:  BoxPath{BoxTypeMoov(), BoxTypeTrak(), BoxTypeTkhd()},
-			types: []BoxType{BoxTypeTkhd(), BoxTypeTkhd(), BoxTypeTkhd()},
+			types: []BoxType{BoxTypeTkhd(), BoxTypeTkhd()},
 		},
 	}
 
 	for _, p := range patterns {
 		func() {
-			f, err := os.Open("../_examples/kojikoji.mp4")
+			f, err := os.Open("./_examples/sample.mp4")
 			require.NoError(t, err)
 			defer f.Close()
 
@@ -95,13 +95,13 @@ func TestExtractBoxes(t *testing.T) {
 			paths: []BoxPath{
 				{BoxTypeMoov(), BoxTypeTrak(), BoxTypeTkhd()},
 			},
-			types: []BoxType{BoxTypeTkhd(), BoxTypeTkhd(), BoxTypeTkhd()},
+			types: []BoxType{BoxTypeTkhd(), BoxTypeTkhd()},
 		},
 	}
 
 	for _, p := range patterns {
 		func() {
-			f, err := os.Open("../_examples/kojikoji.mp4")
+			f, err := os.Open("./_examples/sample.mp4")
 			require.NoError(t, err)
 			defer f.Close()
 
@@ -121,7 +121,7 @@ func TestExtractBoxes(t *testing.T) {
 }
 
 func TestExtractDescendantBox(t *testing.T) {
-	f, err := os.Open("../_examples/kojikoji.mp4")
+	f, err := os.Open("./_examples/sample.mp4")
 	require.NoError(t, err)
 	defer f.Close()
 
@@ -131,5 +131,5 @@ func TestExtractDescendantBox(t *testing.T) {
 
 	descs, err := ExtractBox(f, boxes[0], BoxPath{BoxTypeTrak(), BoxTypeMdia()})
 	require.NoError(t, err)
-	require.Equal(t, 3, len(descs))
+	require.Equal(t, 2, len(descs))
 }
