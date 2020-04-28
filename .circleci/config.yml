@@ -1,0 +1,13 @@
+version: 2
+jobs:
+  build:
+    working_directory: /go/src/github.com/abema/go-mp4
+    docker:
+    - image: circleci/golang:1.14
+    steps:
+    - checkout
+    - run: go get golang.org/x/tools/cmd/cover
+    - run: go get github.com/pierrre/gotestcover
+    - run: go vet . ./mp4tool/...
+    - run: go test -coverprofile=coverage.txt -covermode=count . ./mp4tool/...
+    - run: bash <(curl -s https://codecov.io/bash)
