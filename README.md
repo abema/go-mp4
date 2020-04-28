@@ -11,6 +11,7 @@ go-mp4 is Go library for reading and writing MP4 (ISO Base Media File Format).
 You can parse MP4 file as follows:
 
 ```go
+// expand all boxes
 _, err := mp4.ReadBoxStructure(file, func(h *mp4.ReadHandle) (interface{}, error) {
 	fmt.Println("depth", len(h.Path))
 
@@ -29,6 +30,11 @@ _, err := mp4.ReadBoxStructure(file, func(h *mp4.ReadHandle) (interface{}, error
 	// Expands sibling boxes
 	return h.Expand()
 })
+```
+
+```go
+// extract specific boxes
+boxes, err := mp4.ExtractBox(file, nil, mp4.BoxPath{mp4.BoxTypeMoov(), mp4.BoxTypeTrak(), mp4.BoxTypeTkhd())
 ```
 
 You can create additional box definition as follows:
