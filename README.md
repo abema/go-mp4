@@ -4,7 +4,7 @@ go-mp4
 [![CircleCI](https://circleci.com/gh/abema/go-mp4.svg?style=svg)](https://circleci.com/gh/abema/go-mp4)
 [![codecov](https://codecov.io/gh/abema/go-mp4/branch/wip/graph/badge.svg)](https://codecov.io/gh/abema/go-mp4)
 
-go-mp4 is Go library for reading and writing MP4 (ISO Base Media File Format).
+go-mp4 is Go library for reading and writing MP4.
 
 ## Integration with your Go application
 
