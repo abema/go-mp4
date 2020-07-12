@@ -293,6 +293,14 @@ func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox) (n uint64, err err
 		return 0, fmt.Errorf("overrun error: type=%s, size=%d, readBytes=%d, width=%d", dst.GetType().String(), u.size, u.rbytes, u.width)
 	}
 
+	// for Apple Quick Time (hdlr handlerName)
+	if dst.GetType() == BoxTypeHdlr() {
+		hdlr := dst.(*Hdlr)
+		if err := hdlr.unmarshalHandlerName(u); err != nil {
+			return 0, err
+		}
+	}
+
 	// for Apple Quick Time
 	if dst.GetType() == BoxTypeMeta() && (dst.GetVersion() != 0 || dst.GetFlags() != 0) {
 		if _, err := r.Seek(-4, io.SeekCurrent); err != nil {
