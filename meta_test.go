@@ -52,4 +52,6 @@ func TestMetaMarshalAppleQuickTime(t *testing.T) {
 	assert.Equal(t, uint64(0), n)
 	s, _ := r.Seek(0, io.SeekCurrent)
 	assert.Equal(t, int64(0), s)
+	assert.Equal(t, uint8(0), dst.GetVersion())
+	assert.Equal(t, uint32(0), dst.GetFlags())
 }

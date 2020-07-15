@@ -278,6 +278,14 @@ func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox) (n uint64, err err
 		size:   payloadSize,
 	}
 
+	if n, override, err := dst.BeforeUnmarshal(r); err != nil {
+		return 0, err
+	} else if override {
+		return n, nil
+	} else {
+		u.rbytes = n
+	}
+
 	if err := u.unmarshalStruct(t, v); err != nil {
 		if err == ErrUnsupportedBoxVersion {
 			r.Seek(-int64(u.rbytes), io.SeekCurrent)
@@ -299,14 +307,6 @@ func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox) (n uint64, err err
 		if err := hdlr.unmarshalHandlerName(u); err != nil {
 			return 0, err
 		}
-	}
-
-	// for Apple Quick Time
-	if dst.GetType() == BoxTypeMeta() && (dst.GetVersion() != 0 || dst.GetFlags() != 0) {
-		if _, err := r.Seek(-4, io.SeekCurrent); err != nil {
-			return 0, err
-		}
-		u.rbytes -= 4
 	}
 
 	return u.rbytes, nil
