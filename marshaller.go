@@ -301,14 +301,6 @@ func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox) (n uint64, err err
 		return 0, fmt.Errorf("overrun error: type=%s, size=%d, readBytes=%d, width=%d", dst.GetType().String(), u.size, u.rbytes, u.width)
 	}
 
-	// for Apple Quick Time (hdlr handlerName)
-	if dst.GetType() == BoxTypeHdlr() {
-		hdlr := dst.(*Hdlr)
-		if err := hdlr.unmarshalHandlerName(u); err != nil {
-			return 0, err
-		}
-	}
-
 	return u.rbytes, nil
 }
 
@@ -557,6 +549,17 @@ func (u *unmarshaller) unmarshalBool(t reflect.Type, v reflect.Value, config fie
 }
 
 func (u *unmarshaller) unmarshalString(t reflect.Type, v reflect.Value, config fieldConfig) error {
+	switch config.StringType {
+	case StringType_C:
+		return u.unmarshalString_C(t, v, config)
+	case StringType_C_P:
+		return u.unmarshalString_C_P(t, v, config)
+	default:
+		return fmt.Errorf("unknown string type: %d", config.StringType)
+	}
+}
+
+func (u *unmarshaller) unmarshalString_C(t reflect.Type, v reflect.Value, config fieldConfig) error {
 	data := make([]byte, 0, 16)
 	for {
 		if u.rbytes >= u.size {
@@ -577,6 +580,53 @@ func (u *unmarshaller) unmarshalString(t reflect.Type, v reflect.Value, config f
 	v.SetString(string(data))
 
 	return nil
+}
+
+func (u *unmarshaller) unmarshalString_C_P(t reflect.Type, v reflect.Value, config fieldConfig) error {
+	if ok, err := u.tryReadPString(t, v, config); err != nil {
+		return err
+	} else if ok {
+		return nil
+	}
+	return u.unmarshalString_C(t, v, config)
+}
+
+func (u *unmarshaller) tryReadPString(t reflect.Type, v reflect.Value, config fieldConfig) (ok bool, err error) {
+	remainingSize := u.size - u.rbytes
+	if remainingSize < 2 {
+		return false, nil
+	}
+
+	offset, err := u.reader.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return false, err
+	}
+	defer func() {
+		if err == nil && !ok {
+			_, err = u.reader.Seek(offset, io.SeekStart)
+		}
+	}()
+
+	buf0 := make([]byte, 1)
+	if _, err := io.ReadFull(u.reader, buf0); err != nil {
+		return false, err
+	}
+	remainingSize--
+	plen := buf0[0]
+	if uint64(plen) > remainingSize {
+		return false, nil
+	}
+	buf := make([]byte, int(plen))
+	if _, err := io.ReadFull(u.reader, buf); err != nil {
+		return false, err
+	}
+	remainingSize -= uint64(plen)
+	if config.CFO.IsPString(config.Name, buf, remainingSize) {
+		u.rbytes += uint64(len(buf)) + 1
+		v.SetString(string(buf))
+		return true, nil
+	}
+	return false, nil
 }
 
 func (u *unmarshaller) readUvarint() (uint64, error) {
@@ -644,6 +694,13 @@ func (u *unmarshaller) readOctet() (byte, error) {
 	return buf[0], nil
 }
 
+type StringType int
+
+const (
+	StringType_C StringType = iota
+	StringType_C_P
+)
+
 type fieldConfig struct {
 	Name       string
 	CFO        ICustomFieldObject
@@ -660,6 +717,7 @@ type fieldConfig struct {
 	Hex        bool
 	String     bool
 	ISO639_2   bool
+	StringType StringType
 }
 
 func readFieldConfig(box IImmutableBox, parent reflect.Value, fieldName string, tag fieldTag) (config fieldConfig, err error) {
@@ -764,8 +822,11 @@ func readFieldConfig(box IImmutableBox, parent reflect.Value, fieldName string, 
 		config.Hex = true
 	}
 
-	if _, contained := tag["string"]; contained {
+	if val, contained := tag["string"]; contained {
 		config.String = true
+		if val == "c_p" {
+			config.StringType = StringType_C_P
+		}
 	}
 
 	if _, contained := tag["iso639-2"]; contained {

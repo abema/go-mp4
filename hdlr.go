@@ -1,6 +1,6 @@
 package mp4
 
-import "io"
+import "fmt"
 
 func BoxTypeHdlr() BoxType { return StrToBoxType("hdlr") }
 
@@ -10,11 +10,14 @@ func init() {
 
 // Hdlr is ISOBMFF hdlr box type
 type Hdlr struct {
-	FullBox     `mp4:"extend"`
+	FullBox `mp4:"extend"`
+	// Predefined corresponds to component_type of QuickTime.
+	// pre_defined of ISO-14496 has always zero,
+	// however component_type has "mhlr" or "dhlr".
 	PreDefined  uint32    `mp4:"size=32"`
 	HandlerType [4]byte   `mp4:"size=8,string"`
 	Reserved    [3]uint32 `mp4:"size=32,const=0"`
-	Name        string    `mp4:"string"`
+	Name        string    `mp4:"string=c_p"`
 }
 
 // GetType returns the BoxType
@@ -22,29 +25,11 @@ func (*Hdlr) GetType() BoxType {
 	return BoxTypeHdlr()
 }
 
-const (
-	hdlrSizeWithoutName = 24 // FullBox header(4bytes) + PreDefined(4bytes) + HandlerType(4bytes) + Reserved(12bytes)
-)
-
-// handle a special case: the QuickTime files have a pascal
-// string here, but ISO MP4 files have a C string.
-// we try to detect a pascal encoding and correct it.
-func (hdlr *Hdlr) unmarshalHandlerName(u *unmarshaller) error {
-	nameSize := u.size - hdlrSizeWithoutName
-	if nameSize <= 0 {
-		return nil
+func (hdlr *Hdlr) IsPString(name string, bytes []byte, remainingSize uint64) bool {
+	switch name {
+	case "Name":
+		return remainingSize == 0 && hdlr.PreDefined != 0
+	default:
+		panic(fmt.Errorf("invalid field name: name=%s", name))
 	}
-	if _, err := u.reader.Seek(-int64(nameSize), io.SeekCurrent); err != nil {
-		return err
-	}
-	u.rbytes = hdlrSizeWithoutName
-	nameb := make([]byte, nameSize)
-	if _, err := io.ReadFull(u.reader, nameb); err != nil {
-		return err
-	}
-	u.rbytes += nameSize
-	if nameb[0] != 0x00 && nameb[0] == byte(nameSize-1) {
-		hdlr.Name = string(nameb[1:])
-	}
-	return nil
 }
