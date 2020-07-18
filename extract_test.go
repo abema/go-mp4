@@ -9,7 +9,7 @@ import (
 )
 
 func TestExtractBox(t *testing.T) {
-	patterns := []struct {
+	testCases := []struct {
 		name     string
 		path     BoxPath
 		types    []BoxType
@@ -36,28 +36,28 @@ func TestExtractBox(t *testing.T) {
 		},
 	}
 
-	for _, p := range patterns {
-		func() {
+	for _, c := range testCases {
+		t.Run(c.name, func(t *testing.T) {
 			f, err := os.Open("./_examples/sample.mp4")
 			require.NoError(t, err)
 			defer f.Close()
 
-			boxes, err := ExtractBox(f, nil, p.path)
-			if p.hasError {
-				require.Error(t, err, p.name)
+			boxes, err := ExtractBox(f, nil, c.path)
+			if c.hasError {
+				require.Error(t, err)
 				return
 			}
-			require.NoError(t, err, p.name)
-			assert.Equal(t, len(p.types), len(boxes), p.name)
+			require.NoError(t, err)
+			assert.Equal(t, len(c.types), len(boxes))
 			for bi := range boxes {
-				assert.Equal(t, p.types[bi], boxes[bi].Type, p.name)
+				assert.Equal(t, c.types[bi], boxes[bi].Type)
 			}
-		}()
+		})
 	}
 }
 
 func TestExtractBoxes(t *testing.T) {
-	patterns := []struct {
+	testCases := []struct {
 		name     string
 		paths    []BoxPath
 		types    []BoxType
@@ -99,24 +99,24 @@ func TestExtractBoxes(t *testing.T) {
 		},
 	}
 
-	for _, p := range patterns {
-		func() {
+	for _, c := range testCases {
+		t.Run(c.name, func(t *testing.T) {
 			f, err := os.Open("./_examples/sample.mp4")
 			require.NoError(t, err)
 			defer f.Close()
 
-			boxes, err := ExtractBoxes(f, nil, p.paths)
-			if p.hasError {
-				require.Error(t, err, p.name)
+			boxes, err := ExtractBoxes(f, nil, c.paths)
+			if c.hasError {
+				require.Error(t, err)
 				return
 			}
 
-			require.NoError(t, err, p.name)
-			assert.Equal(t, len(p.types), len(boxes), p.name)
+			require.NoError(t, err)
+			assert.Equal(t, len(c.types), len(boxes))
 			for bi := range boxes {
-				assert.Equal(t, p.types[bi], boxes[bi].Type, p.name)
+				assert.Equal(t, c.types[bi], boxes[bi].Type)
 			}
-		}()
+		})
 	}
 }
 
