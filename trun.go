@@ -14,15 +14,17 @@ type Trun struct {
 	SampleCount uint32 `mp4:"size=32"`
 
 	// optional fields
-	DataOffset       int32  `mp4:"size=32,opt=0x000001"`
-	FirstSampleFlags uint32 `mp4:"size=32,opt=0x000004,hex"`
-	Entries          []struct {
-		SampleDuration                uint32 `mp4:"size=32,opt=0x000100"`
-		SampleSize                    uint32 `mp4:"size=32,opt=0x000200"`
-		SampleFlags                   uint32 `mp4:"size=32,opt=0x000400,hex"`
-		SampleCompositionTimeOffsetV0 uint32 `mp4:"size=32,opt=0x000800,ver=0"`
-		SampleCompositionTimeOffsetV1 int32  `mp4:"size=32,opt=0x000800,nver=0"`
-	} `mp4:"len=dynamic,size=dynamic"`
+	DataOffset       int32       `mp4:"size=32,opt=0x000001"`
+	FirstSampleFlags uint32      `mp4:"size=32,opt=0x000004,hex"`
+	Entries          []TrunEntry `mp4:"len=dynamic,size=dynamic"`
+}
+
+type TrunEntry struct {
+	SampleDuration                uint32 `mp4:"size=32,opt=0x000100"`
+	SampleSize                    uint32 `mp4:"size=32,opt=0x000200"`
+	SampleFlags                   uint32 `mp4:"size=32,opt=0x000400,hex"`
+	SampleCompositionTimeOffsetV0 uint32 `mp4:"size=32,opt=0x000800,ver=0"`
+	SampleCompositionTimeOffsetV1 int32  `mp4:"size=32,opt=0x000800,nver=0"`
 }
 
 // GetType returns the BoxType

@@ -10,12 +10,14 @@ func init() {
 
 type Ctts struct {
 	FullBox    `mp4:"extend"`
-	EntryCount uint32 `mp4:"size=32"`
-	Entries    []struct {
-		SampleCount    uint32 `mp4:"size=32"`
-		SampleOffsetV0 uint32 `mp4:"size=32,ver=0"`
-		SampleOffsetV1 int32  `mp4:"size=32,ver=1"`
-	} `mp4:"len=dynamic,size=64"`
+	EntryCount uint32      `mp4:"size=32"`
+	Entries    []CttsEntry `mp4:"len=dynamic,size=64"`
+}
+
+type CttsEntry struct {
+	SampleCount    uint32 `mp4:"size=32"`
+	SampleOffsetV0 uint32 `mp4:"size=32,ver=0"`
+	SampleOffsetV1 int32  `mp4:"size=32,ver=1"`
 }
 
 // GetType returns the BoxType

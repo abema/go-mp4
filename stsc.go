@@ -11,12 +11,14 @@ func init() {
 // Stsc is ISOBMFF stsc box type
 type Stsc struct {
 	FullBox    `mp4:"extend"`
-	EntryCount uint32 `mp4:"size=32"`
-	Entries    []struct {
-		FirstChunk             uint32 `mp4:"size=32"`
-		SamplesPerChunk        uint32 `mp4:"size=32"`
-		SampleDescriptionIndex uint32 `mp4:"size=32"`
-	} `mp4:"len=dynamic,size=96"`
+	EntryCount uint32      `mp4:"size=32"`
+	Entries    []StscEntry `mp4:"len=dynamic,size=96"`
+}
+
+type StscEntry struct {
+	FirstChunk             uint32 `mp4:"size=32"`
+	SamplesPerChunk        uint32 `mp4:"size=32"`
+	SampleDescriptionIndex uint32 `mp4:"size=32"`
 }
 
 // GetType returns the BoxType
