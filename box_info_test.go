@@ -10,16 +10,16 @@ import (
 )
 
 func TestWriteBoxInfo(t *testing.T) {
-	type pattern struct {
+	type testCase struct {
 		name       string
 		input      io.Writer
 		bi         *BoxInfo
 		hasError   bool
 		expectedBI *BoxInfo
-		assert     func(*pattern)
+		assert     func(*testCase)
 	}
 
-	patterns := []pattern{
+	testCases := []testCase{
 		{
 			name:  "small-size",
 			input: &bytes.Buffer{},
@@ -33,11 +33,11 @@ func TestWriteBoxInfo(t *testing.T) {
 				HeaderSize: 8,
 				Type:       StrToBoxType("test"),
 			},
-			assert: func(p *pattern) {
+			assert: func(c *testCase) {
 				assert.Equal(t, []byte{
 					0x00, 0x01, 0x23, 0x45,
 					't', 'e', 's', 't',
-				}, p.input.(*bytes.Buffer).Bytes(), "%s", p.name)
+				}, c.input.(*bytes.Buffer).Bytes(), "%s", c.name)
 			},
 		},
 		{
@@ -53,13 +53,13 @@ func TestWriteBoxInfo(t *testing.T) {
 				HeaderSize: 16,
 				Type:       StrToBoxType("test"),
 			},
-			assert: func(p *pattern) {
+			assert: func(c *testCase) {
 				assert.Equal(t, []byte{
 					0x00, 0x00, 0x00, 0x01,
 					't', 'e', 's', 't',
 					0x00, 0x00, 0x12, 0x34,
 					0x56, 0x78, 0x9a, 0xbc,
-				}, p.input.(*bytes.Buffer).Bytes(), "%s", p.name)
+				}, c.input.(*bytes.Buffer).Bytes(), "%s", c.name)
 			},
 		},
 		{
@@ -77,29 +77,31 @@ func TestWriteBoxInfo(t *testing.T) {
 				Type:        StrToBoxType("test"),
 				ExtendToEOF: true,
 			},
-			assert: func(p *pattern) {
+			assert: func(c *testCase) {
 				assert.Equal(t, []byte{
 					0x00, 0x00, 0x00, 0x00,
 					't', 'e', 's', 't',
-				}, p.input.(*bytes.Buffer).Bytes(), "%s", p.name)
+				}, c.input.(*bytes.Buffer).Bytes(), "%s", c.name)
 			},
 		},
 	}
 
-	for _, p := range patterns {
-		bi, err := WriteBoxInfo(p.input, p.bi)
-		if !p.hasError {
-			require.NoError(t, err, "%s", p.name)
-			assert.Equal(t, p.expectedBI, bi, "%s", p.name)
-			p.assert(&p)
-		} else {
-			assert.Error(t, err, "%s", p.name)
-		}
+	for _, c := range testCases {
+		t.Run(c.name, func(t *testing.T) {
+			bi, err := WriteBoxInfo(c.input, c.bi)
+			if !c.hasError {
+				require.NoError(t, err)
+				assert.Equal(t, c.expectedBI, bi)
+				c.assert(&c)
+			} else {
+				assert.Error(t, err)
+			}
+		})
 	}
 }
 
 func TestReadBoxInfo(t *testing.T) {
-	patterns := []struct {
+	testCases := []struct {
 		name     string
 		buf      []byte
 		seek     int64
@@ -173,15 +175,17 @@ func TestReadBoxInfo(t *testing.T) {
 		},
 	}
 
-	for _, p := range patterns {
-		buf := bytes.NewReader(p.buf)
-		buf.Seek(p.seek, io.SeekStart)
-		bi, err := ReadBoxInfo(buf)
-		if !p.hasError {
-			require.NoError(t, err)
-			assert.Equal(t, p.expected, bi)
-		} else {
-			assert.Error(t, err)
-		}
+	for _, c := range testCases {
+		t.Run(c.name, func(t *testing.T) {
+			buf := bytes.NewReader(c.buf)
+			buf.Seek(c.seek, io.SeekStart)
+			bi, err := ReadBoxInfo(buf)
+			if !c.hasError {
+				require.NoError(t, err)
+				assert.Equal(t, c.expected, bi)
+			} else {
+				assert.Error(t, err)
+			}
+		})
 	}
 }
