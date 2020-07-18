@@ -11,15 +11,17 @@ func init() {
 // Elst is ISOBMFF elst box type
 type Elst struct {
 	FullBox    `mp4:"extend"`
-	EntryCount uint32 `mp4:"size=32"`
-	Entries    []struct {
-		SegmentDurationV0 uint32 `mp4:"size=32,ver=0"`
-		MediaTimeV0       int32  `mp4:"size=32,ver=0"`
-		SegmentDurationV1 uint64 `mp4:"size=64,ver=1"`
-		MediaTimeV1       int64  `mp4:"size=64,ver=1"`
-		MediaRateInteger  int16  `mp4:"size=16"`
-		MediaRateFraction int16  `mp4:"size=16,const=0"`
-	} `mp4:"len=dynamic,size=dynamic"`
+	EntryCount uint32      `mp4:"size=32"`
+	Entries    []ElstEntry `mp4:"len=dynamic,size=dynamic"`
+}
+
+type ElstEntry struct {
+	SegmentDurationV0 uint32 `mp4:"size=32,ver=0"`
+	MediaTimeV0       int32  `mp4:"size=32,ver=0"`
+	SegmentDurationV1 uint64 `mp4:"size=64,ver=1"`
+	MediaTimeV1       int64  `mp4:"size=64,ver=1"`
+	MediaRateInteger  int16  `mp4:"size=16"`
+	MediaRateFraction int16  `mp4:"size=16,const=0"`
 }
 
 // GetType returns the BoxType

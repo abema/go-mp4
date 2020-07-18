@@ -14,13 +14,15 @@ func init() {
 // Pssh is ISOBMFF pssh box type
 type Pssh struct {
 	FullBox  `mp4:"extend"`
-	SystemID [16]byte `mp4:"size=8"`
-	KIDCount uint32   `mp4:"size=32,nver=0"`
-	KIDs     []struct {
-		KID [16]byte `mp4:"size=8"`
-	} `mp4:"nver=0,len=dynamic,size=128"`
-	DataSize int32  `mp4:"size=32"`
-	Data     []byte `mp4:"size=8,len=dynamic"`
+	SystemID [16]byte  `mp4:"size=8"`
+	KIDCount uint32    `mp4:"size=32,nver=0"`
+	KIDs     []PsshKID `mp4:"nver=0,len=dynamic,size=128"`
+	DataSize int32     `mp4:"size=32"`
+	Data     []byte    `mp4:"size=8,len=dynamic"`
+}
+
+type PsshKID struct {
+	KID [16]byte `mp4:"size=8"`
 }
 
 // GetFieldLength returns length of dynamic field

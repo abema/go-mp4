@@ -11,21 +11,23 @@ func init() {
 // Tfra is ISOBMFF tfra box type
 type Tfra struct {
 	FullBox               `mp4:"extend"`
-	TrackID               uint32 `mp4:"size=32"`
-	Reserved              uint32 `mp4:"size=26,const=0"`
-	LengthSizeOfTrafNum   byte   `mp4:"size=2"`
-	LengthSizeOfTrunNum   byte   `mp4:"size=2"`
-	LengthSizeOfSampleNum byte   `mp4:"size=2"`
-	NumberOfEntry         uint32 `mp4:"size=32"`
-	Entries               []struct {
-		TimeV0       uint32 `mp4:"size=32,ver=0"`
-		MoofOffsetV0 uint32 `mp4:"size=32,ver=0"`
-		TimeV1       uint64 `mp4:"size=64,ver=1"`
-		MoofOffsetV1 uint64 `mp4:"size=64,ver=1"`
-		TrafNumber   uint32 `mp4:"size=dynamic"`
-		TrunNumber   uint32 `mp4:"size=dynamic"`
-		SampleNumber uint32 `mp4:"size=dynamic"`
-	} `mp4:"len=dynamic,size=dynamic"`
+	TrackID               uint32      `mp4:"size=32"`
+	Reserved              uint32      `mp4:"size=26,const=0"`
+	LengthSizeOfTrafNum   byte        `mp4:"size=2"`
+	LengthSizeOfTrunNum   byte        `mp4:"size=2"`
+	LengthSizeOfSampleNum byte        `mp4:"size=2"`
+	NumberOfEntry         uint32      `mp4:"size=32"`
+	Entries               []TfraEntry `mp4:"len=dynamic,size=dynamic"`
+}
+
+type TfraEntry struct {
+	TimeV0       uint32 `mp4:"size=32,ver=0"`
+	MoofOffsetV0 uint32 `mp4:"size=32,ver=0"`
+	TimeV1       uint64 `mp4:"size=64,ver=1"`
+	MoofOffsetV1 uint64 `mp4:"size=64,ver=1"`
+	TrafNumber   uint32 `mp4:"size=dynamic"`
+	TrunNumber   uint32 `mp4:"size=dynamic"`
+	SampleNumber uint32 `mp4:"size=dynamic"`
 }
 
 // GetType returns the BoxType
