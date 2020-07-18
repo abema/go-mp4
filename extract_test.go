@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestExtractBox(t *testing.T) {
+func TestExtractBoxWithPayload(t *testing.T) {
 	testCases := []struct {
 		name     string
 		path     BoxPath
-		types    []BoxType
+		want     []*BoxInfoWithPayload
 		hasError bool
 	}{
 		{
@@ -23,16 +23,88 @@ func TestExtractBox(t *testing.T) {
 		{
 			name: "invalid box path",
 			path: BoxPath{BoxTypeUdta()},
+			want: []*BoxInfoWithPayload{},
 		},
 		{
-			name:  "top level",
-			path:  BoxPath{BoxTypeMoov()},
-			types: []BoxType{BoxTypeMoov()},
+			name: "top level",
+			path: BoxPath{BoxTypeMoov()},
+			want: []*BoxInfoWithPayload{
+				{
+					Info:    BoxInfo{Offset: 6442, Size: 1836, HeaderSize: 8, Type: BoxTypeMoov()},
+					Payload: &Moov{},
+				},
+			},
 		},
 		{
-			name:  "multi hit",
-			path:  BoxPath{BoxTypeMoov(), BoxTypeTrak(), BoxTypeTkhd()},
-			types: []BoxType{BoxTypeTkhd(), BoxTypeTkhd()},
+			name: "multi hit",
+			path: BoxPath{BoxTypeMoov(), BoxTypeTrak(), BoxTypeMdia(), BoxTypeHdlr()},
+			want: []*BoxInfoWithPayload{
+				{
+					Info: BoxInfo{Offset: 6734, Size: 44, HeaderSize: 8, Type: BoxTypeHdlr()},
+					Payload: &Hdlr{
+						HandlerType: [4]byte{'v', 'i', 'd', 'e'},
+						Name:        "VideoHandle",
+					},
+				},
+				{
+					Info: BoxInfo{Offset: 7477, Size: 44, HeaderSize: 8, Type: BoxTypeHdlr()},
+					Payload: &Hdlr{
+						HandlerType: [4]byte{'s', 'o', 'u', 'n'},
+						Name:        "SoundHandle",
+					},
+				},
+			},
+		},
+	}
+
+	for _, c := range testCases {
+		t.Run(c.name, func(t *testing.T) {
+			f, err := os.Open("./_examples/sample.mp4")
+			require.NoError(t, err)
+			defer f.Close()
+
+			bs, err := ExtractBoxWithPayload(f, nil, c.path)
+			if c.hasError {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, c.want, bs)
+		})
+	}
+}
+
+func TestExtractBox(t *testing.T) {
+	testCases := []struct {
+		name     string
+		path     BoxPath
+		want     []*BoxInfo
+		hasError bool
+	}{
+		{
+			name:     "empty box path",
+			path:     BoxPath{},
+			hasError: true,
+		},
+		{
+			name: "invalid box path",
+			path: BoxPath{BoxTypeUdta()},
+			want: []*BoxInfo{},
+		},
+		{
+			name: "top level",
+			path: BoxPath{BoxTypeMoov()},
+			want: []*BoxInfo{
+				{Offset: 6442, Size: 1836, HeaderSize: 8, Type: BoxTypeMoov()},
+			},
+		},
+		{
+			name: "multi hit",
+			path: BoxPath{BoxTypeMoov(), BoxTypeTrak(), BoxTypeTkhd()},
+			want: []*BoxInfo{
+				{Offset: 6566, Size: 92, HeaderSize: 8, Type: BoxTypeTkhd()},
+				{Offset: 7309, Size: 92, HeaderSize: 8, Type: BoxTypeTkhd()},
+			},
 		},
 	}
 
@@ -48,10 +120,7 @@ func TestExtractBox(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			assert.Equal(t, len(c.types), len(boxes))
-			for bi := range boxes {
-				assert.Equal(t, c.types[bi], boxes[bi].Type)
-			}
+			assert.Equal(t, c.want, boxes)
 		})
 	}
 }
@@ -60,7 +129,7 @@ func TestExtractBoxes(t *testing.T) {
 	testCases := []struct {
 		name     string
 		paths    []BoxPath
-		types    []BoxType
+		want     []*BoxInfo
 		hasError bool
 	}{
 		{
@@ -80,7 +149,9 @@ func TestExtractBoxes(t *testing.T) {
 			paths: []BoxPath{
 				{BoxTypeMoov(), BoxTypeUdta()},
 			},
-			types: []BoxType{BoxTypeUdta()},
+			want: []*BoxInfo{
+				{Offset: 8145, Size: 133, HeaderSize: 8, Type: BoxTypeUdta()},
+			},
 		},
 		{
 			name: "multi path",
@@ -88,14 +159,20 @@ func TestExtractBoxes(t *testing.T) {
 				{BoxTypeMoov()},
 				{BoxTypeMoov(), BoxTypeUdta()},
 			},
-			types: []BoxType{BoxTypeMoov(), BoxTypeUdta()},
+			want: []*BoxInfo{
+				{Offset: 6442, Size: 1836, HeaderSize: 8, Type: BoxTypeMoov()},
+				{Offset: 8145, Size: 133, HeaderSize: 8, Type: BoxTypeUdta()},
+			},
 		},
 		{
 			name: "multi hit",
 			paths: []BoxPath{
 				{BoxTypeMoov(), BoxTypeTrak(), BoxTypeTkhd()},
 			},
-			types: []BoxType{BoxTypeTkhd(), BoxTypeTkhd()},
+			want: []*BoxInfo{
+				{Offset: 6566, Size: 92, HeaderSize: 8, Type: BoxTypeTkhd()},
+				{Offset: 7309, Size: 92, HeaderSize: 8, Type: BoxTypeTkhd()},
+			},
 		},
 	}
 
@@ -112,10 +189,7 @@ func TestExtractBoxes(t *testing.T) {
 			}
 
 			require.NoError(t, err)
-			assert.Equal(t, len(c.types), len(boxes))
-			for bi := range boxes {
-				assert.Equal(t, c.types[bi], boxes[bi].Type)
-			}
+			assert.Equal(t, c.want, boxes)
 		})
 	}
 }

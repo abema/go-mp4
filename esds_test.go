@@ -16,7 +16,7 @@ func TestEsdsMarshal(t *testing.T) {
 		},
 		Descriptors: []Descriptor{
 			{
-				Tag:  0x03,
+				Tag:  ESDescrTag,
 				Size: 0x12345678,
 				ESDescriptor: &ESDescriptor{
 					ESID:                 0x1234,
@@ -29,7 +29,7 @@ func TestEsdsMarshal(t *testing.T) {
 				},
 			},
 			{
-				Tag:  0x03,
+				Tag:  ESDescrTag,
 				Size: 0x12345678,
 				ESDescriptor: &ESDescriptor{
 					ESID:                 0x1234,
@@ -42,7 +42,7 @@ func TestEsdsMarshal(t *testing.T) {
 				},
 			},
 			{
-				Tag:  0x04,
+				Tag:  DecoderConfigDescrTag,
 				Size: 0x12345678,
 				DecoderConfigDescriptor: &DecoderConfigDescriptor{
 					ObjectTypeIndication: 0x12,
@@ -96,4 +96,57 @@ func TestEsdsMarshal(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(buf.Len()), n)
 	assert.Equal(t, src, dst)
+}
+
+func TestEsdsStringify(t *testing.T) {
+	esds := Esds{
+		FullBox: FullBox{
+			Version: 0,
+			Flags:   [3]byte{0x00, 0x00, 0x00},
+		},
+		Descriptors: []Descriptor{
+			{
+				Tag:  ESDescrTag,
+				Size: 0x12345678,
+				ESDescriptor: &ESDescriptor{
+					ESID:                 0x1234,
+					StreamDependenceFlag: true,
+					UrlFlag:              false,
+					OcrStreamFlag:        true,
+					StreamPriority:       0x03,
+					DependsOnESID:        0x2345,
+					OCRESID:              0x3456,
+				},
+			},
+			{
+				Tag:  DecoderConfigDescrTag,
+				Size: 0x12345678,
+				DecoderConfigDescriptor: &DecoderConfigDescriptor{
+					ObjectTypeIndication: 0x12,
+					StreamType:           0x15,
+					UpStream:             true,
+					Reserved:             false,
+					BufferSizeDB:         0x123456,
+					MaxBitrate:           0x12345678,
+					AvgBitrate:           0x23456789,
+				},
+			},
+			{
+				Tag:  DecSpecificInfoTag,
+				Size: 0x12345678,
+			},
+			{
+				Tag:  SLConfigDescrTag,
+				Size: 0x12345678,
+			},
+		},
+	}
+	str, err := Stringify(&esds)
+	require.NoError(t, err)
+	assert.Equal(t, "Version=0 Flags=0x000000 Descriptors="+
+		"[{Tag=ESDescr Size=305419896 ESID=4660 StreamDependenceFlag=true UrlFlag=false OcrStreamFlag=true StreamPriority=3 DependsOnESID=9029 OCRESID=13398},"+
+		" {Tag=DecoderConfigDescr Size=305419896 ObjectTypeIndication=0x12 StreamType=21 UpStream=true Reserved=false BufferSizeDB=1193046 MaxBitrate=305419896 AvgBitrate=591751049},"+
+		" {Tag=DecSpecificInfo Size=305419896 Data=[]},"+
+		" {Tag=SLConfigDescr Size=305419896 Data=[]}"+
+		"]", str)
 }
