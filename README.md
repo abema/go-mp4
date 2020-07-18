@@ -26,7 +26,7 @@ _, err := mp4.ReadBoxStructure(file, func(h *mp4.ReadHandle) (interface{}, error
 		box, _, _ := h.ReadPayload()
 		fmt.Println(mp4.Stringify(box))
 
-		// Expands sibling boxes
+		// Expands children
 		return h.Expand()
 	}
 	return nil, nil
