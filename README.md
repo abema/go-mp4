@@ -21,20 +21,21 @@ _, err := mp4.ReadBoxStructure(file, func(h *mp4.ReadHandle) (interface{}, error
 	// Box Size
 	fmt.Println(h.BoxInfo.Size)
 
-	// Payload
 	if h.BoxInfo.Type.IsSupported() {
+		// Payload
 		box, _, _ := h.ReadPayload()
 		fmt.Println(mp4.Stringify(box))
-	}
 
-	// Expands sibling boxes
-	return h.Expand()
+		// Expands sibling boxes
+		return h.Expand()
+	}
+	return nil, nil
 })
 ```
 
 ```go
 // extract specific boxes
-boxes, err := mp4.ExtractBox(file, nil, mp4.BoxPath{mp4.BoxTypeMoov(), mp4.BoxTypeTrak(), mp4.BoxTypeTkhd())
+boxes, err := mp4.ExtractBox(file, nil, mp4.BoxPath{mp4.BoxTypeMoov(), mp4.BoxTypeTrak(), mp4.BoxTypeTkhd()})
 ```
 
 You can create additional box definition as follows:
