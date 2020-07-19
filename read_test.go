@@ -18,7 +18,7 @@ func TestReadBoxStructure(t *testing.T) {
 	_, err = ReadBoxStructure(f, func(h *ReadHandle) (interface{}, error) {
 		n++
 		switch n {
-		case 2, 37, 49, 50, 54, 55: // free, smhd, sgpd, sbgp, ilst, loci
+		case 54, 55: // ilst, loci
 			require.False(t, h.BoxInfo.Type.IsSupported())
 			buf := bytes.NewBuffer(nil)
 			n, err := h.ReadData(buf)
