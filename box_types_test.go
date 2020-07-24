@@ -645,6 +645,118 @@ func TestPsshStringify(t *testing.T) {
 	}
 }
 
+func TestTfraMarshal(t *testing.T) {
+	src := Tfra{
+		FullBox: FullBox{
+			Version: 0,
+			Flags:   [3]byte{0x00, 0x00, 0x00},
+		},
+		TrackID:               0x11111111,
+		LengthSizeOfTrafNum:   0x1,
+		LengthSizeOfTrunNum:   0x2,
+		LengthSizeOfSampleNum: 0x3,
+		NumberOfEntry:         2,
+		Entries: []TfraEntry{
+			{
+				TimeV0:       0x22222222,
+				MoofOffsetV0: 0x33333333,
+				TrafNumber:   0x4444,
+				TrunNumber:   0x555555,
+				SampleNumber: 0x66666666,
+			},
+			{
+				TimeV0:       0x77777777,
+				MoofOffsetV0: 0x88888888,
+				TrafNumber:   0x9999,
+				TrunNumber:   0xaaaaaa,
+				SampleNumber: 0xbbbbbbbb,
+			},
+		},
+	}
+	bin := []byte{
+		0,                // version
+		0x00, 0x00, 0x00, // flags
+		0x11, 0x11, 0x11, 0x11, // trackID
+		0x00, 0x00, 0x00, 0x1b, // rserved lengthSizeOfTrafNum lengthSizeOfTrunNum lengthSizeOfSampleNum
+		0x00, 0x00, 0x00, 0x02, // numberOfEntry
+		0x22, 0x22, 0x22, 0x22, // timeV0
+		0x33, 0x33, 0x33, 0x33, // moofOffsetV0
+		0x44, 0x44, // trafNumber
+		0x55, 0x55, 0x55, // trunNumber
+		0x66, 0x66, 0x66, 0x66, // sampleNumber
+		0x77, 0x77, 0x77, 0x77, // timeV0
+		0x88, 0x88, 0x88, 0x88, // moofOffsetV0
+		0x99, 0x99, // trafNumber
+		0xaa, 0xaa, 0xaa, // trunNumber
+		0xbb, 0xbb, 0xbb, 0xbb, // sampleNumber
+	}
+	buf := bytes.NewBuffer(nil)
+	n, err := Marshal(buf, &src)
+	require.NoError(t, err)
+	assert.Equal(t, uint64(len(bin)), n)
+	assert.Equal(t, bin, buf.Bytes())
+	dst := Tfra{}
+	n, err = Unmarshal(bytes.NewReader(bin), uint64(len(bin)+8), &dst)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(buf.Len()), n)
+	assert.Equal(t, src, dst)
+
+	src = Tfra{
+		FullBox: FullBox{
+			Version: 1,
+			Flags:   [3]byte{0x00, 0x00, 0x00},
+		},
+		TrackID:               0x11111111,
+		LengthSizeOfTrafNum:   0x1,
+		LengthSizeOfTrunNum:   0x2,
+		LengthSizeOfSampleNum: 0x3,
+		NumberOfEntry:         2,
+		Entries: []TfraEntry{
+			{
+				TimeV1:       0x2222222222222222,
+				MoofOffsetV1: 0x3333333333333333,
+				TrafNumber:   0x4444,
+				TrunNumber:   0x555555,
+				SampleNumber: 0x66666666,
+			},
+			{
+				TimeV1:       0x7777777777777777,
+				MoofOffsetV1: 0x8888888888888888,
+				TrafNumber:   0x9999,
+				TrunNumber:   0xaaaaaa,
+				SampleNumber: 0xbbbbbbbb,
+			},
+		},
+	}
+	bin = []byte{
+		1,                // version
+		0x00, 0x00, 0x00, // flags
+		0x11, 0x11, 0x11, 0x11, // trackID
+		0x00, 0x00, 0x00, 0x1b, // rserved lengthSizeOfTrafNum lengthSizeOfTrunNum lengthSizeOfSampleNum
+		0x00, 0x00, 0x00, 0x02, // numberOfEntry
+		0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, // timeV1
+		0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, // moofOffsetV1
+		0x44, 0x44, // trafNumber
+		0x55, 0x55, 0x55, // trunNumber
+		0x66, 0x66, 0x66, 0x66, // sampleNumber
+		0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, // timeV1
+		0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, // moofOffsetV1
+		0x99, 0x99, // trafNumber
+		0xaa, 0xaa, 0xaa, // trunNumber
+		0xbb, 0xbb, 0xbb, 0xbb, // sampleNumber
+	}
+	buf = bytes.NewBuffer(nil)
+	n, err = Marshal(buf, &src)
+	require.NoError(t, err)
+	assert.Equal(t, uint64(len(bin)), n)
+	assert.Equal(t, bin, buf.Bytes())
+	dst = Tfra{}
+	n, err = Unmarshal(bytes.NewReader(bin), uint64(len(bin)+8), &dst)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(buf.Len()), n)
+	assert.Equal(t, src, dst)
+}
+
 func TestVisualSampleEntryStringify(t *testing.T) {
 	vse := VisualSampleEntry{
 		SampleEntry:     SampleEntry{},
