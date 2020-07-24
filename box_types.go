@@ -400,6 +400,7 @@ type Hdlr struct {
 	HandlerType [4]byte   `mp4:"size=8,string"`
 	Reserved    [3]uint32 `mp4:"size=32,const=0"`
 	Name        string    `mp4:"string=c_p"`
+	Padding     []byte    `mp4:"size=8,const=0"`
 }
 
 // GetType returns the BoxType

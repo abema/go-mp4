@@ -327,6 +327,7 @@ func TestHdlrUnmarshalHandlerName(t *testing.T) {
 		componentType []byte
 		bytes         []byte
 		want          string
+		padding       int
 	}{
 		{
 			name:          "NormalString",
@@ -355,8 +356,9 @@ func TestHdlrUnmarshalHandlerName(t *testing.T) {
 		{
 			name:          "AppleQuickTimePascalStringWithEmpty",
 			componentType: []byte("mhlr"),
-			bytes:         []byte{0x00},
+			bytes:         []byte{0x00, 0x00},
 			want:          "",
+			padding:       1,
 		},
 		{
 			name:          "AppleQuickTimePascalStringLong",
@@ -389,6 +391,7 @@ func TestHdlrUnmarshalHandlerName(t *testing.T) {
 			assert.Equal(t, uint64(len(bin)), n)
 			assert.Equal(t, [4]byte{'v', 'i', 'd', 'e'}, dst.HandlerType)
 			assert.Equal(t, tc.want, dst.Name)
+			assert.Len(t, dst.Padding, tc.padding)
 		})
 	}
 }
