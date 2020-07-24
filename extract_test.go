@@ -44,6 +44,7 @@ func TestExtractBoxWithPayload(t *testing.T) {
 					Payload: &Hdlr{
 						HandlerType: [4]byte{'v', 'i', 'd', 'e'},
 						Name:        "VideoHandle",
+						Padding:     []byte{},
 					},
 				},
 				{
@@ -51,6 +52,7 @@ func TestExtractBoxWithPayload(t *testing.T) {
 					Payload: &Hdlr{
 						HandlerType: [4]byte{'s', 'o', 'u', 'n'},
 						Name:        "SoundHandle",
+						Padding:     []byte{},
 					},
 				},
 			},
