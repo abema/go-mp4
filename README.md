@@ -1,8 +1,10 @@
 go-mp4
 ------
 
+[![GoDoc](https://godoc.org/github.com/abema/go-mp4?status.svg)](https://godoc.org/github.com/abema/go-mp4)
 [![CircleCI](https://circleci.com/gh/abema/go-mp4.svg?style=svg)](https://circleci.com/gh/abema/go-mp4)
 [![codecov](https://codecov.io/gh/abema/go-mp4/branch/master/graph/badge.svg)](https://codecov.io/gh/abema/go-mp4)
+[![Go Report Card](https://goreportcard.com/badge/github.com/abema/go-mp4)](https://goreportcard.com/report/github.com/abema/go-mp4)
 
 go-mp4 is Go library for reading and writing MP4.
 
