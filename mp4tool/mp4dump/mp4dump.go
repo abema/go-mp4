@@ -100,14 +100,13 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 
 			if !showAll && n >= 64 {
 				fmt.Printf(" ... (use -a option to show all)\n")
-				return nil, nil
+			} else {
+				str, err := mp4.Stringify(box)
+				if err != nil {
+					panic(err)
+				}
+				fmt.Printf(" %s\n", str)
 			}
-
-			str, err := mp4.Stringify(box)
-			if err != nil {
-				panic(err)
-			}
-			fmt.Printf(" %s\n", str)
 
 			_, err = h.Expand()
 			return nil, err

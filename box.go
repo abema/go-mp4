@@ -2,6 +2,7 @@ package mp4
 
 import (
 	"errors"
+	"io"
 )
 
 type ICustomFieldObject interface {
@@ -16,6 +17,10 @@ type ICustomFieldObject interface {
 
 	// StringifyField returns field value as string
 	StringifyField(string, string, int) (string, bool)
+
+	IsPString(name string, bytes []byte, remainingSize uint64) bool
+
+	BeforeUnmarshal(r io.ReadSeeker) (n uint64, override bool, err error)
 }
 
 type BaseCustomFieldObject struct {
@@ -39,6 +44,14 @@ func (box *BaseCustomFieldObject) IsOptFieldEnabled(string) bool {
 // StringifyField returns field value as string
 func (box *BaseCustomFieldObject) StringifyField(string, string, int) (string, bool) {
 	return "", false
+}
+
+func (*BaseCustomFieldObject) IsPString(name string, bytes []byte, remainingSize uint64) bool {
+	return true
+}
+
+func (*BaseCustomFieldObject) BeforeUnmarshal(r io.ReadSeeker) (uint64, bool, error) {
+	return 0, false, nil
 }
 
 // IImmutableBox is common interface of box

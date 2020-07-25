@@ -66,6 +66,10 @@ func (m *stringfier) stringifyPtr(t reflect.Type, v reflect.Value, config fieldC
 func (m *stringfier) stringifyStruct(t reflect.Type, v reflect.Value, depth int, extended bool) error {
 	if !extended {
 		m.buf.WriteString("{")
+		if m.indent != "" {
+			m.buf.WriteString("\n")
+		}
+		depth++
 	}
 
 	for i := 0; i < t.NumField(); i++ {
@@ -130,6 +134,7 @@ func (m *stringfier) stringifyStruct(t reflect.Type, v reflect.Value, depth int,
 			writeIndent(m.buf, m.indent, depth)
 		}
 		m.buf.WriteString("}")
+		depth--
 	}
 
 	return nil

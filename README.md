@@ -1,8 +1,10 @@
 go-mp4
 ------
 
+[![GoDoc](https://godoc.org/github.com/abema/go-mp4?status.svg)](https://godoc.org/github.com/abema/go-mp4)
 [![CircleCI](https://circleci.com/gh/abema/go-mp4.svg?style=svg)](https://circleci.com/gh/abema/go-mp4)
-[![codecov](https://codecov.io/gh/abema/go-mp4/branch/wip/graph/badge.svg)](https://codecov.io/gh/abema/go-mp4)
+[![codecov](https://codecov.io/gh/abema/go-mp4/branch/master/graph/badge.svg)](https://codecov.io/gh/abema/go-mp4)
+[![Go Report Card](https://goreportcard.com/badge/github.com/abema/go-mp4)](https://goreportcard.com/report/github.com/abema/go-mp4)
 
 go-mp4 is Go library for reading and writing MP4.
 
@@ -21,20 +23,21 @@ _, err := mp4.ReadBoxStructure(file, func(h *mp4.ReadHandle) (interface{}, error
 	// Box Size
 	fmt.Println(h.BoxInfo.Size)
 
-	// Payload
 	if h.BoxInfo.Type.IsSupported() {
+		// Payload
 		box, _, _ := h.ReadPayload()
 		fmt.Println(mp4.Stringify(box))
-	}
 
-	// Expands sibling boxes
-	return h.Expand()
+		// Expands children
+		return h.Expand()
+	}
+	return nil, nil
 })
 ```
 
 ```go
 // extract specific boxes
-boxes, err := mp4.ExtractBox(file, nil, mp4.BoxPath{mp4.BoxTypeMoov(), mp4.BoxTypeTrak(), mp4.BoxTypeTkhd())
+boxes, err := mp4.ExtractBox(file, nil, mp4.BoxPath{mp4.BoxTypeMoov(), mp4.BoxTypeTrak(), mp4.BoxTypeTkhd()})
 ```
 
 You can create additional box definition as follows:
