@@ -897,7 +897,7 @@ func init() {
 
 type Sgpd struct {
 	FullBox                       `mp4:"extend"`
-	GroupingType                  [4]byte `mp4:"size=8"`
+	GroupingType                  [4]byte `mp4:"size=8,string"`
 	DefaultLength                 uint32  `mp4:"size=32,ver=1"`
 	DefaultSampleDescriptionIndex uint32  `mp4:"size=32,ver=2"`
 	EntryCount                    uint32  `mp4:"size=32"`
@@ -967,15 +967,6 @@ func (sgpd *Sgpd) IsOptFieldEnabled(name string) bool {
 			sgpd.DefaultLength == 1
 	default:
 		return false
-	}
-}
-
-func (sgpd *Sgpd) StringifyField(name string, indent string, depth int) (string, bool) {
-	switch name {
-	case "GroupingType":
-		return string([]byte{sgpd.GroupingType[0], sgpd.GroupingType[1], sgpd.GroupingType[2], sgpd.GroupingType[3]}), true
-	default:
-		return "", false
 	}
 }
 
