@@ -549,7 +549,7 @@ func TestMetaMarshal(t *testing.T) {
 
 	// unmarshal
 	dst := Meta{}
-	n, err = Unmarshal(bytes.NewReader(bin), uint64(len(bin)+8), &dst)
+	n, err = Unmarshal(bytes.NewReader(bin), uint64(len(bin)), &dst)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(buf.Len()), n)
 	assert.Equal(t, src, dst)
@@ -566,7 +566,7 @@ func TestMetaMarshalAppleQuickTime(t *testing.T) {
 	// unmarshal
 	dst := Meta{}
 	r := bytes.NewReader(bin)
-	n, err := Unmarshal(r, uint64(len(bin)+8), &dst)
+	n, err := Unmarshal(r, uint64(len(bin)), &dst)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(0), n)
 	s, _ := r.Seek(0, io.SeekCurrent)
@@ -696,7 +696,7 @@ func TestTfraMarshal(t *testing.T) {
 	assert.Equal(t, uint64(len(bin)), n)
 	assert.Equal(t, bin, buf.Bytes())
 	dst := Tfra{}
-	n, err = Unmarshal(bytes.NewReader(bin), uint64(len(bin)+8), &dst)
+	n, err = Unmarshal(bytes.NewReader(bin), uint64(len(bin)), &dst)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(buf.Len()), n)
 	assert.Equal(t, src, dst)
@@ -751,7 +751,7 @@ func TestTfraMarshal(t *testing.T) {
 	assert.Equal(t, uint64(len(bin)), n)
 	assert.Equal(t, bin, buf.Bytes())
 	dst = Tfra{}
-	n, err = Unmarshal(bytes.NewReader(bin), uint64(len(bin)+8), &dst)
+	n, err = Unmarshal(bytes.NewReader(bin), uint64(len(bin)), &dst)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(buf.Len()), n)
 	assert.Equal(t, src, dst)
