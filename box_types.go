@@ -896,19 +896,19 @@ func init() {
 }
 
 type Sgpd struct {
-	FullBox                         `mp4:"extend"`
-	GroupingType                    [4]byte `mp4:"size=8"`
-	DefaultLength                   uint32  `mp4:"size=32,ver=1"`
-	DefaultSample_description_index uint32  `mp4:"size=32,ver=2"`
-	EntryCount                      uint32  `mp4:"size=32"`
-	RollDistances                   []int16 `mp4:"size=16,opt=dynamic"`
+	FullBox                       `mp4:"extend"`
+	GroupingType                  [4]byte `mp4:"size=8,string"`
+	DefaultLength                 uint32  `mp4:"size=32,ver=1"`
+	DefaultSampleDescriptionIndex uint32  `mp4:"size=32,ver=2"`
+	EntryCount                    uint32  `mp4:"size=32"`
+	RollDistances                 []int16 `mp4:"size=16,opt=dynamic"`
 	//AlternativeStartupEntry         []AlternativeStartupEntry `mp4:"size=dynamic,opt=dynamic"`
 	VisualRandomAccessEntry []VisualRandomAccessEntry `mp4:"size=dynamic,opt=dynamic"`
 	TemporalLevelEntry      []TemporalLevelEntry      `mp4:"size=dynamic,opt=dynamic"`
-	Unsupported             []byte                    `mp4:"size=8,opt=dynamic"`
+	Unsupported             []byte                    `mp4:"size=8"`
 }
 
-/* go-mp4 has not supported nested dynamic field.
+/* go-mp4 has never supported nested dynamic field.
 type AlternativeStartupEntry struct {
 	RollCount         uint16                       `mp4:"size=16`
 	FirstOutputSample uint16                       `mp4:"size=16`
@@ -923,7 +923,7 @@ type AlternativeStartupEntryOpt struct {
 */
 
 type VisualRandomAccessEntry struct {
-	NumLeadingSamplesKnown uint8 `mp4:"size=1"`
+	NumLeadingSamplesKnown bool  `mp4:"size=1"`
 	NumLeadingSamples      uint8 `mp4:"size=7"`
 }
 
@@ -965,19 +965,8 @@ func (sgpd *Sgpd) IsOptFieldEnabled(name string) bool {
 		return sgpd.Version == 1 &&
 			sgpd.GroupingType == [4]byte{'t', 'e', 'l', 'e'} &&
 			sgpd.DefaultLength == 1
-	case "Unsupported":
-		return sgpd.Version == 0 || (sgpd.Version == 1 && sgpd.DefaultLength == 0)
 	default:
 		return false
-	}
-}
-
-func (sgpd *Sgpd) StringifyField(name string, indent string, depth int) (string, bool) {
-	switch name {
-	case "GroupingType":
-		return string([]byte{sgpd.GroupingType[0], sgpd.GroupingType[1], sgpd.GroupingType[2], sgpd.GroupingType[3]}), true
-	default:
-		return "", false
 	}
 }
 

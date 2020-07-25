@@ -549,7 +549,7 @@ func TestMetaMarshal(t *testing.T) {
 
 	// unmarshal
 	dst := Meta{}
-	n, err = Unmarshal(bytes.NewReader(bin), uint64(len(bin)+8), &dst)
+	n, err = Unmarshal(bytes.NewReader(bin), uint64(len(bin)), &dst)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(buf.Len()), n)
 	assert.Equal(t, src, dst)
@@ -566,7 +566,7 @@ func TestMetaMarshalAppleQuickTime(t *testing.T) {
 	// unmarshal
 	dst := Meta{}
 	r := bytes.NewReader(bin)
-	n, err := Unmarshal(r, uint64(len(bin)+8), &dst)
+	n, err := Unmarshal(r, uint64(len(bin)), &dst)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(0), n)
 	s, _ := r.Seek(0, io.SeekCurrent)
@@ -645,6 +645,184 @@ func TestPsshStringify(t *testing.T) {
 	}
 }
 
+func TestSgpdMarshal(t *testing.T) {
+	testCases := []struct {
+		name string
+		src  Sgpd
+		bin  []byte
+	}{
+		{
+			name: "version 0",
+			src: Sgpd{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				GroupingType: [4]byte{'r', 'o', 'l', 'l'},
+				EntryCount:   2,
+				Unsupported:  []byte{0x11, 0x22, 0x33, 0x44},
+			},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				'r', 'o', 'l', 'l', // grouping type
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x11, 0x22, 0x33, 0x44, // unsupported
+			},
+		},
+		{
+			name: "version 1 roll",
+			src: Sgpd{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				GroupingType:  [4]byte{'r', 'o', 'l', 'l'},
+				DefaultLength: 2,
+				EntryCount:    2,
+				RollDistances: []int16{0x1111, 0x2222},
+				Unsupported:   []byte{},
+			},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				'r', 'o', 'l', 'l', // grouping type
+				0x00, 0x00, 0x00, 0x02, // default length
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x11, 0x11, 0x22, 0x22, // unsupported
+			},
+		},
+		{
+			name: "version 1 prol",
+			src: Sgpd{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				GroupingType:  [4]byte{'p', 'r', 'o', 'l'},
+				DefaultLength: 2,
+				EntryCount:    2,
+				RollDistances: []int16{0x1111, 0x2222},
+				Unsupported:   []byte{},
+			},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				'p', 'r', 'o', 'l', // grouping type
+				0x00, 0x00, 0x00, 0x02, // default length
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x11, 0x11, 0x22, 0x22, // unsupported
+			},
+		},
+		{
+			name: "version 1 alst",
+			src: Sgpd{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				GroupingType:  [4]byte{'a', 'l', 's', 't'},
+				DefaultLength: 2,
+				EntryCount:    2,
+				Unsupported:   []byte{0x11, 0x22, 0x33, 0x44},
+			},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				'a', 'l', 's', 't', // grouping type
+				0x00, 0x00, 0x00, 0x02, // default length
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x11, 0x22, 0x33, 0x44, // unsupported
+			},
+		},
+		{
+			name: "version 1 rap",
+			src: Sgpd{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				GroupingType:  [4]byte{'r', 'a', 'p', ' '},
+				DefaultLength: 1,
+				EntryCount:    2,
+				VisualRandomAccessEntry: []VisualRandomAccessEntry{
+					{NumLeadingSamplesKnown: true, NumLeadingSamples: 0x27},
+					{NumLeadingSamplesKnown: false, NumLeadingSamples: 0x1a},
+				},
+				Unsupported: []byte{},
+			},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				'r', 'a', 'p', ' ', // grouping type
+				0x00, 0x00, 0x00, 0x01, // default length
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0xa7, 0x1a, // visual random access entry
+			},
+		},
+		{
+			name: "version 1 tele",
+			src: Sgpd{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				GroupingType:  [4]byte{'t', 'e', 'l', 'e'},
+				DefaultLength: 1,
+				EntryCount:    2,
+				TemporalLevelEntry: []TemporalLevelEntry{
+					{LevelUndependentlyUecodable: true},
+					{LevelUndependentlyUecodable: false},
+				},
+				Unsupported: []byte{},
+			},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				't', 'e', 'l', 'e', // grouping type
+				0x00, 0x00, 0x00, 0x01, // default length
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x80, 0x00, // temporal level entry
+			},
+		},
+		{
+			name: "version 2 alst",
+			src: Sgpd{
+				FullBox: FullBox{
+					Version: 2,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				GroupingType:                  [4]byte{'r', 'o', 'l', 'l'},
+				DefaultSampleDescriptionIndex: 5,
+				EntryCount:                    2,
+				Unsupported:                   []byte{0x11, 0x22, 0x33, 0x44},
+			},
+			bin: []byte{
+				2,                // version
+				0x00, 0x00, 0x00, // flags
+				'r', 'o', 'l', 'l', // grouping type
+				0x00, 0x00, 0x00, 0x05, // default sample description index
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x11, 0x22, 0x33, 0x44, // unsupported
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			buf := bytes.NewBuffer(nil)
+			n, err := Marshal(buf, &tc.src)
+			require.NoError(t, err)
+			assert.Equal(t, uint64(len(tc.bin)), n)
+			assert.Equal(t, tc.bin, buf.Bytes())
+			dst := Sgpd{}
+			n, err = Unmarshal(bytes.NewReader(tc.bin), uint64(len(tc.bin)), &dst)
+			assert.NoError(t, err)
+			assert.Equal(t, uint64(buf.Len()), n)
+			assert.Equal(t, tc.src, dst)
+		})
+	}
+}
+
 func TestTfraMarshal(t *testing.T) {
 	src := Tfra{
 		FullBox: FullBox{
@@ -696,7 +874,7 @@ func TestTfraMarshal(t *testing.T) {
 	assert.Equal(t, uint64(len(bin)), n)
 	assert.Equal(t, bin, buf.Bytes())
 	dst := Tfra{}
-	n, err = Unmarshal(bytes.NewReader(bin), uint64(len(bin)+8), &dst)
+	n, err = Unmarshal(bytes.NewReader(bin), uint64(len(bin)), &dst)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(buf.Len()), n)
 	assert.Equal(t, src, dst)
@@ -751,7 +929,7 @@ func TestTfraMarshal(t *testing.T) {
 	assert.Equal(t, uint64(len(bin)), n)
 	assert.Equal(t, bin, buf.Bytes())
 	dst = Tfra{}
-	n, err = Unmarshal(bytes.NewReader(bin), uint64(len(bin)+8), &dst)
+	n, err = Unmarshal(bytes.NewReader(bin), uint64(len(bin)), &dst)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(buf.Len()), n)
 	assert.Equal(t, src, dst)
