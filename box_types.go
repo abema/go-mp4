@@ -815,13 +815,10 @@ type VisualSampleEntry struct {
 func (vse *VisualSampleEntry) StringifyField(name string, indent string, depth int) (string, bool) {
 	switch name {
 	case "Compressorname":
-		end := 0
-		for ; end < len(vse.Compressorname); end++ {
-			if vse.Compressorname[end] == 0 {
-				break
-			}
+		if vse.Compressorname[0] <= 31 {
+			return `"` + string(vse.Compressorname[1:vse.Compressorname[0]+1]) + `"`, true
 		}
-		return `"` + string(vse.Compressorname[:end]) + `"`, true
+		return "", false
 	default:
 		return "", false
 	}
