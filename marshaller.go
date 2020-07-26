@@ -143,13 +143,7 @@ func (m *marshaller) marshalInt(t reflect.Type, v reflect.Value, config fieldCon
 	}
 
 	signBit := signed < 0
-	var val uint64
-	if signBit {
-		val = uint64(-signed)
-	} else {
-		val = uint64(signed)
-	}
-
+	val := uint64(signed)
 	for i := uint(0); i < config.Size; i += 8 {
 		v := val
 		size := uint(8)
@@ -480,23 +474,22 @@ func (u *unmarshaller) unmarshalInt(t reflect.Type, v reflect.Value, config fiel
 
 	signBit := false
 	if len(data) > 0 {
-		mask := byte(0x01) << ((config.Size - 1) % 8)
-		signBit = data[0]&mask != 0
-		data[0] &= ^mask
+		signMask := byte(0x01) << ((config.Size - 1) % 8)
+		signBit = data[0]&signMask != 0
+		if signBit {
+			data[0] |= ^(signMask - 1)
+		}
 	}
 
-	val := uint64(0)
+	var val uint64
+	if signBit {
+		val = ^uint64(0)
+	}
 	for i := range data {
 		val <<= 8
 		val |= uint64(data[i])
 	}
-
-	if signBit {
-		v.SetInt(-int64(val))
-	} else {
-		v.SetInt(int64(val))
-	}
-
+	v.SetInt(int64(val))
 	return nil
 }
 
