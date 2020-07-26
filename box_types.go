@@ -294,7 +294,7 @@ type ESDescriptor struct {
 	StreamPriority       int8   `mp4:"size=5"`
 	DependsOnESID        uint16 `mp4:"size=16,opt=dynamic"`
 	URLLength            uint8  `mp4:"size=8,opt=dynamic"`
-	URLString            []byte `mp4:"size=8,len=dynamic,opt=dynamic"`
+	URLString            []byte `mp4:"size=8,len=dynamic,opt=dynamic,string"`
 	OCRESID              uint16 `mp4:"size=16,opt=dynamic"`
 }
 
@@ -902,10 +902,10 @@ type Sgpd struct {
 	DefaultSampleDescriptionIndex uint32  `mp4:"size=32,ver=2"`
 	EntryCount                    uint32  `mp4:"size=32"`
 	RollDistances                 []int16 `mp4:"size=16,opt=dynamic"`
-	//AlternativeStartupEntry         []AlternativeStartupEntry `mp4:"size=dynamic,opt=dynamic"`
-	VisualRandomAccessEntry []VisualRandomAccessEntry `mp4:"size=dynamic,opt=dynamic"`
-	TemporalLevelEntry      []TemporalLevelEntry      `mp4:"size=dynamic,opt=dynamic"`
-	Unsupported             []byte                    `mp4:"size=8"`
+	//AlternativeStartupEntries     []AlternativeStartupEntry `mp4:"size=dynamic,opt=dynamic"`
+	VisualRandomAccessEntries []VisualRandomAccessEntry `mp4:"size=dynamic,opt=dynamic"`
+	TemporalLevelEntries      []TemporalLevelEntry      `mp4:"size=dynamic,opt=dynamic"`
+	Unsupported               []byte                    `mp4:"size=8"`
 }
 
 /* go-mp4 has never supported nested dynamic field.
@@ -935,9 +935,9 @@ type TemporalLevelEntry struct {
 func (sgpd *Sgpd) GetFieldSize(name string) uint {
 	switch name {
 	case "RollDistances",
-		//"AlternativeStartupEntry",
-		"VisualRandomAccessEntry",
-		"TemporalLevelEntry":
+		//"AlternativeStartupEntries",
+		"VisualRandomAccessEntries",
+		"TemporalLevelEntries":
 		return uint(sgpd.DefaultLength * 8)
 	default:
 		return 0
@@ -952,16 +952,16 @@ func (sgpd *Sgpd) IsOptFieldEnabled(name string) bool {
 				sgpd.GroupingType == [4]byte{'p', 'r', 'o', 'l'}) &&
 			sgpd.DefaultLength == 2
 		/*
-			case "AlternativeStartupEntry":
+			case "AlternativeStartupEntries":
 				return sgpd.Version == 1 &&
 					sgpd.GroupingType == [4]byte{'a', 'l', 's', 't'} &&
 					sgpd.DefaultLength != 0
 		*/
-	case "VisualRandomAccessEntry":
+	case "VisualRandomAccessEntries":
 		return sgpd.Version == 1 &&
 			sgpd.GroupingType == [4]byte{'r', 'a', 'p', ' '} &&
 			sgpd.DefaultLength == 1
-	case "TemporalLevelEntry":
+	case "TemporalLevelEntries":
 		return sgpd.Version == 1 &&
 			sgpd.GroupingType == [4]byte{'t', 'e', 'l', 'e'} &&
 			sgpd.DefaultLength == 1
