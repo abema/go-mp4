@@ -18,6 +18,91 @@ func TestBoxTypes(t *testing.T) {
 		str  string
 	}{
 		{
+			name: "ctts: version 0",
+			src: &Ctts{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				EntryCount: 2,
+				Entries: []CttsEntry{
+					{SampleCount: 0x01234567, SampleOffsetV0: 0x12345678},
+					{SampleCount: 0x89abcdef, SampleOffsetV0: 0x789abcde},
+				},
+			},
+			dst: &Ctts{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x01, 0x23, 0x45, 0x67, // sample count
+				0x12, 0x34, 0x56, 0x78, // sample offset
+				0x89, 0xab, 0xcd, 0xef, // sample count
+				0x78, 0x9a, 0xbc, 0xde, // sample offset
+			},
+			str: `Version=0 Flags=0x000000 EntryCount=2 Entries=[` +
+				`{SampleCount=19088743 SampleOffsetV0=305419896}, ` +
+				`{SampleCount=2309737967 SampleOffsetV0=2023406814}]`,
+		},
+		{
+			name: "ctts: version 1",
+			src: &Ctts{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				EntryCount: 2,
+				Entries: []CttsEntry{
+					{SampleCount: 0x01234567, SampleOffsetV1: 0x12345678},
+					{SampleCount: 0x89abcdef, SampleOffsetV1: -0x789abcde},
+				},
+			},
+			dst: &Ctts{},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x01, 0x23, 0x45, 0x67, // sample count
+				0x12, 0x34, 0x56, 0x78, // sample offset
+				0x89, 0xab, 0xcd, 0xef, // sample count
+				0x87, 0x65, 0x43, 0x22, // sample offset
+			},
+			str: `Version=1 Flags=0x000000 EntryCount=2 Entries=[` +
+				`{SampleCount=19088743 SampleOffsetV1=305419896}, ` +
+				`{SampleCount=2309737967 SampleOffsetV1=-2023406814}]`,
+		},
+		{
+			name: "dinf",
+			src:  &Dinf{},
+			dst:  &Dinf{},
+			bin:  nil,
+			str:  ``,
+		},
+		{
+			name: "dref",
+			src: &Dref{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				EntryCount: 0x12345678,
+			},
+			dst: &Dref{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x12, 0x34, 0x56, 0x78, // entry count
+			},
+			str: `Version=0 Flags=0x000000 EntryCount=305419896`,
+		},
+		{
+			name: "edts",
+			src:  &Edts{},
+			dst:  &Edts{},
+			bin:  nil,
+			str:  ``,
+		},
+		{
 			name: "elst: version 0",
 			src: &Elst{
 				FullBox: FullBox{
@@ -235,6 +320,84 @@ func TestBoxTypes(t *testing.T) {
 				"{Tag=SLConfigDescr Size=5 Data=[0x11, 0x22, 0x33, 0x44, 0x55]}]",
 		},
 		{
+			name: "free",
+			src: &Free{
+				Data: []byte{0x12, 0x34, 0x56},
+			},
+			dst: &Free{},
+			bin: []byte{
+				0x12, 0x34, 0x56,
+			},
+			str: `Data=[0x12, 0x34, 0x56]`,
+		},
+		{
+			name: "skip",
+			src: &Skip{
+				Data: []byte{0x12, 0x34, 0x56},
+			},
+			dst: &Skip{},
+			bin: []byte{
+				0x12, 0x34, 0x56,
+			},
+			str: `Data=[0x12, 0x34, 0x56]`,
+		},
+		{
+			name: "ftyp",
+			src: &Ftyp{
+				MajorBrand:   [4]byte{'a', 'b', 'e', 'm'},
+				MinorVersion: 0x12345678,
+				CompatibleBrands: []CompatibleBrandElem{
+					{CompatibleBrand: [4]byte{'a', 'b', 'c', 'd'}},
+					{CompatibleBrand: [4]byte{'e', 'f', 'g', 'h'}},
+				},
+			},
+			dst: &Ftyp{},
+			bin: []byte{
+				'a', 'b', 'e', 'm', // major brand
+				0x12, 0x34, 0x56, 0x78, // minor version
+				'a', 'b', 'c', 'd', // compatible brand
+				'e', 'f', 'g', 'h', // compatible brand
+			},
+			str: `MajorBrand="abem" MinorVersion=305419896 CompatibleBrands=[{CompatibleBrand="abcd"}, {CompatibleBrand="efgh"}]`,
+		},
+		{
+			name: "hdlr",
+			src: &Hdlr{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				PreDefined:  0x12345678,
+				HandlerType: [4]byte{'a', 'b', 'e', 'm'},
+				Reserved:    [3]uint32{0, 0, 0},
+				Name:        "Abema",
+				Padding:     []byte{},
+			},
+			dst: &Hdlr{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x12, 0x34, 0x56, 0x78, // pre-defined
+				'a', 'b', 'e', 'm', // handler type
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, // reserved
+				'A', 'b', 'e', 'm', 'a', 0x00, // name
+			},
+			str: `Version=0 Flags=0x000000 PreDefined=305419896 HandlerType="abem" Name="Abema"`,
+		},
+		{
+			name: "mdat",
+			src: &Mdat{
+				Data: []byte{0x11, 0x22, 0x33},
+			},
+			dst: &Mdat{},
+			bin: []byte{
+				0x11, 0x22, 0x33,
+			},
+			str: `Data=[0x11, 0x22, 0x33]`,
+		},
+		{
 			name: "mdhd: version 0",
 			src: &Mdhd{
 				FullBox: FullBox{
@@ -305,6 +468,47 @@ func TestBoxTypes(t *testing.T) {
 				`PreDefined=0`,
 		},
 		{
+			name: "mdia",
+			src:  &Mdia{},
+			dst:  &Mdia{},
+			bin:  nil,
+			str:  ``,
+		},
+		{
+			name: "mehd: version 0",
+			src: &Mehd{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				FragmentDurationV0: 0x01234567,
+			},
+			dst: &Mehd{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x01, 0x23, 0x45, 0x67, // frangment duration
+			},
+			str: `Version=0 Flags=0x000000 FragmentDurationV0=19088743`,
+		},
+		{
+			name: "mehd: version 1",
+			src: &Mehd{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				FragmentDurationV1: 0x0123456789abcdef,
+			},
+			dst: &Mehd{},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // frangment duration
+			},
+			str: `Version=1 Flags=0x000000 FragmentDurationV1=81985529216486895`,
+		},
+		{
 			name: "meta",
 			src: &Meta{
 				FullBox: FullBox{
@@ -318,6 +522,169 @@ func TestBoxTypes(t *testing.T) {
 				0x00, 0x00, 0x00, // flags
 			},
 			str: `Version=0 Flags=0x000000`,
+		},
+		{
+			name: "mfhd",
+			src: &Mfhd{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				SequenceNumber: 0x12345678,
+			},
+			dst: &Mfhd{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x12, 0x34, 0x56, 0x78, // sequence number
+			},
+			str: `Version=0 Flags=0x000000 SequenceNumber=305419896`,
+		},
+		{
+			name: "mfra",
+			src:  &Mfra{},
+			dst:  &Mfra{},
+			bin:  nil,
+			str:  ``,
+		},
+		{
+			name: "mfro",
+			src: &Mfro{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				Size: 0x12345678,
+			},
+			dst: &Mfro{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x12, 0x34, 0x56, 0x78, // size
+			},
+			str: `Version=0 Flags=0x000000 Size=305419896`,
+		},
+		{
+			name: "minf",
+			src:  &Minf{},
+			dst:  &Minf{},
+			bin:  nil,
+			str:  ``,
+		},
+		{
+			name: "moof",
+			src:  &Moof{},
+			dst:  &Moof{},
+			bin:  nil,
+			str:  ``,
+		},
+		{
+			name: "moov",
+			src:  &Moov{},
+			dst:  &Moov{},
+			bin:  nil,
+			str:  ``,
+		},
+		{
+			name: "mvex",
+			src:  &Mvex{},
+			dst:  &Mvex{},
+			bin:  nil,
+			str:  ``,
+		},
+		{
+			name: "mvhd: version 0",
+			src: &Mvhd{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				CreationTimeV0:     0x01234567,
+				ModificationTimeV0: 0x23456789,
+				TimescaleV0:        0x456789ab,
+				DurationV0:         0x6789abcd,
+				Rate:               -0x01234567,
+				Volume:             0x0123,
+				Matrix:             [9]int32{},
+				PreDefined:         [6]int32{},
+				NextTrackID:        0xabcdef01,
+			},
+			dst: &Mvhd{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x01, 0x23, 0x45, 0x67, // creation time
+				0x23, 0x45, 0x67, 0x89, // modification time
+				0x45, 0x67, 0x89, 0xab, // timescale
+				0x67, 0x89, 0xab, 0xcd, // duration
+				0xfe, 0xdc, 0xba, 0x99, // rate
+				0x01, 0x23, // volume
+				0x00, 0x00, // reserved
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // reserved
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // matrix
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // pre-defined
+				0xab, 0xcd, 0xef, 0x01, // next track ID
+			},
+			str: `Version=0 Flags=0x000000 ` +
+				`CreationTimeV0=19088743 ` +
+				`ModificationTimeV0=591751049 ` +
+				`TimescaleV0=1164413355 ` +
+				`DurationV0=1737075661 ` +
+				`Rate=-19088743 ` +
+				`Volume=291 ` +
+				`Matrix=[0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0] ` +
+				`PreDefined=[0, 0, 0, 0, 0, 0] ` +
+				`NextTrackID=2882400001`,
+		},
+		{
+			name: "mvhd: version 1",
+			src: &Mvhd{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				CreationTimeV1:     0x0123456789abcdef,
+				ModificationTimeV1: 0x23456789abcdef01,
+				TimescaleV1:        0x89abcdef,
+				DurationV1:         0x456789abcdef0123,
+				Rate:               -0x01234567,
+				Volume:             0x0123,
+				Matrix:             [9]int32{},
+				PreDefined:         [6]int32{},
+				NextTrackID:        0xabcdef01,
+			},
+			dst: &Mvhd{},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // creation time
+				0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, // modification
+				0x89, 0xab, 0xcd, 0xef, // timescale
+				0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, // duration
+				0xfe, 0xdc, 0xba, 0x99, // rate
+				0x01, 0x23, // volume
+				0x00, 0x00, // reserved
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // reserved
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // matrix
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // pre-defined
+				0xab, 0xcd, 0xef, 0x01, // next track ID
+			},
+			str: `Version=1 Flags=0x000000 ` +
+				`CreationTimeV1=81985529216486895 ` +
+				`ModificationTimeV1=2541551405711093505 ` +
+				`TimescaleV1=2309737967 ` +
+				`DurationV1=5001117282205630755 ` +
+				`Rate=-19088743 ` +
+				`Volume=291 ` +
+				`Matrix=[0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0] ` +
+				`PreDefined=[0, 0, 0, 0, 0, 0] ` +
+				`NextTrackID=2882400001`,
 		},
 		{
 			name: "pssh: version 0: no KIDs",
@@ -379,6 +746,161 @@ func TestBoxTypes(t *testing.T) {
 				`KIDs=["1112131415161718191a1b1c1d1e1f10" "2122232425262728292a2b2c2d2e2f20"] ` +
 				`DataSize=5 ` +
 				`Data=[0x21, 0x22, 0x23, 0x24, 0x25]`,
+		},
+		{
+			name: "VisualSampleEntry",
+			src: &VisualSampleEntry{
+				SampleEntry: SampleEntry{
+					AnyTypeBox:         AnyTypeBox{Type: StrToBoxType("avc1")},
+					DataReferenceIndex: 0x1234,
+				},
+				PreDefined:      0x0101,
+				PreDefined2:     [3]uint32{0x01000001, 0x01000002, 0x01000003},
+				Width:           0x0102,
+				Height:          0x0103,
+				Horizresolution: 0x01000004,
+				Vertresolution:  0x01000005,
+				Reserved2:       0x01000006,
+				FrameCount:      0x0104,
+				Compressorname:  [32]byte{5, 'a', 'b', 'e', 'm', 'a'},
+				Depth:           0x0105,
+				PreDefined3:     1001,
+			},
+			dst: &VisualSampleEntry{SampleEntry: SampleEntry{AnyTypeBox: AnyTypeBox{Type: StrToBoxType("avc1")}}},
+			bin: []byte{
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // reserved
+				0x12, 0x34, // data reference index
+				0x01, 0x01, // PreDefined
+				0x00, 0x00, // Reserved
+				0x01, 0x00, 0x00, 0x01,
+				0x01, 0x00, 0x00, 0x02,
+				0x01, 0x00, 0x00, 0x03, // PreDefined2
+				0x01, 0x02, // Width
+				0x01, 0x03, // Height
+				0x01, 0x00, 0x00, 0x04, // Horizresolution
+				0x01, 0x00, 0x00, 0x05, // Vertresolution
+				0x01, 0x00, 0x00, 0x06, // Reserved2
+				0x01, 0x04, // FrameCount
+				5, 'a', 'b', 'e', 'm', 'a', 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Compressorname
+				0x01, 0x05, // Depth
+				0x03, 0xe9, // PreDefined3
+			},
+			str: `DataReferenceIndex=4660 ` +
+				`PreDefined=257 ` +
+				`PreDefined2=[16777217, 16777218, 16777219] ` +
+				`Width=258 ` +
+				`Height=259 ` +
+				`Horizresolution=16777220 ` +
+				`Vertresolution=16777221 ` +
+				`FrameCount=260 ` +
+				`Compressorname="abema" ` +
+				`Depth=261 ` +
+				`PreDefined3=1001`,
+		},
+		{
+			name: "AudioSampleEntry",
+			src: &AudioSampleEntry{
+				SampleEntry: SampleEntry{
+					AnyTypeBox:         AnyTypeBox{Type: StrToBoxType("enca")},
+					DataReferenceIndex: 0x1234,
+				},
+				EntryVersion: 0x0123,
+				ChannelCount: 0x2345,
+				SampleSize:   0x4567,
+				PreDefined:   0x6789,
+				SampleRate:   0x01234567,
+			},
+			dst: &AudioSampleEntry{SampleEntry: SampleEntry{AnyTypeBox: AnyTypeBox{Type: StrToBoxType("enca")}}},
+			bin: []byte{
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // reserved
+				0x12, 0x34, // data reference index
+				0x01, 0x23, // entry version
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // reserved
+				0x23, 0x45, // channel count
+				0x45, 0x67, // sample size
+				0x67, 0x89, // pre-defined
+				0x00, 0x00, // reserved
+				0x01, 0x23, 0x45, 0x67, // sample rate
+			},
+			str: `DataReferenceIndex=4660 ` +
+				`EntryVersion=291 ` +
+				`ChannelCount=9029 ` +
+				`SampleSize=17767 ` +
+				`PreDefined=26505 ` +
+				`SampleRate=19088743`,
+		},
+		{
+			name: "AVCDecoderConfiguration",
+			src: &AVCDecoderConfiguration{
+				AnyTypeBox:           AnyTypeBox{Type: StrToBoxType("avcC")},
+				ConfigurationVersion: 0x12,
+				Profile:              0x34,
+				ProfileCompatibility: 0x56,
+				Level:                0x78,
+				Data:                 []byte{0x9a, 0xbc, 0xde},
+			},
+			dst: &AVCDecoderConfiguration{AnyTypeBox: AnyTypeBox{Type: StrToBoxType("avcC")}},
+			bin: []byte{
+				0x12,             // configuration version
+				0x34,             // profile
+				0x56,             // profile compatibility
+				0x78,             // level
+				0x9a, 0xbc, 0xde, // data
+			},
+			str: `ConfigurationVersion=0x12 ` +
+				`Profile=0x34 ` +
+				`ProfileCompatibility=0x56 ` +
+				`Level=0x78 ` +
+				`Data=[0x9a, 0xbc, 0xde]`,
+		},
+		{
+			name: "PixelAspectRatioBox",
+			src: &PixelAspectRatioBox{
+				AnyTypeBox: AnyTypeBox{Type: StrToBoxType("pasp")},
+				HSpacing:   0x01234567,
+				VSpacing:   0x23456789,
+			},
+			dst: &PixelAspectRatioBox{AnyTypeBox: AnyTypeBox{Type: StrToBoxType("pasp")}},
+			bin: []byte{
+				0x01, 0x23, 0x45, 0x67,
+				0x23, 0x45, 0x67, 0x89,
+			},
+			str: `HSpacing=19088743 VSpacing=591751049`,
+		},
+		{
+			name: "sbgp: version 0",
+			src: &Sbgp{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				GroupingType: 0x01234567,
+				EntryCount:   2,
+				Entries: []SbgpEntry{
+					{SampleCount: 0x23456789, GroupDescriptionIndex: 0x3456789a},
+					{SampleCount: 0x456789ab, GroupDescriptionIndex: 0x56789abc},
+				},
+			},
+			dst: &Sbgp{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x01, 0x23, 0x45, 0x67, // grouping type
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x23, 0x45, 0x67, 0x89, // sample count
+				0x34, 0x56, 0x78, 0x9a, // group description index
+				0x45, 0x67, 0x89, 0xab, // sample count
+				0x56, 0x78, 0x9a, 0xbc, // group description index
+			},
+			str: `Version=0 Flags=0x000000 ` +
+				`GroupingType=19088743 ` +
+				`EntryCount=2 ` +
+				`Entries=[` +
+				`{SampleCount=591751049 GroupDescriptionIndex=878082202}, ` +
+				`{SampleCount=1164413355 GroupDescriptionIndex=1450744508}]`,
 		},
 		{
 			name: "sgpd: version 0",
@@ -585,6 +1107,257 @@ func TestBoxTypes(t *testing.T) {
 				`Unsupported=[0x11, 0x22, 0x33, 0x44]`,
 		},
 		{
+			name: "smhd",
+			src: &Smhd{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				Balance: 0x0123,
+			},
+			dst: &Smhd{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x01, 0x23, // balance
+				0x00, 0x00, // reserved
+			},
+			str: `Version=0 Flags=0x000000 Balance=291`,
+		},
+		{
+			name: "stbl",
+			src:  &Stbl{},
+			dst:  &Stbl{},
+			bin:  nil,
+			str:  ``,
+		},
+		{
+			name: "stco",
+			src: &Stco{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				EntryCount:  2,
+				ChunkOffset: []uint32{0x01234567, 0x89abcdef},
+			},
+			dst: &Stco{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x01, 0x23, 0x45, 0x67, // chunk offset
+				0x89, 0xab, 0xcd, 0xef, // chunk offset
+			},
+			str: `Version=0 Flags=0x000000 EntryCount=2 ChunkOffset=[19088743, 2309737967]`,
+		},
+		{
+			name: "stsc",
+			src: &Stsc{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				EntryCount: 2,
+				Entries: []StscEntry{
+					{FirstChunk: 0x01234567, SamplesPerChunk: 0x23456789, SampleDescriptionIndex: 0x456789ab},
+					{FirstChunk: 0x6789abcd, SamplesPerChunk: 0x89abcdef, SampleDescriptionIndex: 0xabcdef01},
+				},
+			},
+			dst: &Stsc{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x01, 0x23, 0x45, 0x67, // first chunk
+				0x23, 0x45, 0x67, 0x89, // sample per chunk
+				0x45, 0x67, 0x89, 0xab, // sample description index
+				0x67, 0x89, 0xab, 0xcd, // first chunk
+				0x89, 0xab, 0xcd, 0xef, // sample per chunk
+				0xab, 0xcd, 0xef, 0x01, // sample description index
+			},
+			str: `Version=0 Flags=0x000000 EntryCount=2 Entries=[` +
+				`{FirstChunk=19088743 SamplesPerChunk=591751049 SampleDescriptionIndex=1164413355}, ` +
+				`{FirstChunk=1737075661 SamplesPerChunk=2309737967 SampleDescriptionIndex=2882400001}]`,
+		},
+		{
+			name: "stsd",
+			src: &Stsd{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				EntryCount: 0x01234567,
+			},
+			dst: &Stsd{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x01, 0x23, 0x45, 0x67, // entry count
+			},
+			str: `Version=0 Flags=0x000000 EntryCount=19088743`,
+		},
+		{
+			name: "stss",
+			src: &Stss{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				EntryCount:   2,
+				SampleNumber: []uint32{0x01234567, 0x89abcdef},
+			},
+			dst: &Stss{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x01, 0x23, 0x45, 0x67, // sample number
+				0x89, 0xab, 0xcd, 0xef, // sample number
+			},
+			str: `Version=0 Flags=0x000000 EntryCount=2 SampleNumber=[19088743, 2309737967]`,
+		},
+		{
+			name: "stsz: common sample size",
+			src: &Stsz{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				SampleSize:  0x01234567,
+				SampleCount: 2,
+				EntrySize:   []uint32{},
+			},
+			dst: &Stsz{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x01, 0x23, 0x45, 0x67, // sample size
+				0x00, 0x00, 0x00, 0x02, // sample count
+			},
+			str: `Version=0 Flags=0x000000 SampleSize=19088743 SampleCount=2 EntrySize=[]`,
+		},
+		{
+			name: "stsz: sample size array",
+			src: &Stsz{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				SampleCount: 2,
+				EntrySize:   []uint32{0x01234567, 0x23456789},
+			},
+			dst: &Stsz{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x00, 0x00, 0x00, 0x00, // sample size
+				0x00, 0x00, 0x00, 0x02, // sample count
+				0x01, 0x23, 0x45, 0x67, // entry size
+				0x23, 0x45, 0x67, 0x89, // entry size
+			},
+			str: `Version=0 Flags=0x000000 SampleSize=0 SampleCount=2 EntrySize=[19088743, 591751049]`,
+		},
+		{
+			name: "stts",
+			src: &Stts{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				EntryCount: 2,
+				Entries: []SttsEntry{
+					{SampleCount: 0x01234567, SampleDelta: 0x23456789},
+					{SampleCount: 0x456789ab, SampleDelta: 0x6789abcd},
+				},
+			},
+			dst: &Stts{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x01, 0x23, 0x45, 0x67, // sample count
+				0x23, 0x45, 0x67, 0x89, // sample delta
+				0x45, 0x67, 0x89, 0xab, // sample count
+				0x67, 0x89, 0xab, 0xcd, // sample delta
+			},
+			str: `Version=0 Flags=0x000000 EntryCount=2 Entries=[` +
+				`{SampleCount=19088743 SampleDelta=591751049}, ` +
+				`{SampleCount=1164413355 SampleDelta=1737075661}]`,
+		},
+		{
+			name: "tfdt: version 0",
+			src: &Tfdt{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				BaseMediaDecodeTimeV0: 0x01234567,
+			},
+			dst: &Tfdt{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x01, 0x23, 0x45, 0x67, // base media decode time
+			},
+			str: `Version=0 Flags=0x000000 BaseMediaDecodeTimeV0=19088743`,
+		},
+		{
+			name: "tfdt: version 1",
+			src: &Tfdt{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				BaseMediaDecodeTimeV1: 0x0123456789abcdef,
+			},
+			dst: &Tfdt{},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // base media decode time
+			},
+			str: `Version=1 Flags=0x000000 BaseMediaDecodeTimeV1=81985529216486895`,
+		},
+		{
+			name: "tfhd: no flags",
+			src: &Tfhd{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				TrackID: 0x08404649,
+			},
+			dst: &Tfhd{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x08, 0x40, 0x46, 0x49, // track ID
+			},
+			str: `Version=0 Flags=0x000000 TrackID=138430025`,
+		},
+		{
+			name: "tfhd: base data offset & default sample duration",
+			src: &Tfhd{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, TfhdBaseDataOffsetPresent | TfhdDefaultSampleDurationPresent},
+				},
+				TrackID:               0x08404649,
+				BaseDataOffset:        0x0123456789abcdef,
+				DefaultSampleDuration: 0x23456789,
+			},
+			dst: &Tfhd{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x09, // flags (0000 0000 1001)
+				0x08, 0x40, 0x46, 0x49, // track ID
+				0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+				0x23, 0x45, 0x67, 0x89,
+			},
+			str: `Version=0 Flags=0x000009 TrackID=138430025 BaseDataOffset=81985529216486895 DefaultSampleDuration=591751049`,
+		},
+		{
 			name: "tfra: version 0",
 			src: &Tfra{
 				FullBox: FullBox{
@@ -699,44 +1472,6 @@ func TestBoxTypes(t *testing.T) {
 				`{TimeV1=8608480567731124087 MoofOffsetV1=9838263505978427528 TrafNumber=39321 TrunNumber=11184810 SampleNumber=3149642683}]`,
 		},
 		{
-			name: "tfhd: no flags",
-			src: &Tfhd{
-				FullBox: FullBox{
-					Version: 0,
-					Flags:   [3]byte{0x00, 0x00, 0x00},
-				},
-				TrackID: 0x08404649,
-			},
-			dst: &Tfhd{},
-			bin: []byte{
-				0,                // version
-				0x00, 0x00, 0x00, // flags
-				0x08, 0x40, 0x46, 0x49, // track ID
-			},
-			str: `Version=0 Flags=0x000000 TrackID=138430025`,
-		},
-		{
-			name: "tfhd: base data offset & default sample duration",
-			src: &Tfhd{
-				FullBox: FullBox{
-					Version: 0,
-					Flags:   [3]byte{0x00, 0x00, TfhdBaseDataOffsetPresent | TfhdDefaultSampleDurationPresent},
-				},
-				TrackID:               0x08404649,
-				BaseDataOffset:        0x0123456789abcdef,
-				DefaultSampleDuration: 0x23456789,
-			},
-			dst: &Tfhd{},
-			bin: []byte{
-				0,                // version
-				0x00, 0x00, 0x09, // flags (0000 0000 1001)
-				0x08, 0x40, 0x46, 0x49, // track ID
-				0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
-				0x23, 0x45, 0x67, 0x89,
-			},
-			str: `Version=0 Flags=0x000009 TrackID=138430025 BaseDataOffset=81985529216486895 DefaultSampleDuration=591751049`,
-		},
-		{
 			name: "tkhd",
 			src: &Tkhd{
 				FullBox: FullBox{
@@ -791,6 +1526,50 @@ func TestBoxTypes(t *testing.T) {
 				`Volume=256 ` +
 				`Matrix=[0x10000, 0x0, 0x0, 0x0, 0x10000, 0x0, 0x0, 0x0, 0x40000000] ` +
 				`Width=1450744508 Height=1737075661`,
+		},
+		{
+			name: "traf",
+			src:  &Traf{},
+			dst:  &Traf{},
+			bin:  nil,
+			str:  ``,
+		},
+		{
+			name: "trak",
+			src:  &Trak{},
+			dst:  &Trak{},
+			bin:  nil,
+			str:  ``,
+		},
+		{
+			name: "trex",
+			src: &Trex{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				TrackID:                       0x01234567,
+				DefaultSampleDescriptionIndex: 0x23456789,
+				DefaultSampleDuration:         0x456789ab,
+				DefaultSampleSize:             0x6789abcd,
+				DefaultSampleFlags:            0x89abcdef,
+			},
+			dst: &Trex{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x01, 0x23, 0x45, 0x67, // track ID
+				0x23, 0x45, 0x67, 0x89, // default sample description index
+				0x45, 0x67, 0x89, 0xab, // default sample duration
+				0x67, 0x89, 0xab, 0xcd, // default sample size
+				0x89, 0xab, 0xcd, 0xef, // default sample flags
+			},
+			str: `Version=0 Flags=0x000000 ` +
+				`TrackID=19088743 ` +
+				`DefaultSampleDescriptionIndex=591751049 ` +
+				`DefaultSampleDuration=1164413355 ` +
+				`DefaultSampleSize=1737075661 ` +
+				`DefaultSampleFlags=0x89abcdef`,
 		},
 		{
 			name: "trun: version=0 flag=0x101",
@@ -906,57 +1685,32 @@ func TestBoxTypes(t *testing.T) {
 				`{SampleCompositionTimeOffsetV1=-202}]`,
 		},
 		{
-			name: "VisualSampleEntry",
-			src: &VisualSampleEntry{
-				SampleEntry: SampleEntry{
-					AnyTypeBox:         AnyTypeBox{Type: StrToBoxType("avc1")},
-					DataReferenceIndex: 0x1234,
+			name: "udta",
+			src:  &Udta{},
+			dst:  &Udta{},
+			bin:  nil,
+			str:  ``,
+		},
+		{
+			name: "vmhd",
+			src: &Vmhd{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
 				},
-				PreDefined:      0x0101,
-				PreDefined2:     [3]uint32{0x01000001, 0x01000002, 0x01000003},
-				Width:           0x0102,
-				Height:          0x0103,
-				Horizresolution: 0x01000004,
-				Vertresolution:  0x01000005,
-				Reserved2:       0x01000006,
-				FrameCount:      0x0104,
-				Compressorname:  [32]byte{5, 'a', 'b', 'e', 'm', 'a'},
-				Depth:           0x0105,
-				PreDefined3:     1001,
+				Graphicsmode: 0x0123,
+				Opcolor:      [3]uint16{0x2345, 0x4567, 0x6789},
 			},
-			dst: &VisualSampleEntry{SampleEntry: SampleEntry{AnyTypeBox: AnyTypeBox{Type: StrToBoxType("avc1")}}},
+			dst: &Vmhd{},
 			bin: []byte{
-				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // reserved
-				0x12, 0x34, // data reference index
-				0x01, 0x01, // PreDefined
-				0x00, 0x00, // Reserved
-				0x01, 0x00, 0x00, 0x01,
-				0x01, 0x00, 0x00, 0x02,
-				0x01, 0x00, 0x00, 0x03, // PreDefined2
-				0x01, 0x02, // Width
-				0x01, 0x03, // Height
-				0x01, 0x00, 0x00, 0x04, // Horizresolution
-				0x01, 0x00, 0x00, 0x05, // Vertresolution
-				0x01, 0x00, 0x00, 0x06, // Reserved2
-				0x01, 0x04, // FrameCount
-				5, 'a', 'b', 'e', 'm', 'a', 0x00, 0x00,
-				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Compressorname
-				0x01, 0x05, // Depth
-				0x03, 0xe9, // PreDefined3
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x01, 0x23, // graphics mode
+				0x23, 0x45, 0x45, 0x67, 0x67, 0x89, // opcolor
 			},
-			str: `DataReferenceIndex=4660 ` +
-				`PreDefined=257 ` +
-				`PreDefined2=[16777217, 16777218, 16777219] ` +
-				`Width=258 ` +
-				`Height=259 ` +
-				`Horizresolution=16777220 ` +
-				`Vertresolution=16777221 ` +
-				`FrameCount=260 ` +
-				`Compressorname="abema" ` +
-				`Depth=261 ` +
-				`PreDefined3=1001`,
+			str: `Version=0 Flags=0x000000 ` +
+				`Graphicsmode=291 ` +
+				`Opcolor=[9029, 17767, 26505]`,
 		},
 	}
 	for _, tc := range testCases {
@@ -969,16 +1723,23 @@ func TestBoxTypes(t *testing.T) {
 			assert.Equal(t, tc.bin, buf.Bytes())
 
 			// Unmarshal
-			n, err = Unmarshal(bytes.NewReader(tc.bin), uint64(len(tc.bin)), tc.dst)
-			assert.NoError(t, err)
+			r := bytes.NewReader(tc.bin)
+			n, err = Unmarshal(r, uint64(len(tc.bin)), tc.dst)
+			require.NoError(t, err)
 			assert.Equal(t, uint64(buf.Len()), n)
 			assert.Equal(t, tc.src, tc.dst)
+			s, err := r.Seek(0, io.SeekCurrent)
+			require.NoError(t, err)
+			assert.Equal(t, int64(buf.Len()), s)
 
 			// UnmarshalAny
 			dst, n, err := UnmarshalAny(bytes.NewReader(tc.bin), tc.src.GetType(), uint64(len(tc.bin)))
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, uint64(buf.Len()), n)
 			assert.Equal(t, tc.src, dst)
+			s, err = r.Seek(0, io.SeekCurrent)
+			require.NoError(t, err)
+			assert.Equal(t, int64(buf.Len()), s)
 
 			// Stringify
 			str, err := Stringify(tc.src)
