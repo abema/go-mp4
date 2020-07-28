@@ -101,11 +101,7 @@ func divide(inputFilePath, outputDir string) error {
 			return fmt.Errorf("trak box must have one mdhd box: mdhd=%d", len(bs))
 		}
 		mdhd := bs[0].Payload.(*mp4.Mdhd)
-		if mdhd.Version == 0 {
-			t.timescale = mdhd.TimescaleV0
-		} else {
-			t.timescale = mdhd.TimescaleV1
-		}
+		t.timescale = mdhd.Timescale
 
 		bs, err = mp4.ExtractBoxWithPayload(inputFile, bi, mp4.BoxPath{mp4.BoxTypeMdia(), mp4.BoxTypeMinf(), mp4.BoxTypeStbl(), mp4.BoxTypeStsd(), mp4.StrToBoxType("avc1")})
 		if err != nil {
