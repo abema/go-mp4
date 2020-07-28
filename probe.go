@@ -130,12 +130,7 @@ func probeMdhd(r io.ReadSeeker, bi *BoxInfo, info *TrackInfo) error {
 		return err
 	}
 
-	if mdhd.Version == 0 {
-		info.Timescale = mdhd.TimescaleV0
-	} else {
-		info.Timescale = mdhd.TimescaleV1
-	}
-
+	info.Timescale = mdhd.Timescale
 	return nil
 }
 

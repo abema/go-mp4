@@ -406,7 +406,7 @@ func TestBoxTypes(t *testing.T) {
 				},
 				CreationTimeV0:     0x12345678,
 				ModificationTimeV0: 0x23456789,
-				TimescaleV0:        0x01020304,
+				Timescale:          0x01020304,
 				DurationV0:         0x02030405,
 				Pad:                true,
 				Language:           [3]byte{'j' - 0x60, 'p' - 0x60, 'n' - 0x60}, // 0x0a, 0x10, 0x0e
@@ -426,7 +426,7 @@ func TestBoxTypes(t *testing.T) {
 			str: `Version=0 Flags=0x000000 ` +
 				`CreationTimeV0=305419896 ` +
 				`ModificationTimeV0=591751049 ` +
-				`TimescaleV0=16909060 ` +
+				`Timescale=16909060 ` +
 				`DurationV0=33752069 ` +
 				`Pad=true ` +
 				`Language="jpn" ` +
@@ -441,7 +441,7 @@ func TestBoxTypes(t *testing.T) {
 				},
 				CreationTimeV1:     0x123456789abcdef0,
 				ModificationTimeV1: 0x23456789abcdef01,
-				TimescaleV1:        0x01020304,
+				Timescale:          0x01020304,
 				DurationV1:         0x0203040506070809,
 				Pad:                true,
 				Language:           [3]byte{'j' - 0x60, 'p' - 0x60, 'n' - 0x60}, // 0x0a, 0x10, 0x0e
@@ -461,7 +461,7 @@ func TestBoxTypes(t *testing.T) {
 			str: `Version=1 Flags=0x000000 ` +
 				`CreationTimeV1=1311768467463790320 ` +
 				`ModificationTimeV1=2541551405711093505 ` +
-				`TimescaleV1=16909060 ` +
+				`Timescale=16909060 ` +
 				`DurationV1=144964032628459529 ` +
 				`Pad=true ` +
 				`Language="jpn" ` +
@@ -601,7 +601,7 @@ func TestBoxTypes(t *testing.T) {
 				},
 				CreationTimeV0:     0x01234567,
 				ModificationTimeV0: 0x23456789,
-				TimescaleV0:        0x456789ab,
+				Timescale:          0x456789ab,
 				DurationV0:         0x6789abcd,
 				Rate:               -0x01234567,
 				Volume:             0x0123,
@@ -631,7 +631,7 @@ func TestBoxTypes(t *testing.T) {
 			str: `Version=0 Flags=0x000000 ` +
 				`CreationTimeV0=19088743 ` +
 				`ModificationTimeV0=591751049 ` +
-				`TimescaleV0=1164413355 ` +
+				`Timescale=1164413355 ` +
 				`DurationV0=1737075661 ` +
 				`Rate=-19088743 ` +
 				`Volume=291 ` +
@@ -648,7 +648,7 @@ func TestBoxTypes(t *testing.T) {
 				},
 				CreationTimeV1:     0x0123456789abcdef,
 				ModificationTimeV1: 0x23456789abcdef01,
-				TimescaleV1:        0x89abcdef,
+				Timescale:          0x89abcdef,
 				DurationV1:         0x456789abcdef0123,
 				Rate:               -0x01234567,
 				Volume:             0x0123,
@@ -678,7 +678,7 @@ func TestBoxTypes(t *testing.T) {
 			str: `Version=1 Flags=0x000000 ` +
 				`CreationTimeV1=81985529216486895 ` +
 				`ModificationTimeV1=2541551405711093505 ` +
-				`TimescaleV1=2309737967 ` +
+				`Timescale=2309737967 ` +
 				`DurationV1=5001117282205630755 ` +
 				`Rate=-19088743 ` +
 				`Volume=291 ` +
