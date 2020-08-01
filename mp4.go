@@ -27,6 +27,19 @@ func (boxType BoxType) String() string {
 	})
 }
 
+func (lhs BoxType) MatchWith(rhs BoxType) bool {
+	if lhs == boxTypeAny || rhs == boxTypeAny {
+		return true
+	}
+	return lhs == rhs
+}
+
+var boxTypeAny = BoxType{0x00, 0x00, 0x00, 0x00}
+
+func BoxTypeAny() BoxType {
+	return boxTypeAny
+}
+
 type boxDef struct {
 	dataType reflect.Type
 	versions []uint8

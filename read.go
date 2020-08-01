@@ -13,7 +13,7 @@ func (lhs BoxPath) compareWith(rhs BoxPath) (forwardMatch bool, match bool) {
 		return false, false
 	}
 	for i := 0; i < len(lhs); i++ {
-		if lhs[i] != rhs[i] {
+		if !lhs[i].MatchWith(rhs[i]) {
 			return false, false
 		}
 	}
