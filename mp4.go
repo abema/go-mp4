@@ -3,11 +3,8 @@ package mp4
 import (
 	"errors"
 	"fmt"
-	"math"
 	"reflect"
 )
-
-const noVersion = math.MaxUint8
 
 var ErrBoxInfoNotFound = errors.New("box info not found")
 
@@ -38,22 +35,16 @@ type boxDef struct {
 var boxMap = make(map[BoxType]boxDef, 64)
 
 func AddBoxDef(payload IBox, versions ...uint8) {
-	if len(versions) == 0 {
-		panic(errors.New("empty versions"))
-	}
 	boxMap[payload.GetType()] = boxDef{
 		dataType: reflect.TypeOf(payload).Elem(),
 		versions: versions,
 	}
 }
 
-func AddAnyTypeBoxDef(payload IAnyType, boxTypes ...BoxType) {
-	t := reflect.TypeOf(payload).Elem()
-	for i := range boxTypes {
-		boxMap[boxTypes[i]] = boxDef{
-			dataType: t,
-			versions: []uint8{noVersion},
-		}
+func AddAnyTypeBoxDef(payload IAnyType, boxType BoxType, versions ...uint8) {
+	boxMap[boxType] = boxDef{
+		dataType: reflect.TypeOf(payload).Elem(),
+		versions: versions,
 	}
 }
 
@@ -94,8 +85,11 @@ func (boxType BoxType) IsSupportedVersion(ver uint8) bool {
 	if !ok {
 		return false
 	}
+	if len(boxDef.versions) == 0 {
+		return true
+	}
 	for _, sver := range boxDef.versions {
-		if sver == noVersion || ver == sver {
+		if ver == sver {
 			return true
 		}
 	}

@@ -45,7 +45,7 @@ func (ctts *Ctts) GetFieldLength(name string) uint {
 func BoxTypeDinf() BoxType { return StrToBoxType("dinf") }
 
 func init() {
-	AddBoxDef(&Dinf{}, noVersion)
+	AddBoxDef(&Dinf{})
 }
 
 // Dinf is ISOBMFF dinf box type
@@ -109,7 +109,7 @@ const UrnSelfContained = 0x000001
 func BoxTypeEdts() BoxType { return StrToBoxType("edts") }
 
 func init() {
-	AddBoxDef(&Edts{}, noVersion)
+	AddBoxDef(&Edts{})
 }
 
 // Edts is ISOBMFF edts box type
@@ -336,8 +336,8 @@ func BoxTypeFree() BoxType { return StrToBoxType("free") }
 func BoxTypeSkip() BoxType { return StrToBoxType("skip") }
 
 func init() {
-	AddBoxDef(&Free{}, noVersion)
-	AddBoxDef(&Skip{}, noVersion)
+	AddBoxDef(&Free{})
+	AddBoxDef(&Skip{})
 }
 
 type FreeSpace struct {
@@ -362,7 +362,7 @@ func (*Skip) GetType() BoxType {
 func BoxTypeFtyp() BoxType { return StrToBoxType("ftyp") }
 
 func init() {
-	AddBoxDef(&Ftyp{}, noVersion)
+	AddBoxDef(&Ftyp{})
 }
 
 // Ftyp is ISOBMFF ftyp box type
@@ -422,7 +422,7 @@ func (hdlr *Hdlr) IsPString(name string, bytes []byte, remainingSize uint64) boo
 func BoxTypeMdat() BoxType { return StrToBoxType("mdat") }
 
 func init() {
-	AddBoxDef(&Mdat{}, noVersion)
+	AddBoxDef(&Mdat{})
 }
 
 // Mdat is ISOBMFF mdat box type
@@ -470,7 +470,7 @@ func (*Mdhd) GetType() BoxType {
 func BoxTypeMdia() BoxType { return StrToBoxType("mdia") }
 
 func init() {
-	AddBoxDef(&Mdia{}, noVersion)
+	AddBoxDef(&Mdia{})
 }
 
 // Mdia is ISOBMFF mdia box type
@@ -562,7 +562,7 @@ func (*Mfhd) GetType() BoxType {
 func BoxTypeMfra() BoxType { return StrToBoxType("mfra") }
 
 func init() {
-	AddBoxDef(&Mfra{}, noVersion)
+	AddBoxDef(&Mfra{})
 }
 
 // Mfra is ISOBMFF mfra box type
@@ -599,7 +599,7 @@ func (*Mfro) GetType() BoxType {
 func BoxTypeMinf() BoxType { return StrToBoxType("minf") }
 
 func init() {
-	AddBoxDef(&Minf{}, noVersion)
+	AddBoxDef(&Minf{})
 }
 
 // Minf is ISOBMFF minf box type
@@ -617,7 +617,7 @@ func (*Minf) GetType() BoxType {
 func BoxTypeMoof() BoxType { return StrToBoxType("moof") }
 
 func init() {
-	AddBoxDef(&Moof{}, noVersion)
+	AddBoxDef(&Moof{})
 }
 
 // Moof is ISOBMFF moof box type
@@ -635,7 +635,7 @@ func (*Moof) GetType() BoxType {
 func BoxTypeMoov() BoxType { return StrToBoxType("moov") }
 
 func init() {
-	AddBoxDef(&Moov{}, noVersion)
+	AddBoxDef(&Moov{})
 }
 
 // Moov is ISOBMFF moov box type
@@ -653,7 +653,7 @@ func (*Moov) GetType() BoxType {
 func BoxTypeMvex() BoxType { return StrToBoxType("mvex") }
 
 func init() {
-	AddBoxDef(&Mvex{}, noVersion)
+	AddBoxDef(&Mvex{})
 }
 
 // Mvex is ISOBMFF mvex box type
@@ -773,16 +773,12 @@ func (*Pssh) GetType() BoxType {
 /*********************** SampleEntry *************************/
 
 func init() {
-	AddAnyTypeBoxDef(&VisualSampleEntry{},
-		StrToBoxType("avc1"),
-		StrToBoxType("encv"))
-	AddAnyTypeBoxDef(&AudioSampleEntry{},
-		StrToBoxType("mp4a"),
-		StrToBoxType("enca"))
-	AddAnyTypeBoxDef(&AVCDecoderConfiguration{},
-		StrToBoxType("avcC"))
-	AddAnyTypeBoxDef(&PixelAspectRatioBox{},
-		StrToBoxType("pasp"))
+	AddAnyTypeBoxDef(&VisualSampleEntry{}, StrToBoxType("avc1"))
+	AddAnyTypeBoxDef(&VisualSampleEntry{}, StrToBoxType("encv"))
+	AddAnyTypeBoxDef(&AudioSampleEntry{}, StrToBoxType("mp4a"))
+	AddAnyTypeBoxDef(&AudioSampleEntry{}, StrToBoxType("enca"))
+	AddAnyTypeBoxDef(&AVCDecoderConfiguration{}, StrToBoxType("avcC"))
+	AddAnyTypeBoxDef(&PixelAspectRatioBox{}, StrToBoxType("pasp"))
 }
 
 type SampleEntry struct {
@@ -990,7 +986,7 @@ func (*Smhd) GetType() BoxType {
 func BoxTypeStbl() BoxType { return StrToBoxType("stbl") }
 
 func init() {
-	AddBoxDef(&Stbl{}, noVersion)
+	AddBoxDef(&Stbl{})
 }
 
 // Stbl is ISOBMFF stbl box type
@@ -1356,7 +1352,7 @@ func (*Tkhd) GetType() BoxType {
 func BoxTypeTraf() BoxType { return StrToBoxType("traf") }
 
 func init() {
-	AddBoxDef(&Traf{}, noVersion)
+	AddBoxDef(&Traf{})
 }
 
 // Traf is ISOBMFF traf box type
@@ -1374,7 +1370,7 @@ func (*Traf) GetType() BoxType {
 func BoxTypeTrak() BoxType { return StrToBoxType("trak") }
 
 func init() {
-	AddBoxDef(&Trak{}, noVersion)
+	AddBoxDef(&Trak{})
 }
 
 // Trak is ISOBMFF trak box type
@@ -1479,7 +1475,7 @@ func (trun *Trun) GetFieldLength(name string) uint {
 func BoxTypeUdta() BoxType { return StrToBoxType("udta") }
 
 func init() {
-	AddBoxDef(&Udta{}, noVersion)
+	AddBoxDef(&Udta{})
 }
 
 // Udta is ISOBMFF udta box type
