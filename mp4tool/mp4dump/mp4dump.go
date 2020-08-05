@@ -12,8 +12,9 @@ import (
 
 func Main(args []string) {
 	flagSet := flag.NewFlagSet("dump", flag.ExitOnError)
-	showAll := flagSet.Bool("a", false, "show all contents, excluding mdat")
+	showAll := flagSet.Bool("a", false, "show all contents, excluding mdat, free and skip")
 	mdat := flagSet.Bool("mdat", false, "show content of mdat")
+	free := flagSet.Bool("free", false, "show content of free/skip")
 	offset := flagSet.Bool("offset", false, "show offset of box")
 	flagSet.Parse(args)
 
@@ -27,6 +28,7 @@ func Main(args []string) {
 	m := &mp4dump{
 		showAll: *showAll,
 		mdat:    *mdat,
+		free:    *free,
 		offset:  *offset,
 	}
 	err := m.dumpFile(fpath)
@@ -39,6 +41,7 @@ func Main(args []string) {
 type mp4dump struct {
 	showAll bool
 	mdat    bool
+	free    bool
 	offset  bool
 }
 
@@ -72,6 +75,13 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 				showAll = true
 			} else {
 				fmt.Printf(" Data=[...] (use -mdat option to expand)\n")
+				return nil, nil
+			}
+		case mp4.BoxTypeFree(), mp4.BoxTypeSkip():
+			if m.free {
+				showAll = true
+			} else {
+				fmt.Printf(" Data=[...] (use -free option to expand)\n")
 				return nil, nil
 			}
 		}
