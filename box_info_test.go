@@ -3,26 +3,27 @@ package mp4
 import (
 	"bytes"
 	"io"
+	"io/ioutil"
 	"testing"
 
+	"github.com/orcaman/writerseeker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestWriteBoxInfo(t *testing.T) {
 	type testCase struct {
-		name       string
-		input      io.Writer
-		bi         *BoxInfo
-		hasError   bool
-		expectedBI *BoxInfo
-		assert     func(*testCase)
+		name          string
+		pre           []byte
+		bi            *BoxInfo
+		hasError      bool
+		expectedBI    *BoxInfo
+		expectedBytes []byte
 	}
 
 	testCases := []testCase{
 		{
-			name:  "small-size",
-			input: &bytes.Buffer{},
+			name: "small-size",
 			bi: &BoxInfo{
 				Size:       0x12345,
 				HeaderSize: 8,
@@ -33,16 +34,13 @@ func TestWriteBoxInfo(t *testing.T) {
 				HeaderSize: 8,
 				Type:       StrToBoxType("test"),
 			},
-			assert: func(c *testCase) {
-				assert.Equal(t, []byte{
-					0x00, 0x01, 0x23, 0x45,
-					't', 'e', 's', 't',
-				}, c.input.(*bytes.Buffer).Bytes(), "%s", c.name)
+			expectedBytes: []byte{
+				0x00, 0x01, 0x23, 0x45,
+				't', 'e', 's', 't',
 			},
 		},
 		{
-			name:  "large-size",
-			input: &bytes.Buffer{},
+			name: "large-size",
 			bi: &BoxInfo{
 				Size:       0x123456789abc,
 				HeaderSize: 8,
@@ -53,18 +51,15 @@ func TestWriteBoxInfo(t *testing.T) {
 				HeaderSize: 16,
 				Type:       StrToBoxType("test"),
 			},
-			assert: func(c *testCase) {
-				assert.Equal(t, []byte{
-					0x00, 0x00, 0x00, 0x01,
-					't', 'e', 's', 't',
-					0x00, 0x00, 0x12, 0x34,
-					0x56, 0x78, 0x9a, 0xbc,
-				}, c.input.(*bytes.Buffer).Bytes(), "%s", c.name)
+			expectedBytes: []byte{
+				0x00, 0x00, 0x00, 0x01,
+				't', 'e', 's', 't',
+				0x00, 0x00, 0x12, 0x34,
+				0x56, 0x78, 0x9a, 0xbc,
 			},
 		},
 		{
-			name:  "extend to eof",
-			input: &bytes.Buffer{},
+			name: "extend to eof",
 			bi: &BoxInfo{
 				Size:        0x123,
 				HeaderSize:  8,
@@ -77,22 +72,45 @@ func TestWriteBoxInfo(t *testing.T) {
 				Type:        StrToBoxType("test"),
 				ExtendToEOF: true,
 			},
-			assert: func(c *testCase) {
-				assert.Equal(t, []byte{
-					0x00, 0x00, 0x00, 0x00,
-					't', 'e', 's', 't',
-				}, c.input.(*bytes.Buffer).Bytes(), "%s", c.name)
+			expectedBytes: []byte{
+				0x00, 0x00, 0x00, 0x00,
+				't', 'e', 's', 't',
+			},
+		},
+		{
+			name: "with offset",
+			pre:  []byte{0x00, 0x00, 0x00},
+			bi: &BoxInfo{
+				Size:       0x12345,
+				HeaderSize: 8,
+				Type:       StrToBoxType("test"),
+			},
+			expectedBI: &BoxInfo{
+				Offset:     3,
+				Size:       0x12345,
+				HeaderSize: 8,
+				Type:       StrToBoxType("test"),
+			},
+			expectedBytes: []byte{
+				0x00, 0x00, 0x00, // pre inserted
+				0x00, 0x01, 0x23, 0x45,
+				't', 'e', 's', 't',
 			},
 		},
 	}
 
 	for _, c := range testCases {
 		t.Run(c.name, func(t *testing.T) {
-			bi, err := WriteBoxInfo(c.input, c.bi)
+			w := &writerseeker.WriterSeeker{}
+			_, err := w.Write(c.pre)
+			require.NoError(t, err)
+			bi, err := WriteBoxInfo(w, c.bi)
 			if !c.hasError {
 				require.NoError(t, err)
 				assert.Equal(t, c.expectedBI, bi)
-				c.assert(&c)
+				b, err := ioutil.ReadAll(w.Reader())
+				require.NoError(t, err)
+				assert.Equal(t, c.expectedBytes, b)
 			} else {
 				assert.Error(t, err)
 			}

@@ -3,7 +3,6 @@ package mp4
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"io"
 	"math"
 )
@@ -32,7 +31,13 @@ const (
 )
 
 // WriteBoxInfo writes common fields which are defined as "Box" class member at ISO/IEC 14496-12.
-func WriteBoxInfo(w io.Writer, bi *BoxInfo) (*BoxInfo, error) {
+// This function ignores bi.Offset and returns BoxInfo which contains real Offset and recalculated Size/HeaderSize.
+func WriteBoxInfo(w io.WriteSeeker, bi *BoxInfo) (*BoxInfo, error) {
+	offset, err := w.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return nil, err
+	}
+
 	var data []byte
 	if bi.ExtendToEOF {
 		data = make([]byte, SmallHeaderSize)
@@ -49,16 +54,12 @@ func WriteBoxInfo(w io.Writer, bi *BoxInfo) (*BoxInfo, error) {
 	data[6] = bi.Type[2]
 	data[7] = bi.Type[3]
 
-	n, err := w.Write(data)
-	if err != nil {
+	if _, err := w.Write(data); err != nil {
 		return nil, err
-	}
-	if n != len(data) {
-		return nil, fmt.Errorf("invalid size of written bytes: %d", n)
 	}
 
 	return &BoxInfo{
-		Offset:      bi.Offset,
+		Offset:      uint64(offset),
 		Size:        bi.Size - bi.HeaderSize + uint64(len(data)),
 		HeaderSize:  uint64(len(data)),
 		Type:        bi.Type,
