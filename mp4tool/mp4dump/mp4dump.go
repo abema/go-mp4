@@ -6,16 +6,18 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/abema/go-mp4"
 )
 
 func Main(args []string) {
 	flagSet := flag.NewFlagSet("dump", flag.ExitOnError)
-	showAll := flagSet.Bool("a", false, "show all contents, excluding mdat, free and skip")
-	mdat := flagSet.Bool("mdat", false, "show content of mdat")
-	free := flagSet.Bool("free", false, "show content of free/skip")
-	offset := flagSet.Bool("offset", false, "show offset of box")
+	full := flagSet.String("full", "", "Show full content of specified box types\nFor example: -full free,ctts,stts")
+	showAll := flagSet.Bool("a", false, "Deprecated: see -full")
+	mdat := flagSet.Bool("mdat", false, "Deprecated: see -full")
+	free := flagSet.Bool("free", false, "Deprecated: see -full")
+	offset := flagSet.Bool("offset", false, "Show offset of box")
 	flagSet.Parse(args)
 
 	if len(flagSet.Args()) < 1 {
@@ -25,10 +27,21 @@ func Main(args []string) {
 
 	fpath := flagSet.Args()[0]
 
+	fmap := make(map[string]struct{})
+	for _, tname := range strings.Split(*full, ",") {
+		fmap[tname] = struct{}{}
+	}
+	if *mdat {
+		fmap["mdat"] = struct{}{}
+	}
+	if *free {
+		fmap["free"] = struct{}{}
+		fmap["skip"] = struct{}{}
+	}
+
 	m := &mp4dump{
+		full:    fmap,
 		showAll: *showAll,
-		mdat:    *mdat,
-		free:    *free,
 		offset:  *offset,
 	}
 	err := m.dumpFile(fpath)
@@ -39,9 +52,8 @@ func Main(args []string) {
 }
 
 type mp4dump struct {
+	full    map[string]struct{}
 	showAll bool
-	mdat    bool
-	free    bool
 	offset  bool
 }
 
@@ -68,27 +80,19 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 		}
 		fmt.Printf(" Size=%d", h.BoxInfo.Size)
 
-		showAll := m.showAll
-		switch h.BoxInfo.Type {
-		case mp4.BoxTypeMdat():
-			if m.mdat {
-				showAll = true
-			} else {
-				fmt.Printf(" Data=[...] (use -mdat option to expand)\n")
-				return nil, nil
-			}
-		case mp4.BoxTypeFree(), mp4.BoxTypeSkip():
-			if m.free {
-				showAll = true
-			} else {
-				fmt.Printf(" Data=[...] (use -free option to expand)\n")
-				return nil, nil
-			}
+		_, full := m.full[h.BoxInfo.Type.String()]
+		if !full &&
+			(h.BoxInfo.Type == mp4.BoxTypeMdat() ||
+				h.BoxInfo.Type == mp4.BoxTypeFree() ||
+				h.BoxInfo.Type == mp4.BoxTypeSkip()) {
+			fmt.Printf(" Data=[...] (use \"-full %s\" to show all)\n", h.BoxInfo.Type)
+			return nil, nil
 		}
+		full = full || m.showAll
 
 		// supported box type
 		if h.BoxInfo.Type.IsSupported() {
-			if !showAll && h.BoxInfo.Size-h.BoxInfo.HeaderSize >= 64 &&
+			if !full && h.BoxInfo.Size-h.BoxInfo.HeaderSize >= 64 &&
 				(h.BoxInfo.Type == mp4.BoxTypeEmsg() ||
 					h.BoxInfo.Type == mp4.BoxTypeEsds() ||
 					h.BoxInfo.Type == mp4.BoxTypeFtyp() ||
@@ -99,7 +103,7 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 					h.BoxInfo.Type == mp4.BoxTypeStsz() ||
 					h.BoxInfo.Type == mp4.BoxTypeTfra() ||
 					h.BoxInfo.Type == mp4.BoxTypeTrun()) {
-				fmt.Printf(" ... (use -a option to show all)\n")
+				fmt.Printf(" ... (use \"-full %s\" to show all)\n", h.BoxInfo.Type)
 				return nil, nil
 			}
 
@@ -108,8 +112,8 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 				panic(err)
 			}
 
-			if !showAll && n >= 64 {
-				fmt.Printf(" ... (use -a option to show all)\n")
+			if !full && n >= 64 {
+				fmt.Printf(" ... (use \"-full %s\" to show all)\n", h.BoxInfo.Type)
 			} else {
 				str, err := mp4.Stringify(box)
 				if err != nil {
@@ -123,7 +127,7 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 		}
 
 		// unsupported box type
-		if showAll {
+		if full {
 			buf := bytes.NewBuffer(make([]byte, 0, h.BoxInfo.Size-h.BoxInfo.HeaderSize))
 			if _, err := h.ReadData(buf); err != nil {
 				panic(err)
@@ -137,7 +141,7 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 			}
 			fmt.Println("]")
 		} else {
-			fmt.Printf(" Data=[...] (use -a option to show all)\n")
+			fmt.Printf(" Data=[...] (use \"-full %s\" to show all)\n", h.BoxInfo.Type)
 		}
 		return nil, nil
 	})
