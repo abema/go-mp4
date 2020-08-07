@@ -370,7 +370,7 @@ type Ftyp struct {
 	Box
 	MajorBrand       [4]byte               `mp4:"size=8,string"`
 	MinorVersion     uint32                `mp4:"size=32"`
-	CompatibleBrands []CompatibleBrandElem `mp4:"size=32"` // to end of the box
+	CompatibleBrands []CompatibleBrandElem `mp4:"size=32"` // reach to end of the box
 }
 
 type CompatibleBrandElem struct {
@@ -963,6 +963,48 @@ func (*Sgpd) GetType() BoxType {
 	return BoxTypeSgpd()
 }
 
+/*************************** sidx ****************************/
+
+func BoxTypeSidx() BoxType { return StrToBoxType("sidx") }
+
+func init() {
+	AddBoxDef(&Sidx{}, 0, 1)
+}
+
+type Sidx struct {
+	FullBox                    `mp4:"extend"`
+	ReferenceID                uint32          `mp4:"size=32"`
+	Timescale                  uint32          `mp4:"size=32"`
+	EarliestPresentationTimeV0 uint32          `mp4:"size=32,ver=0"`
+	FirstOffsetV0              uint32          `mp4:"size=32,ver=0"`
+	EarliestPresentationTimeV1 uint64          `mp4:"size=64,nver=0"`
+	FirstOffsetV1              uint64          `mp4:"size=64,nver=0"`
+	Reserved                   uint16          `mp4:"size=16,const=0"`
+	ReferenceCount             uint16          `mp4:"size=16"`
+	References                 []SidxReference `mp4:"size=96,len=dynamic"`
+}
+
+type SidxReference struct {
+	ReferenceType      bool   `mp4:"size=1"`
+	ReferencedSize     uint32 `mp4:"size=31"`
+	SubsegmentDuration uint32 `mp4:"size=32"`
+	StartsWithSAP      bool   `mp4:"size=1"`
+	SAPType            uint32 `mp4:"size=3"`
+	SAPDeltaTime       uint32 `mp4:"size=28"`
+}
+
+func (*Sidx) GetType() BoxType {
+	return BoxTypeSidx()
+}
+
+func (sidx *Sidx) GetFieldLength(name string) uint {
+	switch name {
+	case "References":
+		return uint(sidx.ReferenceCount)
+	}
+	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=sidx fieldName=%s", name))
+}
+
 /*************************** smhd ****************************/
 
 func BoxTypeSmhd() BoxType { return StrToBoxType("smhd") }
@@ -1176,6 +1218,25 @@ func (stts *Stts) GetFieldLength(name string) uint {
 		return uint(stts.EntryCount)
 	}
 	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=stts fieldName=%s", name))
+}
+
+/*************************** styp ****************************/
+
+func BoxTypeStyp() BoxType { return StrToBoxType("styp") }
+
+func init() {
+	AddBoxDef(&Styp{}, 0)
+}
+
+type Styp struct {
+	Box
+	MajorBrand       [4]byte               `mp4:"size=8,string"`
+	MinorVersion     uint32                `mp4:"size=32"`
+	CompatibleBrands []CompatibleBrandElem `mp4:"size=32"` // reach to end of the box
+}
+
+func (*Styp) GetType() BoxType {
+	return BoxTypeStyp()
 }
 
 /*************************** tfdt ****************************/
