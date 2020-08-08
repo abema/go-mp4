@@ -1107,6 +1107,114 @@ func TestBoxTypes(t *testing.T) {
 				`Unsupported=[0x11, 0x22, 0x33, 0x44]`,
 		},
 		{
+			name: "sidx: version=0",
+			src: &Sidx{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				ReferenceID:                0x01234567,
+				Timescale:                  0x23456789,
+				EarliestPresentationTimeV0: 0x456789ab,
+				FirstOffsetV0:              0x6789abcd,
+				ReferenceCount:             2,
+				References: []SidxReference{
+					{
+						ReferenceType:      false,
+						ReferencedSize:     0x01234567,
+						SubsegmentDuration: 0x23456789,
+						StartsWithSAP:      true,
+						SAPType:            6,
+						SAPDeltaTime:       0x09abcdef,
+					},
+					{
+						ReferenceType:      true,
+						ReferencedSize:     0x01234567,
+						SubsegmentDuration: 0x23456789,
+						StartsWithSAP:      false,
+						SAPType:            5,
+						SAPDeltaTime:       0x09abcdef,
+					},
+				},
+			},
+			dst: &Sidx{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x01, 0x23, 0x45, 0x67, // ReferenceID
+				0x23, 0x45, 0x67, 0x89, // Timescale
+				0x45, 0x67, 0x89, 0xab, // EarliestPresentationTimeV0
+				0x67, 0x89, 0xab, 0xcd, // FirstOffsetV0
+				0x00, 0x00, // Reserved
+				0x00, 0x2, // ReferenceCount
+				0x01, 0x23, 0x45, 0x67, // ReferenceType, ReferencedSize
+				0x23, 0x45, 0x67, 0x89, // SubsegmentDuration
+				0xe9, 0xab, 0xcd, 0xef, // StartsWithSAP, SAPType, SAPDeltaTime
+				0x81, 0x23, 0x45, 0x67, // ReferenceType, ReferencedSize
+				0x23, 0x45, 0x67, 0x89, // SubsegmentDuration
+				0x59, 0xab, 0xcd, 0xef, // StartsWithSAP, SAPType, SAPDeltaTime
+			},
+			str: `Version=0 Flags=0x000000 ` +
+				`ReferenceID=19088743 Timescale=591751049 EarliestPresentationTimeV0=1164413355 FirstOffsetV0=1737075661 ` +
+				`ReferenceCount=2 References=[` +
+				`{ReferenceType=false ReferencedSize=19088743 SubsegmentDuration=591751049 StartsWithSAP=true SAPType=6 SAPDeltaTime=162254319}, ` +
+				`{ReferenceType=true ReferencedSize=19088743 SubsegmentDuration=591751049 StartsWithSAP=false SAPType=5 SAPDeltaTime=162254319}]`,
+		},
+		{
+			name: "sidx: version=1",
+			src: &Sidx{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				ReferenceID:                0x01234567,
+				Timescale:                  0x23456789,
+				EarliestPresentationTimeV1: 0x0123456789abcdef,
+				FirstOffsetV1:              0x23456789abcdef01,
+				ReferenceCount:             2,
+				References: []SidxReference{
+					{
+						ReferenceType:      false,
+						ReferencedSize:     0x01234567,
+						SubsegmentDuration: 0x23456789,
+						StartsWithSAP:      true,
+						SAPType:            6,
+						SAPDeltaTime:       0x09abcdef,
+					},
+					{
+						ReferenceType:      true,
+						ReferencedSize:     0x01234567,
+						SubsegmentDuration: 0x23456789,
+						StartsWithSAP:      false,
+						SAPType:            5,
+						SAPDeltaTime:       0x09abcdef,
+					},
+				},
+			},
+			dst: &Sidx{},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				0x01, 0x23, 0x45, 0x67, // ReferenceID
+				0x23, 0x45, 0x67, 0x89, // Timescale
+				0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // EarliestPresentationTimeV1
+				0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, // FirstOffsetV1
+				0x00, 0x00, // Reserved
+				0x00, 0x2, // ReferenceCount
+				0x01, 0x23, 0x45, 0x67, // ReferenceType, ReferencedSize
+				0x23, 0x45, 0x67, 0x89, // SubsegmentDuration
+				0xe9, 0xab, 0xcd, 0xef, // StartsWithSAP, SAPType, SAPDeltaTime
+				0x81, 0x23, 0x45, 0x67, // ReferenceType, ReferencedSize
+				0x23, 0x45, 0x67, 0x89, // SubsegmentDuration
+				0x59, 0xab, 0xcd, 0xef, // StartsWithSAP, SAPType, SAPDeltaTime
+			},
+			str: `Version=1 Flags=0x000000 ` +
+				`ReferenceID=19088743 Timescale=591751049 EarliestPresentationTimeV1=81985529216486895 FirstOffsetV1=2541551405711093505 ` +
+				`ReferenceCount=2 References=[` +
+				`{ReferenceType=false ReferencedSize=19088743 SubsegmentDuration=591751049 StartsWithSAP=true SAPType=6 SAPDeltaTime=162254319}, ` +
+				`{ReferenceType=true ReferencedSize=19088743 SubsegmentDuration=591751049 StartsWithSAP=false SAPType=5 SAPDeltaTime=162254319}]`,
+		},
+		{
 			name: "smhd",
 			src: &Smhd{
 				FullBox: FullBox{
@@ -1284,6 +1392,25 @@ func TestBoxTypes(t *testing.T) {
 			str: `Version=0 Flags=0x000000 EntryCount=2 Entries=[` +
 				`{SampleCount=19088743 SampleDelta=591751049}, ` +
 				`{SampleCount=1164413355 SampleDelta=1737075661}]`,
+		},
+		{
+			name: "styp",
+			src: &Styp{
+				MajorBrand:   [4]byte{'a', 'b', 'e', 'm'},
+				MinorVersion: 0x12345678,
+				CompatibleBrands: []CompatibleBrandElem{
+					{CompatibleBrand: [4]byte{'a', 'b', 'c', 'd'}},
+					{CompatibleBrand: [4]byte{'e', 'f', 'g', 'h'}},
+				},
+			},
+			dst: &Styp{},
+			bin: []byte{
+				'a', 'b', 'e', 'm', // major brand
+				0x12, 0x34, 0x56, 0x78, // minor version
+				'a', 'b', 'c', 'd', // compatible brand
+				'e', 'f', 'g', 'h', // compatible brand
+			},
+			str: `MajorBrand="abem" MinorVersion=305419896 CompatibleBrands=[{CompatibleBrand="abcd"}, {CompatibleBrand="efgh"}]`,
 		},
 		{
 			name: "tfdt: version 0",
