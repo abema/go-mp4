@@ -19,12 +19,14 @@ func StrToBoxType(code string) BoxType {
 }
 
 func (boxType BoxType) String() string {
-	return string([]byte{
-		boxType[0],
-		boxType[1],
-		boxType[2],
-		boxType[3],
-	})
+	if isASCII(boxType[0]) && isASCII(boxType[1]) && isASCII(boxType[2]) && isASCII(boxType[3]) {
+		return string([]byte{boxType[0], boxType[1], boxType[2], boxType[3]})
+	}
+	return fmt.Sprintf("0x%02x%02x%02x%02x", boxType[0], boxType[1], boxType[2], boxType[3])
+}
+
+func isASCII(c byte) bool {
+	return c >= 0x20 && c <= 0x7e
 }
 
 func (lhs BoxType) MatchWith(rhs BoxType) bool {
