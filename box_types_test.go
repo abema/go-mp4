@@ -18,6 +18,44 @@ func TestBoxTypes(t *testing.T) {
 		str  string
 	}{
 		{
+			name: "colr: nclx",
+			src: &Colr{
+				ColourType:              [4]byte{'n', 'c', 'l', 'x'},
+				ColourPrimaries:         0x0123,
+				TransferCharacteristics: 0x2345,
+				MatrixCoefficients:      0x4567,
+				FullRangeFlag:           true,
+				Reserved:                0x67,
+			},
+			dst: &Colr{},
+			bin: []byte{
+				'n', 'c', 'l', 'x',
+				0x01, 0x23, // ColourPrimaries
+				0x23, 0x45, // TransferCharacteristics
+				0x45, 0x67, // MatrixCoefficients
+				0xe7, // FullRangeFlag, Reserved
+			},
+			str: `ColourType="nclx" ` +
+				`ColourPrimaries=291 ` +
+				`TransferCharacteristics=9029 ` +
+				`MatrixCoefficients=17767 ` +
+				`FullRangeFlag=true ` +
+				`Reserved=0x67`,
+		},
+		{
+			name: "colr: rICC",
+			src: &Colr{
+				ColourType: [4]byte{'r', 'I', 'C', 'C'},
+				Profile:    []byte{0x12, 0x34, 0x56, 0x78, 0xab},
+			},
+			dst: &Colr{},
+			bin: []byte{
+				'r', 'I', 'C', 'C',
+				0x12, 0x34, 0x56, 0x78, 0xab,
+			},
+			str: `ColourType="rICC" Profile=[0x12, 0x34, 0x56, 0x78, 0xab]`,
+		},
+		{
 			name: "ctts: version 0",
 			src: &Ctts{
 				FullBox: FullBox{
@@ -385,6 +423,13 @@ func TestBoxTypes(t *testing.T) {
 				'A', 'b', 'e', 'm', 'a', 0x00, // name
 			},
 			str: `Version=0 Flags=0x000000 PreDefined=305419896 HandlerType="abem" Name="Abema"`,
+		},
+		{
+			name: "ilst",
+			src:  &Ilst{},
+			dst:  &Ilst{},
+			bin:  nil,
+			str:  ``,
 		},
 		{
 			name: "mdat",
@@ -903,6 +948,13 @@ func TestBoxTypes(t *testing.T) {
 				`{SampleCount=1164413355 GroupDescriptionIndex=1450744508}]`,
 		},
 		{
+			name: "schi",
+			src:  &Schi{},
+			dst:  &Schi{},
+			bin:  nil,
+			str:  ``,
+		},
+		{
 			name: "sgpd: version 0",
 			src: &Sgpd{
 				FullBox: FullBox{
@@ -1213,6 +1265,13 @@ func TestBoxTypes(t *testing.T) {
 				`ReferenceCount=2 References=[` +
 				`{ReferenceType=false ReferencedSize=19088743 SubsegmentDuration=591751049 StartsWithSAP=true SAPType=6 SAPDeltaTime=162254319}, ` +
 				`{ReferenceType=true ReferencedSize=19088743 SubsegmentDuration=591751049 StartsWithSAP=false SAPType=5 SAPDeltaTime=162254319}]`,
+		},
+		{
+			name: "sinf",
+			src:  &Sinf{},
+			dst:  &Sinf{},
+			bin:  nil,
+			str:  ``,
 		},
 		{
 			name: "smhd",

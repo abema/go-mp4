@@ -6,6 +6,47 @@ import (
 	"io"
 )
 
+/*************************** colr ****************************/
+
+func BoxTypeColr() BoxType { return StrToBoxType("colr") }
+
+func init() {
+	AddBoxDef(&Colr{})
+}
+
+type Colr struct {
+	Box
+	ColourType              [4]byte `mp4:"size=8,string"`
+	ColourPrimaries         uint16  `mp4:"size=16,opt=dynamic"`
+	TransferCharacteristics uint16  `mp4:"size=16,opt=dynamic"`
+	MatrixCoefficients      uint16  `mp4:"size=16,opt=dynamic"`
+	FullRangeFlag           bool    `mp4:"size=1,opt=dynamic"`
+	Reserved                uint8   `mp4:"size=7,opt=dynamic"`
+	Profile                 []byte  `mp4:"size=8,opt=dynamic"`
+}
+
+func (colr *Colr) IsOptFieldEnabled(name string) bool {
+	switch name {
+	case "ColourType",
+		"ColourPrimaries",
+		"TransferCharacteristics",
+		"MatrixCoefficients",
+		"FullRangeFlag",
+		"Reserved":
+		return colr.ColourType == [4]byte{'n', 'c', 'l', 'x'}
+	case "Profile":
+		return colr.ColourType == [4]byte{'r', 'I', 'C', 'C'} ||
+			colr.ColourType == [4]byte{'p', 'r', 'o', 'f'}
+	default:
+		return false
+	}
+}
+
+// GetType returns the BoxType
+func (*Colr) GetType() BoxType {
+	return BoxTypeColr()
+}
+
 /*************************** ctts ****************************/
 
 func BoxTypeCtts() BoxType { return StrToBoxType("ctts") }
@@ -415,6 +456,23 @@ func (hdlr *Hdlr) IsPString(name string, bytes []byte, remainingSize uint64) boo
 	default:
 		panic(fmt.Errorf("invalid field name: name=%s", name))
 	}
+}
+
+/*************************** ilst ****************************/
+
+func BoxTypeIlst() BoxType { return StrToBoxType("ilst") }
+
+func init() {
+	AddBoxDef(&Ilst{})
+}
+
+type Ilst struct {
+	Box
+}
+
+// GetType returns the BoxType
+func (*Ilst) GetType() BoxType {
+	return BoxTypeIlst()
 }
 
 /*************************** mdat ****************************/
@@ -876,6 +934,22 @@ func (*Sbgp) GetType() BoxType {
 	return BoxTypeSbgp()
 }
 
+/*************************** schi ****************************/
+
+func BoxTypeSchi() BoxType { return StrToBoxType("schi") }
+
+func init() {
+	AddBoxDef(&Schi{})
+}
+
+type Schi struct {
+	Box
+}
+
+func (*Schi) GetType() BoxType {
+	return BoxTypeSchi()
+}
+
 /*************************** sgpd ****************************/
 
 func BoxTypeSgpd() BoxType { return StrToBoxType("sgpd") }
@@ -1003,6 +1077,22 @@ func (sidx *Sidx) GetFieldLength(name string) uint {
 		return uint(sidx.ReferenceCount)
 	}
 	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=sidx fieldName=%s", name))
+}
+
+/*************************** sinf ****************************/
+
+func BoxTypeSinf() BoxType { return StrToBoxType("sinf") }
+
+func init() {
+	AddBoxDef(&Sinf{})
+}
+
+type Sinf struct {
+	Box
+}
+
+func (*Sinf) GetType() BoxType {
+	return BoxTypeSinf()
 }
 
 /*************************** smhd ****************************/
@@ -1225,7 +1315,7 @@ func (stts *Stts) GetFieldLength(name string) uint {
 func BoxTypeStyp() BoxType { return StrToBoxType("styp") }
 
 func init() {
-	AddBoxDef(&Styp{}, 0)
+	AddBoxDef(&Styp{})
 }
 
 type Styp struct {
