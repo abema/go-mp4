@@ -12,6 +12,7 @@ func TestBoxTypeString(t *testing.T) {
 	assert.Equal(t, "abcd", BoxType{'a', 'b', 'c', 'd'}.String())
 	assert.Equal(t, "xx x", BoxType{'x', 'x', ' ', 'x'}.String())
 	assert.Equal(t, "xx~x", BoxType{'x', 'x', '~', 'x'}.String())
+	assert.Equal(t, "xx(c)x", BoxType{'x', 'x', 0xa9, 'x'}.String())
 	assert.Equal(t, "0x7878ab78", BoxType{'x', 'x', 0xab, 'x'}.String())
 }
 

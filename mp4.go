@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 var ErrBoxInfoNotFound = errors.New("box info not found")
@@ -19,14 +20,20 @@ func StrToBoxType(code string) BoxType {
 }
 
 func (boxType BoxType) String() string {
-	if isASCII(boxType[0]) && isASCII(boxType[1]) && isASCII(boxType[2]) && isASCII(boxType[3]) {
-		return string([]byte{boxType[0], boxType[1], boxType[2], boxType[3]})
+	if isPrintable(boxType[0]) && isPrintable(boxType[1]) && isPrintable(boxType[2]) && isPrintable(boxType[3]) {
+		s := string([]byte{boxType[0], boxType[1], boxType[2], boxType[3]})
+		s = strings.ReplaceAll(s, string([]byte{0xa9}), "(c)")
+		return s
 	}
 	return fmt.Sprintf("0x%02x%02x%02x%02x", boxType[0], boxType[1], boxType[2], boxType[3])
 }
 
 func isASCII(c byte) bool {
 	return c >= 0x20 && c <= 0x7e
+}
+
+func isPrintable(c byte) bool {
+	return isASCII(c) || c == 0xa9
 }
 
 func (lhs BoxType) MatchWith(rhs BoxType) bool {
