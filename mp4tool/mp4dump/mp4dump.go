@@ -7,9 +7,21 @@ import (
 	"io"
 	"os"
 	"strings"
+	"syscall"
 
 	"github.com/abema/go-mp4"
+	"golang.org/x/crypto/ssh/terminal"
 )
+
+const indentSize = 2
+
+var terminalWidth = 180
+
+func init() {
+	if width, _, err := terminal.GetSize(syscall.Stdin); err == nil {
+		terminalWidth = width
+	}
+}
 
 func Main(args []string) {
 	flagSet := flag.NewFlagSet("dump", flag.ExitOnError)
@@ -69,23 +81,26 @@ func (m *mp4dump) dumpFile(fpath string) error {
 
 func (m *mp4dump) dump(r io.ReadSeeker) error {
 	_, err := mp4.ReadBoxStructure(r, func(h *mp4.ReadHandle) (interface{}, error) {
-		printIndent(len(h.Path) - 1)
+		line := bytes.NewBuffer(make([]byte, 0, terminalWidth))
 
-		fmt.Printf("[%s]", h.BoxInfo.Type.String())
+		printIndent(line, len(h.Path)-1)
+
+		fmt.Fprintf(line, "[%s]", h.BoxInfo.Type.String())
 		if !h.BoxInfo.Type.IsSupported() {
-			fmt.Printf(" (unsupported box type)")
+			fmt.Fprintf(line, " (unsupported box type)")
 		}
 		if m.offset {
-			fmt.Printf(" Offset=%d", h.BoxInfo.Offset)
+			fmt.Fprintf(line, " Offset=%d", h.BoxInfo.Offset)
 		}
-		fmt.Printf(" Size=%d", h.BoxInfo.Size)
+		fmt.Fprintf(line, " Size=%d", h.BoxInfo.Size)
 
 		_, full := m.full[h.BoxInfo.Type.String()]
 		if !full &&
 			(h.BoxInfo.Type == mp4.BoxTypeMdat() ||
 				h.BoxInfo.Type == mp4.BoxTypeFree() ||
 				h.BoxInfo.Type == mp4.BoxTypeSkip()) {
-			fmt.Printf(" Data=[...] (use \"-full %s\" to show all)\n", h.BoxInfo.Type)
+			fmt.Fprintf(line, " Data=[...] (use \"-full %s\" to show all)", h.BoxInfo.Type)
+			fmt.Println(line.String())
 			return nil, nil
 		}
 		full = full || m.showAll
@@ -97,31 +112,36 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 					h.BoxInfo.Type == mp4.BoxTypeEsds() ||
 					h.BoxInfo.Type == mp4.BoxTypeFtyp() ||
 					h.BoxInfo.Type == mp4.BoxTypePssh() ||
+					h.BoxInfo.Type == mp4.BoxTypeCtts() ||
+					h.BoxInfo.Type == mp4.BoxTypeElst() ||
+					h.BoxInfo.Type == mp4.BoxTypeSbgp() ||
 					h.BoxInfo.Type == mp4.BoxTypeStco() ||
 					h.BoxInfo.Type == mp4.BoxTypeStsc() ||
 					h.BoxInfo.Type == mp4.BoxTypeStts() ||
 					h.BoxInfo.Type == mp4.BoxTypeStsz() ||
 					h.BoxInfo.Type == mp4.BoxTypeTfra() ||
 					h.BoxInfo.Type == mp4.BoxTypeTrun()) {
-				fmt.Printf(" ... (use \"-full %s\" to show all)\n", h.BoxInfo.Type)
+				fmt.Fprintf(line, " ... (use \"-full %s\" to show all)", h.BoxInfo.Type)
+				fmt.Println(line.String())
 				return nil, nil
 			}
 
-			box, n, err := h.ReadPayload()
+			box, _, err := h.ReadPayload()
 			if err != nil {
 				panic(err)
 			}
 
-			if !full && n >= 64 {
-				fmt.Printf(" ... (use \"-full %s\" to show all)\n", h.BoxInfo.Type)
+			str, err := mp4.Stringify(box)
+			if err != nil {
+				panic(err)
+			}
+			if !full && line.Len()+len(str)+2 > terminalWidth {
+				fmt.Fprintf(line, " ... (use \"-full %s\" to show all)", h.BoxInfo.Type)
 			} else {
-				str, err := mp4.Stringify(box)
-				if err != nil {
-					panic(err)
-				}
-				fmt.Printf(" %s\n", str)
+				fmt.Fprintf(line, " %s", str)
 			}
 
+			fmt.Println(line.String())
 			_, err = h.Expand()
 			return nil, err
 		}
@@ -132,24 +152,25 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 			if _, err := h.ReadData(buf); err != nil {
 				panic(err)
 			}
-			fmt.Printf(" Data=[")
+			fmt.Fprintf(line, " Data=[")
 			for i, d := range buf.Bytes() {
 				if i != 0 {
-					fmt.Printf(" ")
+					fmt.Fprintf(line, " ")
 				}
-				fmt.Printf("0x%02x", d)
+				fmt.Fprintf(line, "0x%02x", d)
 			}
-			fmt.Println("]")
+			fmt.Fprintf(line, "]")
 		} else {
-			fmt.Printf(" Data=[...] (use \"-full %s\" to show all)\n", h.BoxInfo.Type)
+			fmt.Fprintf(line, " Data=[...] (use \"-full %s\" to show all)", h.BoxInfo.Type)
 		}
+		fmt.Println(line.String())
 		return nil, nil
 	})
 	return err
 }
 
-func printIndent(depth int) {
-	for i := 0; i < depth; i++ {
-		fmt.Printf("  ")
+func printIndent(w io.Writer, depth int) {
+	for i := 0; i < depth*indentSize; i++ {
+		fmt.Fprintf(w, " ")
 	}
 }
