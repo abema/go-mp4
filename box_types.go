@@ -6,6 +6,34 @@ import (
 	"io"
 )
 
+/*************************** co64 ****************************/
+
+func BoxTypeCo64() BoxType { return StrToBoxType("co64") }
+
+func init() {
+	AddBoxDef(&Co64{}, 0)
+}
+
+type Co64 struct {
+	FullBox     `mp4:"extend"`
+	EntryCount  uint32   `mp4:"size=32"`
+	ChunkOffset []uint64 `mp4:"size=64,len=dynamic"`
+}
+
+// GetType returns the BoxType
+func (*Co64) GetType() BoxType {
+	return BoxTypeCo64()
+}
+
+// GetFieldLength returns length of dynamic field
+func (co64 *Co64) GetFieldLength(name string) uint {
+	switch name {
+	case "ChunkOffset":
+		return uint(co64.EntryCount)
+	}
+	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=co64 fieldName=%s", name))
+}
+
 /*************************** colr ****************************/
 
 func BoxTypeColr() BoxType { return StrToBoxType("colr") }

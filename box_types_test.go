@@ -18,6 +18,26 @@ func TestBoxTypes(t *testing.T) {
 		str  string
 	}{
 		{
+			name: "co64",
+			src: &Co64{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				EntryCount:  2,
+				ChunkOffset: []uint64{0x0123456789abcdef, 0x89abcdef01234567},
+			},
+			dst: &Co64{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // chunk offset
+				0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, // chunk offset
+			},
+			str: `Version=0 Flags=0x000000 EntryCount=2 ChunkOffset=[81985529216486895, 9920249030613615975]`,
+		},
+		{
 			name: "colr: nclx",
 			src: &Colr{
 				ColourType:              [4]byte{'n', 'c', 'l', 'x'},
