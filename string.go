@@ -90,7 +90,7 @@ func (m *stringfier) stringifyStruct(t reflect.Type, v reflect.Value, depth int,
 			continue
 		}
 
-		if config.cnst != "" {
+		if config.cnst != "" || config.hidden {
 			continue
 		}
 
