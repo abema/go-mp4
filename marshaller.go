@@ -92,6 +92,15 @@ func (m *marshaller) marshalStruct(t reflect.Type, v reflect.Value) error {
 			continue
 		}
 
+		wbits, override, err := config.cfo.OnWriteField(f.Name, m.writer)
+		if err != nil {
+			return err
+		}
+		m.wbits += wbits
+		if override {
+			continue
+		}
+
 		err = m.marshal(ft, fv, config)
 		if err != nil {
 			return err
@@ -272,7 +281,7 @@ func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox) (n uint64, err err
 		size:   payloadSize,
 	}
 
-	if n, override, err := dst.BeforeUnmarshal(r); err != nil {
+	if n, override, err := dst.BeforeUnmarshal(r, payloadSize); err != nil {
 		return 0, err
 	} else if override {
 		return n, nil
@@ -309,7 +318,7 @@ func (u *unmarshaller) unmarshal(t reflect.Type, v reflect.Value, config fieldCo
 	case reflect.Ptr:
 		err = u.unmarshalPtr(t, v, config)
 	case reflect.Struct:
-		err = u.unmarshalStruct(t, v)
+		err = u.unmarshalStructWithConfig(t, v, config)
 	case reflect.Array:
 		err = u.unmarshalArray(t, v, config)
 	case reflect.Slice:
@@ -333,6 +342,24 @@ func (u *unmarshaller) unmarshalPtr(t reflect.Type, v reflect.Value, config fiel
 	return u.unmarshal(t.Elem(), v.Elem(), config)
 }
 
+func (u *unmarshaller) unmarshalStructWithConfig(t reflect.Type, v reflect.Value, config fieldConfig) error {
+	if config.size != 0 && config.size%8 == 0 {
+		u2 := *u
+		u2.size = uint64(config.size / 8)
+		u2.rbits = 0
+		if err := u2.unmarshalStruct(t, v); err != nil {
+			return err
+		}
+		u.rbits += u2.rbits
+		if u2.rbits != uint64(config.size) {
+			return errors.New("invalid alignment")
+		}
+		return nil
+	}
+
+	return u.unmarshalStruct(t, v)
+}
+
 func (u *unmarshaller) unmarshalStruct(t reflect.Type, v reflect.Value) error {
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
@@ -349,6 +376,15 @@ func (u *unmarshaller) unmarshalStruct(t reflect.Type, v reflect.Value) error {
 		}
 
 		if !isTargetField(u.dst, config) {
+			continue
+		}
+
+		rbits, override, err := config.cfo.OnReadField(f.Name, u.reader, u.size*8-u.rbits)
+		if err != nil {
+			return err
+		}
+		u.rbits += rbits
+		if override {
 			continue
 		}
 
@@ -398,41 +434,14 @@ func (u *unmarshaller) unmarshalSlice(t reflect.Type, v reflect.Value, config fi
 		return fmt.Errorf("out of memory: requestedSize=%d", length)
 	}
 
-	if config.size != 0 && config.size%8 == 0 && u.rbits%8 == 0 {
+	if config.size != 0 && config.size%8 == 0 && u.rbits%8 == 0 && elemType.Kind() == reflect.Uint8 && config.size == 8 {
 		totalSize := length * uint64(config.size) / 8
 		buf := bytes.NewBuffer(make([]byte, 0, totalSize))
 		if _, err := io.CopyN(buf, u.reader, int64(totalSize)); err != nil {
 			return err
 		}
-		data := buf.Bytes()
-
-		if elemType.Kind() == reflect.Uint8 && config.size == 8 {
-			slice = reflect.ValueOf(data)
-			u.rbits += uint64(totalSize) * 8
-
-		} else {
-			tmpReader := bytes.NewReader(data)
-			orgReader := u.reader
-			u.reader = bitio.NewReadSeeker(tmpReader)
-			defer func() {
-				u.reader = orgReader
-			}()
-
-			slice = reflect.MakeSlice(t, 0, int(length))
-			for i := 0; i < int(length); i++ {
-				slice = reflect.Append(slice, reflect.Zero(elemType))
-
-				var err error
-				err = u.unmarshal(elemType, slice.Index(i), config)
-				if err != nil {
-					return err
-				}
-			}
-
-			if tmpReader.Len() != 0 {
-				return fmt.Errorf("unread bytes are detected: %d", tmpReader.Len())
-			}
-		}
+		slice = reflect.ValueOf(buf.Bytes())
+		u.rbits += uint64(totalSize) * 8
 
 	} else {
 		slice = reflect.MakeSlice(t, 0, int(length))
@@ -672,6 +681,7 @@ type fieldConfig struct {
 	str        bool
 	iso639_2   bool
 	strType    StringType
+	hidden     bool
 }
 
 func readFieldConfig(box IImmutableBox, parent reflect.Value, fieldName string, tag fieldTag) (config fieldConfig, err error) {
@@ -785,6 +795,10 @@ func readFieldConfig(box IImmutableBox, parent reflect.Value, fieldName string, 
 
 	if _, contained := tag["iso639-2"]; contained {
 		config.iso639_2 = true
+	}
+
+	if _, contained := tag["hidden"]; contained {
+		config.hidden = true
 	}
 
 	return

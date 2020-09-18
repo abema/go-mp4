@@ -3,6 +3,8 @@ package mp4
 import (
 	"errors"
 	"io"
+
+	"github.com/abema/go-mp4/bitio"
 )
 
 type ICustomFieldObject interface {
@@ -20,7 +22,11 @@ type ICustomFieldObject interface {
 
 	IsPString(name string, bytes []byte, remainingSize uint64) bool
 
-	BeforeUnmarshal(r io.ReadSeeker) (n uint64, override bool, err error)
+	BeforeUnmarshal(r io.ReadSeeker, size uint64) (n uint64, override bool, err error)
+
+	OnReadField(name string, r bitio.ReadSeeker, leftBits uint64) (rbits uint64, override bool, err error)
+
+	OnWriteField(name string, w bitio.Writer) (wbits uint64, override bool, err error)
 }
 
 type BaseCustomFieldObject struct {
@@ -50,7 +56,15 @@ func (*BaseCustomFieldObject) IsPString(name string, bytes []byte, remainingSize
 	return true
 }
 
-func (*BaseCustomFieldObject) BeforeUnmarshal(r io.ReadSeeker) (uint64, bool, error) {
+func (*BaseCustomFieldObject) BeforeUnmarshal(io.ReadSeeker, uint64) (uint64, bool, error) {
+	return 0, false, nil
+}
+
+func (*BaseCustomFieldObject) OnReadField(string, bitio.ReadSeeker, uint64) (uint64, bool, error) {
+	return 0, false, nil
+}
+
+func (*BaseCustomFieldObject) OnWriteField(string, bitio.Writer) (uint64, bool, error) {
 	return 0, false, nil
 }
 

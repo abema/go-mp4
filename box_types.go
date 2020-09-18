@@ -2,8 +2,11 @@ package mp4
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
+
+	"github.com/abema/go-mp4/bitio"
 )
 
 /*************************** co64 ****************************/
@@ -607,7 +610,7 @@ func (*Meta) GetType() BoxType {
 	return BoxTypeMeta()
 }
 
-func (meta *Meta) BeforeUnmarshal(r io.ReadSeeker) (n uint64, override bool, err error) {
+func (meta *Meta) BeforeUnmarshal(r io.ReadSeeker, size uint64) (n uint64, override bool, err error) {
 	// for Apple Quick Time
 	buf := make([]byte, 4)
 	if _, err := io.ReadFull(r, buf); err != nil {
@@ -905,22 +908,112 @@ func (vse *VisualSampleEntry) StringifyField(name string, indent string, depth i
 type AudioSampleEntry struct {
 	SampleEntry  `mp4:"extend"`
 	EntryVersion uint16    `mp4:"size=16"`
-	Reserved     [3]uint16 `mp4:"size=16,const=0,hidden"`
+	Reserved     [3]uint16 `mp4:"size=16,const=0"`
 	ChannelCount uint16    `mp4:"size=16"`
 	SampleSize   uint16    `mp4:"size=16"`
 	PreDefined   uint16    `mp4:"size=16"`
-	Reserved2    uint16    `mp4:"size=16,const=0,hidden"`
+	Reserved2    uint16    `mp4:"size=16,const=0"`
 	SampleRate   uint32    `mp4:"size=32"`
 }
 
+const (
+	AVCBaselineProfile uint8 = 66  // 0x42
+	AVCMainProfile     uint8 = 77  // 0x4d
+	AVCExtendedProfile uint8 = 88  // 0x58
+	AVCHighProfile     uint8 = 100 // 0x64
+	AVCHigh10Profile   uint8 = 110 // 0x6e
+	AVCHigh422Profile  uint8 = 122 // 0x7a
+)
+
 type AVCDecoderConfiguration struct {
 	AnyTypeBox
-	ConfigurationVersion uint8 `mp4:"size=8"`
-	Profile              uint8 `mp4:"size=8"`
-	ProfileCompatibility uint8 `mp4:"size=8"`
-	Level                uint8 `mp4:"size=8"`
-	// TODO: Refer to ISO/IEC 14496-15
-	Data []byte `mp4:"size=8"`
+	ConfigurationVersion         uint8             `mp4:"size=8"`
+	Profile                      uint8             `mp4:"size=8"`
+	ProfileCompatibility         uint8             `mp4:"size=8"`
+	Level                        uint8             `mp4:"size=8"`
+	Reserved                     uint8             `mp4:"size=6,const=63"`
+	LengthSizeMinusOne           uint8             `mp4:"size=2"`
+	Reserved2                    uint8             `mp4:"size=3,const=7"`
+	NumOfSequenceParameterSets   uint8             `mp4:"size=5"`
+	SequenceParameterSets        []AVCParameterSet `mp4:"len=dynamic"`
+	NumOfPictureParameterSets    uint8             `mp4:"size=8"`
+	PictureParameterSets         []AVCParameterSet `mp4:"len=dynamic"`
+	HighProfileFieldsEnabled     bool              `mp4:"hidden"`
+	Reserved3                    uint8             `mp4:"size=6,opt=dynamic,const=63"`
+	ChromaFormat                 uint8             `mp4:"size=2,opt=dynamic"`
+	Reserved4                    uint8             `mp4:"size=5,opt=dynamic,const=31"`
+	BitDepthLumaMinus8           uint8             `mp4:"size=3,opt=dynamic"`
+	Reserved5                    uint8             `mp4:"size=5,opt=dynamic,const=31"`
+	BitDepthChromaMinus8         uint8             `mp4:"size=3,opt=dynamic"`
+	NumOfSequenceParameterSetExt uint8             `mp4:"size=8,opt=dynamic"`
+	SequenceParameterSetsExt     []AVCParameterSet `mp4:"len=dynamic,opt=dynamic"`
+}
+
+func (avcc *AVCDecoderConfiguration) GetFieldLength(name string) uint {
+	switch name {
+	case "SequenceParameterSets":
+		return uint(avcc.NumOfSequenceParameterSets)
+	case "PictureParameterSets":
+		return uint(avcc.NumOfPictureParameterSets)
+	case "SequenceParameterSetsExt":
+		return uint(avcc.NumOfSequenceParameterSetExt)
+	}
+	return 0
+}
+
+func (avcc *AVCDecoderConfiguration) IsOptFieldEnabled(name string) bool {
+	switch name {
+	case "Reserved3",
+		"ChromaFormat",
+		"Reserved4",
+		"BitDepthLumaMinus8",
+		"Reserved5",
+		"BitDepthChromaMinus8",
+		"NumOfSequenceParameterSetExt",
+		"SequenceParameterSetsExt":
+		return avcc.HighProfileFieldsEnabled
+	}
+	return false
+}
+
+func (avcc *AVCDecoderConfiguration) OnReadField(name string, r bitio.ReadSeeker, leftBits uint64) (rbits uint64, override bool, err error) {
+	if name == "HighProfileFieldsEnabled" {
+		avcc.HighProfileFieldsEnabled = leftBits >= 32 &&
+			(avcc.Profile == AVCHighProfile ||
+				avcc.Profile == AVCHigh10Profile ||
+				avcc.Profile == AVCHigh422Profile ||
+				avcc.Profile == 144)
+		return 0, true, nil
+	}
+	return 0, false, nil
+}
+
+func (avcc *AVCDecoderConfiguration) OnWriteField(name string, w bitio.Writer) (wbits uint64, override bool, err error) {
+	if name == "HighProfileFieldsEnabled" {
+		if avcc.HighProfileFieldsEnabled &&
+			avcc.Profile != AVCHighProfile &&
+			avcc.Profile != AVCHigh10Profile &&
+			avcc.Profile != AVCHigh422Profile &&
+			avcc.Profile != 144 {
+			return 0, false, errors.New("each values of Profile and HighProfileFieldsEnabled are inconsistent")
+		}
+		return 0, true, nil
+	}
+	return 0, false, nil
+}
+
+type AVCParameterSet struct {
+	BaseCustomFieldObject
+	Length  uint16 `mp4:"size=16"`
+	NALUnit []byte `mp4:"size=8,len=dynamic"`
+}
+
+func (s *AVCParameterSet) GetFieldLength(name string) uint {
+	switch name {
+	case "NALUnit":
+		return uint(s.Length)
+	}
+	return 0
 }
 
 type PixelAspectRatioBox struct {
@@ -983,39 +1076,57 @@ func (*Schi) GetType() BoxType {
 func BoxTypeSgpd() BoxType { return StrToBoxType("sgpd") }
 
 func init() {
-	AddBoxDef(&Sgpd{}, 0, 1, 2)
+	AddBoxDef(&Sgpd{}, 1, 2) // version 0 is deprecated by ISO/IEC 14496-12
 }
 
 type Sgpd struct {
 	FullBox                       `mp4:"extend"`
-	GroupingType                  [4]byte `mp4:"size=8,string"`
-	DefaultLength                 uint32  `mp4:"size=32,ver=1"`
-	DefaultSampleDescriptionIndex uint32  `mp4:"size=32,ver=2"`
-	EntryCount                    uint32  `mp4:"size=32"`
-	RollDistances                 []int16 `mp4:"size=16,opt=dynamic"`
-	//AlternativeStartupEntries     []AlternativeStartupEntry `mp4:"size=dynamic,opt=dynamic"`
-	VisualRandomAccessEntries []VisualRandomAccessEntry `mp4:"size=dynamic,opt=dynamic"`
-	TemporalLevelEntries      []TemporalLevelEntry      `mp4:"size=dynamic,opt=dynamic"`
-	Unsupported               []byte                    `mp4:"size=8"`
+	GroupingType                  [4]byte                    `mp4:"size=8,string"`
+	DefaultLength                 uint32                     `mp4:"size=32,ver=1"`
+	DefaultSampleDescriptionIndex uint32                     `mp4:"size=32,ver=2"`
+	EntryCount                    uint32                     `mp4:"size=32"`
+	RollDistances                 []int16                    `mp4:"size=16,opt=dynamic"`
+	RollDistancesL                []RollDistanceWithLength   `mp4:"size=16,opt=dynamic"`
+	AlternativeStartupEntries     []AlternativeStartupEntry  `mp4:"size=dynamic,len=dynamic,opt=dynamic"`
+	AlternativeStartupEntriesL    []AlternativeStartupEntryL `mp4:"len=dynamic,opt=dynamic"`
+	VisualRandomAccessEntries     []VisualRandomAccessEntry  `mp4:"len=dynamic,opt=dynamic"`
+	VisualRandomAccessEntriesL    []VisualRandomAccessEntryL `mp4:"len=dynamic,opt=dynamic"`
+	TemporalLevelEntries          []TemporalLevelEntry       `mp4:"len=dynamic,opt=dynamic"`
+	TemporalLevelEntriesL         []TemporalLevelEntryL      `mp4:"len=dynamic,opt=dynamic"`
+	Unsupported                   []byte                     `mp4:"size=8,opt=dynamic"`
 }
 
-/* go-mp4 has never supported nested dynamic field.
+type RollDistanceWithLength struct {
+	DescriptionLength uint32 `mp4:"size=32"`
+	RollDistance      int16  `mp4:"size=16"`
+}
+
 type AlternativeStartupEntry struct {
-	RollCount         uint16                       `mp4:"size=16`
-	FirstOutputSample uint16                       `mp4:"size=16`
-	SampleOffset      []uint32                     `mp4:"size=32,len=dynamic`
-	Opts              []AlternativeStartupEntryOpt `mp4:"size=32`
+	BaseCustomFieldObject
+	RollCount         uint16                       `mp4:"size=16"`
+	FirstOutputSample uint16                       `mp4:"size=16"`
+	SampleOffset      []uint32                     `mp4:"size=32,len=dynamic"`
+	Opts              []AlternativeStartupEntryOpt `mp4:"size=32"`
+}
+
+type AlternativeStartupEntryL struct {
+	DescriptionLength       uint32 `mp4:"size=32"`
+	AlternativeStartupEntry `mp4:"extend,size=dynamic"`
 }
 
 type AlternativeStartupEntryOpt struct {
-	NumOutputSamples uint16 `mp4:"size=16`
-	NumTotalSamples  uint16 `mp4:"size=16`
+	NumOutputSamples uint16 `mp4:"size=16"`
+	NumTotalSamples  uint16 `mp4:"size=16"`
 }
-*/
 
 type VisualRandomAccessEntry struct {
 	NumLeadingSamplesKnown bool  `mp4:"size=1"`
 	NumLeadingSamples      uint8 `mp4:"size=7"`
+}
+
+type VisualRandomAccessEntryL struct {
+	DescriptionLength       uint32 `mp4:"size=32"`
+	VisualRandomAccessEntry `mp4:"extend"`
 }
 
 type TemporalLevelEntry struct {
@@ -1023,39 +1134,59 @@ type TemporalLevelEntry struct {
 	Reserved                    uint8 `mp4:"size=7,const=0"`
 }
 
+type TemporalLevelEntryL struct {
+	DescriptionLength  uint32 `mp4:"size=32"`
+	TemporalLevelEntry `mp4:"extend"`
+}
+
 func (sgpd *Sgpd) GetFieldSize(name string) uint {
 	switch name {
-	case "RollDistances",
-		//"AlternativeStartupEntries",
-		"VisualRandomAccessEntries",
-		"TemporalLevelEntries":
+	case "AlternativeStartupEntries":
 		return uint(sgpd.DefaultLength * 8)
-	default:
-		return 0
 	}
+	return 0
+}
+
+func (sgpd *Sgpd) GetFieldLength(name string) uint {
+	switch name {
+	case "RollDistances", "RollDistancesL",
+		"AlternativeStartupEntries", "AlternativeStartupEntriesL",
+		"VisualRandomAccessEntries", "VisualRandomAccessEntriesL",
+		"TemporalLevelEntries", "TemporalLevelEntriesL":
+		return uint(sgpd.EntryCount)
+	}
+	return 0
 }
 
 func (sgpd *Sgpd) IsOptFieldEnabled(name string) bool {
+	noDefaultLength := sgpd.Version == 1 && sgpd.DefaultLength == 0
+	rollDistances := sgpd.GroupingType == [4]byte{'r', 'o', 'l', 'l'} ||
+		sgpd.GroupingType == [4]byte{'p', 'r', 'o', 'l'}
+	alternativeStartupEntries := sgpd.GroupingType == [4]byte{'a', 'l', 's', 't'}
+	visualRandomAccessEntries := sgpd.GroupingType == [4]byte{'r', 'a', 'p', ' '}
+	temporalLevelEntries := sgpd.GroupingType == [4]byte{'t', 'e', 'l', 'e'}
 	switch name {
 	case "RollDistances":
-		return sgpd.Version == 1 &&
-			(sgpd.GroupingType == [4]byte{'r', 'o', 'l', 'l'} ||
-				sgpd.GroupingType == [4]byte{'p', 'r', 'o', 'l'}) &&
-			sgpd.DefaultLength == 2
-		/*
-			case "AlternativeStartupEntries":
-				return sgpd.Version == 1 &&
-					sgpd.GroupingType == [4]byte{'a', 'l', 's', 't'} &&
-					sgpd.DefaultLength != 0
-		*/
+		return rollDistances && !noDefaultLength
+	case "RollDistancesL":
+		return rollDistances && noDefaultLength
+	case "AlternativeStartupEntries":
+		return alternativeStartupEntries && !noDefaultLength
+	case "AlternativeStartupEntriesL":
+		return alternativeStartupEntries && noDefaultLength
 	case "VisualRandomAccessEntries":
-		return sgpd.Version == 1 &&
-			sgpd.GroupingType == [4]byte{'r', 'a', 'p', ' '} &&
-			sgpd.DefaultLength == 1
+		return visualRandomAccessEntries && !noDefaultLength
+	case "VisualRandomAccessEntriesL":
+		return visualRandomAccessEntries && noDefaultLength
 	case "TemporalLevelEntries":
-		return sgpd.Version == 1 &&
-			sgpd.GroupingType == [4]byte{'t', 'e', 'l', 'e'} &&
-			sgpd.DefaultLength == 1
+		return temporalLevelEntries && !noDefaultLength
+	case "TemporalLevelEntriesL":
+		return temporalLevelEntries && noDefaultLength
+	case "Unsupported":
+		return !rollDistances &&
+			!alternativeStartupEntries &&
+			!visualRandomAccessEntries &&
+			!temporalLevelEntries
 	default:
 		return false
 	}
@@ -1063,6 +1194,22 @@ func (sgpd *Sgpd) IsOptFieldEnabled(name string) bool {
 
 func (*Sgpd) GetType() BoxType {
 	return BoxTypeSgpd()
+}
+
+func (entry *AlternativeStartupEntry) GetFieldLength(name string) uint {
+	switch name {
+	case "SampleOffset":
+		return uint(entry.RollCount)
+	}
+	return 0
+}
+
+func (entry *AlternativeStartupEntryL) GetFieldSize(name string) uint {
+	switch name {
+	case "AlternativeStartupEntry":
+		return uint(entry.DescriptionLength * 8)
+	}
+	return 0
 }
 
 /*************************** sidx ****************************/

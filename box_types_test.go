@@ -898,28 +898,193 @@ func TestBoxTypes(t *testing.T) {
 				`SampleRate=19088743`,
 		},
 		{
-			name: "AVCDecoderConfiguration",
+			name: "AVCDecoderConfiguration main profile",
 			src: &AVCDecoderConfiguration{
-				AnyTypeBox:           AnyTypeBox{Type: StrToBoxType("avcC")},
-				ConfigurationVersion: 0x12,
-				Profile:              0x34,
-				ProfileCompatibility: 0x56,
-				Level:                0x78,
-				Data:                 []byte{0x9a, 0xbc, 0xde},
+				AnyTypeBox:                 AnyTypeBox{Type: StrToBoxType("avcC")},
+				ConfigurationVersion:       0x12,
+				Profile:                    AVCMainProfile,
+				ProfileCompatibility:       0x40,
+				Level:                      0x1f,
+				Reserved:                   0x3f,
+				LengthSizeMinusOne:         0x2,
+				Reserved2:                  0x7,
+				NumOfSequenceParameterSets: 2,
+				SequenceParameterSets: []AVCParameterSet{
+					{Length: 2, NALUnit: []byte{0x12, 0x34}},
+					{Length: 3, NALUnit: []byte{0x12, 0x34, 0x56}},
+				},
+				NumOfPictureParameterSets: 2,
+				PictureParameterSets: []AVCParameterSet{
+					{Length: 2, NALUnit: []byte{0xab, 0xcd}},
+					{Length: 3, NALUnit: []byte{0xab, 0xcd, 0xef}},
+				},
 			},
 			dst: &AVCDecoderConfiguration{AnyTypeBox: AnyTypeBox{Type: StrToBoxType("avcC")}},
 			bin: []byte{
-				0x12,             // configuration version
-				0x34,             // profile
-				0x56,             // profile compatibility
-				0x78,             // level
-				0x9a, 0xbc, 0xde, // data
+				0x12,       // configuration version
+				0x4d,       // profile
+				0x40,       // profile compatibility
+				0x1f,       // level
+				0xfe,       // reserved,  lengthSizeMinusOne
+				0xe2,       // reserved, numOfSequenceParameterSets
+				0x00, 0x02, // length
+				0x12, 0x34, // nalUnit
+				0x00, 0x03, // length
+				0x12, 0x34, 0x56, // nalUnit
+				0x02,       // reserved, numOfSequenceParameterSets
+				0x00, 0x02, // length
+				0xab, 0xcd, // nalUnit
+				0x00, 0x03, // length
+				0xab, 0xcd, 0xef, // nalUnit
 			},
 			str: `ConfigurationVersion=0x12 ` +
-				`Profile=0x34 ` +
-				`ProfileCompatibility=0x56 ` +
-				`Level=0x78 ` +
-				`Data=[0x9a, 0xbc, 0xde]`,
+				`Profile=0x4d ` +
+				`ProfileCompatibility=0x40 ` +
+				`Level=0x1f ` +
+				`LengthSizeMinusOne=0x2 ` +
+				`NumOfSequenceParameterSets=0x2 ` +
+				`SequenceParameterSets=[` +
+				`{Length=2 NALUnit=[0x12, 0x34]}, ` +
+				`{Length=3 NALUnit=[0x12, 0x34, 0x56]}] ` +
+				`NumOfPictureParameterSets=0x2 ` +
+				`PictureParameterSets=[` +
+				`{Length=2 NALUnit=[0xab, 0xcd]}, ` +
+				`{Length=3 NALUnit=[0xab, 0xcd, 0xef]}]`,
+		},
+		{
+			name: "AVCDecoderConfiguration high profile old spec",
+			src: &AVCDecoderConfiguration{
+				AnyTypeBox:                 AnyTypeBox{Type: StrToBoxType("avcC")},
+				ConfigurationVersion:       0x12,
+				Profile:                    AVCHighProfile,
+				ProfileCompatibility:       0x00,
+				Level:                      0x28,
+				Reserved:                   0x3f,
+				LengthSizeMinusOne:         0x2,
+				Reserved2:                  0x7,
+				NumOfSequenceParameterSets: 2,
+				SequenceParameterSets: []AVCParameterSet{
+					{Length: 2, NALUnit: []byte{0x12, 0x34}},
+					{Length: 3, NALUnit: []byte{0x12, 0x34, 0x56}},
+				},
+				NumOfPictureParameterSets: 2,
+				PictureParameterSets: []AVCParameterSet{
+					{Length: 2, NALUnit: []byte{0xab, 0xcd}},
+					{Length: 3, NALUnit: []byte{0xab, 0xcd, 0xef}},
+				},
+			},
+			dst: &AVCDecoderConfiguration{AnyTypeBox: AnyTypeBox{Type: StrToBoxType("avcC")}},
+			bin: []byte{
+				0x12,       // configuration version
+				0x64,       // profile
+				0x00,       // profile compatibility
+				0x28,       // level
+				0xfe,       // reserved,  lengthSizeMinusOne
+				0xe2,       // reserved, numOfSequenceParameterSets
+				0x00, 0x02, // length
+				0x12, 0x34, // nalUnit
+				0x00, 0x03, // length
+				0x12, 0x34, 0x56, // nalUnit
+				0x02,       // reserved, numOfSequenceParameterSets
+				0x00, 0x02, // length
+				0xab, 0xcd, // nalUnit
+				0x00, 0x03, // length
+				0xab, 0xcd, 0xef, // nalUnit
+			},
+			str: `ConfigurationVersion=0x12 ` +
+				`Profile=0x64 ` +
+				`ProfileCompatibility=0x0 ` +
+				`Level=0x28 ` +
+				`LengthSizeMinusOne=0x2 ` +
+				`NumOfSequenceParameterSets=0x2 ` +
+				`SequenceParameterSets=[` +
+				`{Length=2 NALUnit=[0x12, 0x34]}, ` +
+				`{Length=3 NALUnit=[0x12, 0x34, 0x56]}] ` +
+				`NumOfPictureParameterSets=0x2 ` +
+				`PictureParameterSets=[` +
+				`{Length=2 NALUnit=[0xab, 0xcd]}, ` +
+				`{Length=3 NALUnit=[0xab, 0xcd, 0xef]}]`,
+		},
+		{
+			name: "AVCDecoderConfiguration high profile new spec",
+			src: &AVCDecoderConfiguration{
+				AnyTypeBox:                 AnyTypeBox{Type: StrToBoxType("avcC")},
+				ConfigurationVersion:       0x12,
+				Profile:                    AVCHighProfile,
+				ProfileCompatibility:       0x00,
+				Level:                      0x28,
+				Reserved:                   0x3f,
+				LengthSizeMinusOne:         0x2,
+				Reserved2:                  0x7,
+				NumOfSequenceParameterSets: 2,
+				SequenceParameterSets: []AVCParameterSet{
+					{Length: 2, NALUnit: []byte{0x12, 0x34}},
+					{Length: 3, NALUnit: []byte{0x12, 0x34, 0x56}},
+				},
+				NumOfPictureParameterSets: 2,
+				PictureParameterSets: []AVCParameterSet{
+					{Length: 2, NALUnit: []byte{0xab, 0xcd}},
+					{Length: 3, NALUnit: []byte{0xab, 0xcd, 0xef}},
+				},
+				HighProfileFieldsEnabled:     true,
+				Reserved3:                    0x3f,
+				ChromaFormat:                 0x1,
+				Reserved4:                    0x1f,
+				BitDepthLumaMinus8:           0x2,
+				Reserved5:                    0x1f,
+				BitDepthChromaMinus8:         0x3,
+				NumOfSequenceParameterSetExt: 2,
+				SequenceParameterSetsExt: []AVCParameterSet{
+					{Length: 2, NALUnit: []byte{0x12, 0x34}},
+					{Length: 3, NALUnit: []byte{0x12, 0x34, 0x56}},
+				},
+			},
+			dst: &AVCDecoderConfiguration{AnyTypeBox: AnyTypeBox{Type: StrToBoxType("avcC")}},
+			bin: []byte{
+				0x12,       // configuration version
+				0x64,       // profile
+				0x00,       // profile compatibility
+				0x28,       // level
+				0xfe,       // reserved,  lengthSizeMinusOne
+				0xe2,       // reserved, numOfSequenceParameterSets
+				0x00, 0x02, // length
+				0x12, 0x34, // nalUnit
+				0x00, 0x03, // length
+				0x12, 0x34, 0x56, // nalUnit
+				0x02,       // numOfSequenceParameterSets
+				0x00, 0x02, // length
+				0xab, 0xcd, // nalUnit
+				0x00, 0x03, // length
+				0xab, 0xcd, 0xef, // nalUnit
+				0xfd,       // reserved, chromaFormat
+				0xfa,       // reserved, bitDepthLumaMinus8
+				0xfb,       // reserved, bitDepthChromaMinus8
+				0x02,       // numOfSequenceParameterSets
+				0x00, 0x02, // length
+				0x12, 0x34, // nalUnit
+				0x00, 0x03, // length
+				0x12, 0x34, 0x56, // nalUnit
+			},
+			str: `ConfigurationVersion=0x12 ` +
+				`Profile=0x64 ` +
+				`ProfileCompatibility=0x0 ` +
+				`Level=0x28 ` +
+				`LengthSizeMinusOne=0x2 ` +
+				`NumOfSequenceParameterSets=0x2 ` +
+				`SequenceParameterSets=[` +
+				`{Length=2 NALUnit=[0x12, 0x34]}, ` +
+				`{Length=3 NALUnit=[0x12, 0x34, 0x56]}] ` +
+				`NumOfPictureParameterSets=0x2 ` +
+				`PictureParameterSets=[` +
+				`{Length=2 NALUnit=[0xab, 0xcd]}, ` +
+				`{Length=3 NALUnit=[0xab, 0xcd, 0xef]}] ` +
+				`ChromaFormat=0x1 ` +
+				`BitDepthLumaMinus8=0x2 ` +
+				`BitDepthChromaMinus8=0x3 ` +
+				`NumOfSequenceParameterSetExt=0x2 ` +
+				`SequenceParameterSetsExt=[` +
+				`{Length=2 NALUnit=[0x12, 0x34]}, ` +
+				`{Length=3 NALUnit=[0x12, 0x34, 0x56]}]`,
 		},
 		{
 			name: "PixelAspectRatioBox",
@@ -1010,30 +1175,6 @@ func TestBoxTypes(t *testing.T) {
 			str:  ``,
 		},
 		{
-			name: "sgpd: version 0",
-			src: &Sgpd{
-				FullBox: FullBox{
-					Version: 0,
-					Flags:   [3]byte{0x00, 0x00, 0x00},
-				},
-				GroupingType: [4]byte{'r', 'o', 'l', 'l'},
-				EntryCount:   2,
-				Unsupported:  []byte{0x11, 0x22, 0x33, 0x44},
-			},
-			dst: &Sgpd{},
-			bin: []byte{
-				0,                // version
-				0x00, 0x00, 0x00, // flags
-				'r', 'o', 'l', 'l', // grouping type
-				0x00, 0x00, 0x00, 0x02, // entry count
-				0x11, 0x22, 0x33, 0x44, // unsupported
-			},
-			str: `Version=0 Flags=0x000000 ` +
-				`GroupingType="roll" ` +
-				`EntryCount=2 ` +
-				`Unsupported=[0x11, 0x22, 0x33, 0x44]`,
-		},
-		{
 			name: "sgpd: version 1 roll",
 			src: &Sgpd{
 				FullBox: FullBox{
@@ -1044,7 +1185,6 @@ func TestBoxTypes(t *testing.T) {
 				DefaultLength: 2,
 				EntryCount:    2,
 				RollDistances: []int16{0x1111, 0x2222},
-				Unsupported:   []byte{},
 			},
 			dst: &Sgpd{},
 			bin: []byte{
@@ -1053,14 +1193,13 @@ func TestBoxTypes(t *testing.T) {
 				'r', 'o', 'l', 'l', // grouping type
 				0x00, 0x00, 0x00, 0x02, // default length
 				0x00, 0x00, 0x00, 0x02, // entry count
-				0x11, 0x11, 0x22, 0x22, // unsupported
+				0x11, 0x11, 0x22, 0x22, // roll distances
 			},
 			str: `Version=1 Flags=0x000000 ` +
 				`GroupingType="roll" ` +
 				`DefaultLength=2 ` +
 				`EntryCount=2 ` +
-				`RollDistances=[4369, 8738] ` +
-				`Unsupported=[]`,
+				`RollDistances=[4369, 8738]`,
 		},
 		{
 			name: "sgpd: version 1 prol",
@@ -1073,7 +1212,6 @@ func TestBoxTypes(t *testing.T) {
 				DefaultLength: 2,
 				EntryCount:    2,
 				RollDistances: []int16{0x1111, 0x2222},
-				Unsupported:   []byte{},
 			},
 			dst: &Sgpd{},
 			bin: []byte{
@@ -1082,41 +1220,190 @@ func TestBoxTypes(t *testing.T) {
 				'p', 'r', 'o', 'l', // grouping type
 				0x00, 0x00, 0x00, 0x02, // default length
 				0x00, 0x00, 0x00, 0x02, // entry count
-				0x11, 0x11, 0x22, 0x22, // unsupported
+				0x11, 0x11, 0x22, 0x22, // roll distances
 			},
 			str: `Version=1 Flags=0x000000 ` +
 				`GroupingType="prol" ` +
 				`DefaultLength=2 ` +
 				`EntryCount=2 ` +
-				`RollDistances=[4369, 8738] ` +
-				`Unsupported=[]`,
+				`RollDistances=[4369, 8738]`,
 		},
 		{
-			name: "sgpd: version 1 alst",
+			name: "sgpd: version 1 alst no-opts",
 			src: &Sgpd{
 				FullBox: FullBox{
 					Version: 1,
 					Flags:   [3]byte{0x00, 0x00, 0x00},
 				},
 				GroupingType:  [4]byte{'a', 'l', 's', 't'},
-				DefaultLength: 2,
+				DefaultLength: 12,
 				EntryCount:    2,
-				Unsupported:   []byte{0x11, 0x22, 0x33, 0x44},
+				AlternativeStartupEntries: []AlternativeStartupEntry{
+					{
+						RollCount:         2,
+						FirstOutputSample: 0x0123,
+						SampleOffset:      []uint32{0x01234567, 0x89abcdef},
+						Opts:              []AlternativeStartupEntryOpt{},
+					}, {
+						RollCount:         2,
+						FirstOutputSample: 0x4567,
+						SampleOffset:      []uint32{0x456789ab, 0xcdef0123},
+						Opts:              []AlternativeStartupEntryOpt{},
+					},
+				},
 			},
 			dst: &Sgpd{},
 			bin: []byte{
 				1,                // version
 				0x00, 0x00, 0x00, // flags
 				'a', 'l', 's', 't', // grouping type
-				0x00, 0x00, 0x00, 0x02, // default length
+				0x00, 0x00, 0x00, 0x0c, // default length
 				0x00, 0x00, 0x00, 0x02, // entry count
-				0x11, 0x22, 0x33, 0x44, // unsupported
+				0x00, 0x02, // roll count
+				0x01, 0x23, // first output sample
+				0x01, 0x23, 0x45, 0x67, // sample offset
+				0x89, 0xab, 0xcd, 0xef, // sample offset
+				0x00, 0x02, // roll count
+				0x45, 0x67, // first output sample
+				0x45, 0x67, 0x89, 0xab, // sample offset
+				0xcd, 0xef, 0x01, 0x23, // sample offset
 			},
 			str: `Version=1 Flags=0x000000 ` +
 				`GroupingType="alst" ` +
-				`DefaultLength=2 ` +
+				`DefaultLength=12 ` +
 				`EntryCount=2 ` +
-				`Unsupported=[0x11, 0x22, 0x33, 0x44]`,
+				`AlternativeStartupEntries=[` +
+				`{RollCount=2 FirstOutputSample=291 SampleOffset=[19088743, 2309737967] Opts=[]}, ` +
+				`{RollCount=2 FirstOutputSample=17767 SampleOffset=[1164413355, 3454992675] Opts=[]}]`,
+		},
+		{
+			name: "sgpd: version 1 alst default-length",
+			src: &Sgpd{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				GroupingType:  [4]byte{'a', 'l', 's', 't'},
+				DefaultLength: 20,
+				EntryCount:    2,
+				AlternativeStartupEntries: []AlternativeStartupEntry{
+					{
+						RollCount:         2,
+						FirstOutputSample: 0x0123,
+						SampleOffset:      []uint32{0x01234567, 0x89abcdef},
+						Opts: []AlternativeStartupEntryOpt{
+							{NumOutputSamples: 0x0123, NumTotalSamples: 0x4567},
+							{NumOutputSamples: 0x89ab, NumTotalSamples: 0xcdef},
+						},
+					}, {
+						RollCount:         2,
+						FirstOutputSample: 0x4567,
+						SampleOffset:      []uint32{0x456789ab, 0xcdef0123},
+						Opts: []AlternativeStartupEntryOpt{
+							{NumOutputSamples: 0x0123, NumTotalSamples: 0x4567},
+							{NumOutputSamples: 0x89ab, NumTotalSamples: 0xcdef},
+						},
+					},
+				},
+			},
+			dst: &Sgpd{},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				'a', 'l', 's', 't', // grouping type
+				0x00, 0x00, 0x00, 0x14, // default length
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x00, 0x02, // roll count
+				0x01, 0x23, // first output sample
+				0x01, 0x23, 0x45, 0x67, // sample offset
+				0x89, 0xab, 0xcd, 0xef, // sample offset
+				0x01, 0x23, // num output samples
+				0x45, 0x67, // num total samples
+				0x89, 0xab, // num output samples
+				0xcd, 0xef, // num total samples
+				0x00, 0x02, // roll count
+				0x45, 0x67, // first output sample
+				0x45, 0x67, 0x89, 0xab, // sample offset
+				0xcd, 0xef, 0x01, 0x23, // sample offset
+				0x01, 0x23, // num output samples
+				0x45, 0x67, // num total samples
+				0x89, 0xab, // num output samples
+				0xcd, 0xef, // num total samples
+			},
+			str: `Version=1 Flags=0x000000 ` +
+				`GroupingType="alst" ` +
+				`DefaultLength=20 ` +
+				`EntryCount=2 ` +
+				`AlternativeStartupEntries=[` +
+				`{RollCount=2 FirstOutputSample=291 SampleOffset=[19088743, 2309737967] Opts=[{NumOutputSamples=291 NumTotalSamples=17767}, {NumOutputSamples=35243 NumTotalSamples=52719}]}, ` +
+				`{RollCount=2 FirstOutputSample=17767 SampleOffset=[1164413355, 3454992675] Opts=[{NumOutputSamples=291 NumTotalSamples=17767}, {NumOutputSamples=35243 NumTotalSamples=52719}]}]`,
+		},
+		{
+			name: "sgpd: version 1 alst no-default-length",
+			src: &Sgpd{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				GroupingType:  [4]byte{'a', 'l', 's', 't'},
+				DefaultLength: 0,
+				EntryCount:    2,
+				AlternativeStartupEntriesL: []AlternativeStartupEntryL{
+					{
+						DescriptionLength: 16,
+						AlternativeStartupEntry: AlternativeStartupEntry{
+							RollCount:         2,
+							FirstOutputSample: 0x0123,
+							SampleOffset:      []uint32{0x01234567, 0x89abcdef},
+							Opts: []AlternativeStartupEntryOpt{
+								{NumOutputSamples: 0x0123, NumTotalSamples: 0x4567},
+							},
+						},
+					}, {
+						DescriptionLength: 20,
+						AlternativeStartupEntry: AlternativeStartupEntry{
+							RollCount:         2,
+							FirstOutputSample: 0x4567,
+							SampleOffset:      []uint32{0x456789ab, 0xcdef0123},
+							Opts: []AlternativeStartupEntryOpt{
+								{NumOutputSamples: 0x0123, NumTotalSamples: 0x4567},
+								{NumOutputSamples: 0x89ab, NumTotalSamples: 0xcdef},
+							},
+						},
+					},
+				},
+			},
+			dst: &Sgpd{},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				'a', 'l', 's', 't', // grouping type
+				0x00, 0x00, 0x00, 0x00, // default length
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x00, 0x00, 0x00, 0x10, // description length
+				0x00, 0x02, // roll count
+				0x01, 0x23, // first output sample
+				0x01, 0x23, 0x45, 0x67, // sample offset
+				0x89, 0xab, 0xcd, 0xef, // sample offset
+				0x01, 0x23, // num output samples
+				0x45, 0x67, // num total samples
+				0x00, 0x00, 0x00, 0x14, // description length
+				0x00, 0x02, // roll count
+				0x45, 0x67, // first output sample
+				0x45, 0x67, 0x89, 0xab, // sample offset
+				0xcd, 0xef, 0x01, 0x23, // sample offset
+				0x01, 0x23, // num output samples
+				0x45, 0x67, // num total samples
+				0x89, 0xab, // num output samples
+				0xcd, 0xef, // num total samples
+			},
+			str: `Version=1 Flags=0x000000 ` +
+				`GroupingType="alst" ` +
+				`DefaultLength=0 ` +
+				`EntryCount=2 ` +
+				`AlternativeStartupEntriesL=[` +
+				`{DescriptionLength=16 RollCount=2 FirstOutputSample=291 SampleOffset=[19088743, 2309737967] Opts=[{NumOutputSamples=291 NumTotalSamples=17767}]}, ` +
+				`{DescriptionLength=20 RollCount=2 FirstOutputSample=17767 SampleOffset=[1164413355, 3454992675] Opts=[{NumOutputSamples=291 NumTotalSamples=17767}, {NumOutputSamples=35243 NumTotalSamples=52719}]}]`,
 		},
 		{
 			name: "sgpd: version 1 rap",
@@ -1132,7 +1419,6 @@ func TestBoxTypes(t *testing.T) {
 					{NumLeadingSamplesKnown: true, NumLeadingSamples: 0x27},
 					{NumLeadingSamplesKnown: false, NumLeadingSamples: 0x1a},
 				},
-				Unsupported: []byte{},
 			},
 			dst: &Sgpd{},
 			bin: []byte{
@@ -1149,8 +1435,7 @@ func TestBoxTypes(t *testing.T) {
 				`EntryCount=2 ` +
 				`VisualRandomAccessEntries=[` +
 				`{NumLeadingSamplesKnown=true NumLeadingSamples=0x27}, ` +
-				`{NumLeadingSamplesKnown=false NumLeadingSamples=0x1a}] ` +
-				`Unsupported=[]`,
+				`{NumLeadingSamplesKnown=false NumLeadingSamples=0x1a}]`,
 		},
 		{
 			name: "sgpd: version 1 tele",
@@ -1166,7 +1451,6 @@ func TestBoxTypes(t *testing.T) {
 					{LevelUndependentlyUecodable: true},
 					{LevelUndependentlyUecodable: false},
 				},
-				Unsupported: []byte{},
 			},
 			dst: &Sgpd{},
 			bin: []byte{
@@ -1183,8 +1467,7 @@ func TestBoxTypes(t *testing.T) {
 				`EntryCount=2 ` +
 				`TemporalLevelEntries=[` +
 				`{LevelUndependentlyUecodable=true}, ` +
-				`{LevelUndependentlyUecodable=false}] ` +
-				`Unsupported=[]`,
+				`{LevelUndependentlyUecodable=false}]`,
 		},
 		{
 			name: "sgpd: version 2 roll",
@@ -1196,7 +1479,7 @@ func TestBoxTypes(t *testing.T) {
 				GroupingType:                  [4]byte{'r', 'o', 'l', 'l'},
 				DefaultSampleDescriptionIndex: 5,
 				EntryCount:                    2,
-				Unsupported:                   []byte{0x11, 0x22, 0x33, 0x44},
+				RollDistances:                 []int16{0x1111, 0x2222},
 			},
 			dst: &Sgpd{},
 			bin: []byte{
@@ -1205,13 +1488,13 @@ func TestBoxTypes(t *testing.T) {
 				'r', 'o', 'l', 'l', // grouping type
 				0x00, 0x00, 0x00, 0x05, // default sample description index
 				0x00, 0x00, 0x00, 0x02, // entry count
-				0x11, 0x22, 0x33, 0x44, // unsupported
+				0x11, 0x11, 0x22, 0x22, // roll distances
 			},
 			str: `Version=2 Flags=0x000000 ` +
 				`GroupingType="roll" ` +
 				`DefaultSampleDescriptionIndex=5 ` +
 				`EntryCount=2 ` +
-				`Unsupported=[0x11, 0x22, 0x33, 0x44]`,
+				`RollDistances=[4369, 8738]`,
 		},
 		{
 			name: "sidx: version=0",
@@ -2083,4 +2366,43 @@ func TestMetaMarshalAppleQuickTime(t *testing.T) {
 	assert.Equal(t, int64(0), s)
 	assert.Equal(t, uint8(0), dst.GetVersion())
 	assert.Equal(t, uint32(0), dst.GetFlags())
+}
+
+func TestAvcCInconsistentError(t *testing.T) {
+	avcc := &AVCDecoderConfiguration{
+		AnyTypeBox:                 AnyTypeBox{Type: StrToBoxType("avcC")},
+		ConfigurationVersion:       0x12,
+		Profile:                    AVCMainProfile,
+		ProfileCompatibility:       0x40,
+		Level:                      0x1f,
+		Reserved:                   0x3f,
+		LengthSizeMinusOne:         0x2,
+		Reserved2:                  0x7,
+		NumOfSequenceParameterSets: 2,
+		SequenceParameterSets: []AVCParameterSet{
+			{Length: 2, NALUnit: []byte{0x12, 0x34}},
+			{Length: 3, NALUnit: []byte{0x12, 0x34, 0x56}},
+		},
+		NumOfPictureParameterSets: 2,
+		PictureParameterSets: []AVCParameterSet{
+			{Length: 2, NALUnit: []byte{0xab, 0xcd}},
+			{Length: 3, NALUnit: []byte{0xab, 0xcd, 0xef}},
+		},
+		HighProfileFieldsEnabled:     true,
+		Reserved3:                    0x3f,
+		ChromaFormat:                 0x1,
+		Reserved4:                    0x1f,
+		BitDepthLumaMinus8:           0x2,
+		Reserved5:                    0x1f,
+		BitDepthChromaMinus8:         0x3,
+		NumOfSequenceParameterSetExt: 2,
+		SequenceParameterSetsExt: []AVCParameterSet{
+			{Length: 2, NALUnit: []byte{0x12, 0x34}},
+			{Length: 3, NALUnit: []byte{0x12, 0x34, 0x56}},
+		},
+	}
+	buf := bytes.NewBuffer(nil)
+	_, err := Marshal(buf, avcc)
+	require.Error(t, err)
+	assert.Equal(t, "each values of Profile and HighProfileFieldsEnabled are inconsistent", err.Error())
 }
