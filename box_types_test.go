@@ -968,6 +968,41 @@ func TestBoxTypes(t *testing.T) {
 				`{SampleCount=1164413355 GroupDescriptionIndex=1450744508}]`,
 		},
 		{
+			name: "sbgp: version 1",
+			src: &Sbgp{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				GroupingType:          0x01234567,
+				GroupingTypeParameter: 0x89abcdef,
+				EntryCount:            2,
+				Entries: []SbgpEntry{
+					{SampleCount: 0x23456789, GroupDescriptionIndex: 0x3456789a},
+					{SampleCount: 0x456789ab, GroupDescriptionIndex: 0x56789abc},
+				},
+			},
+			dst: &Sbgp{},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				0x01, 0x23, 0x45, 0x67, // grouping type
+				0x89, 0xab, 0xcd, 0xef, // grouping type parameter
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x23, 0x45, 0x67, 0x89, // sample count
+				0x34, 0x56, 0x78, 0x9a, // group description index
+				0x45, 0x67, 0x89, 0xab, // sample count
+				0x56, 0x78, 0x9a, 0xbc, // group description index
+			},
+			str: `Version=1 Flags=0x000000 ` +
+				`GroupingType=19088743 ` +
+				`GroupingTypeParameter=2309737967 ` +
+				`EntryCount=2 ` +
+				`Entries=[` +
+				`{SampleCount=591751049 GroupDescriptionIndex=878082202}, ` +
+				`{SampleCount=1164413355 GroupDescriptionIndex=1450744508}]`,
+		},
+		{
 			name: "schi",
 			src:  &Schi{},
 			dst:  &Schi{},

@@ -938,11 +938,11 @@ func init() {
 }
 
 type Sbgp struct {
-	FullBox                 `mp4:"extend"`
-	GroupingType            uint32      `mp4:"size=32"`
-	grouping_type_parameter uint32      `mp4:"size=32,ver=1"`
-	EntryCount              uint32      `mp4:"size=32"`
-	Entries                 []SbgpEntry `mp4:"len=dynamic,size=64"`
+	FullBox               `mp4:"extend"`
+	GroupingType          uint32      `mp4:"size=32"`
+	GroupingTypeParameter uint32      `mp4:"size=32,ver=1"`
+	EntryCount            uint32      `mp4:"size=32"`
+	Entries               []SbgpEntry `mp4:"len=dynamic,size=64"`
 }
 
 type SbgpEntry struct {
