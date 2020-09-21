@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/abema/go-mp4/bitio"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -255,7 +256,7 @@ func TestReadVarint(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			u := &unmarshaller{
-				reader: bytes.NewReader(tc.input),
+				reader: bitio.NewReadSeeker(bytes.NewReader(tc.input)),
 				size:   uint64(len(tc.input)),
 			}
 			val, err := u.readUvarint()
@@ -270,105 +271,6 @@ func TestReadVarint(t *testing.T) {
 			assert.Equal(t, tc.expected, val)
 		})
 	}
-}
-
-func TestRead(t *testing.T) {
-	testCases := []struct {
-		name         string
-		octet        byte
-		input        []byte
-		width        uint
-		size         uint
-		err          bool
-		expectedData []byte
-	}{
-		{name: "no width", input: []byte{0x6c, 0xa5}, size: 10, expectedData: []byte{0x01, 0xb2}},
-		{name: "width 3", octet: 0x6c, input: []byte{0xa5}, width: 3, size: 10, expectedData: []byte{0x02, 0x52}},
-		{name: "reach to end of box", input: []byte{0x6c, 0xa5}, size: 16, expectedData: []byte{0x6c, 0xa5}},
-		{name: "overrun", input: []byte{0x6c, 0xa5}, size: 17, err: true},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			u := &unmarshaller{
-				reader: bytes.NewReader(tc.input),
-				size:   uint64(len(tc.input)),
-				octet:  tc.octet,
-				width:  tc.width,
-			}
-			data, err := u.read(tc.size)
-			if tc.err {
-				require.Error(t, err)
-				return
-			}
-			require.NoError(t, err)
-			assert.Equal(t, tc.expectedData, data)
-		})
-	}
-}
-
-func TestReadBit(t *testing.T) {
-	u := &unmarshaller{
-		reader: bytes.NewReader([]byte{0x6c, 0xa5}),
-		rbytes: 10,
-	}
-	outputs := []struct {
-		bit    byte
-		rbytes uint64
-		octet  byte
-	}{
-		{bit: 0x00, rbytes: 11, octet: 0x6c},
-		{bit: 0x01, rbytes: 11, octet: 0x6c},
-		{bit: 0x01, rbytes: 11, octet: 0x6c},
-		{bit: 0x00, rbytes: 11, octet: 0x6c},
-		{bit: 0x01, rbytes: 11, octet: 0x6c},
-		{bit: 0x01, rbytes: 11, octet: 0x6c},
-		{bit: 0x00, rbytes: 11, octet: 0x6c},
-		{bit: 0x00, rbytes: 11, octet: 0x6c},
-		{bit: 0x01, rbytes: 12, octet: 0xa5},
-		{bit: 0x00, rbytes: 12, octet: 0xa5},
-		{bit: 0x01, rbytes: 12, octet: 0xa5},
-		{bit: 0x00, rbytes: 12, octet: 0xa5},
-		{bit: 0x00, rbytes: 12, octet: 0xa5},
-		{bit: 0x01, rbytes: 12, octet: 0xa5},
-		{bit: 0x00, rbytes: 12, octet: 0xa5},
-		{bit: 0x01, rbytes: 12, octet: 0xa5},
-	}
-	for _, o := range outputs {
-		bit, err := u.readBit()
-		require.NoError(t, err)
-		assert.Equal(t, o.bit, bit)
-		assert.Equal(t, o.rbytes, u.rbytes)
-		assert.Equal(t, o.octet, u.octet)
-	}
-	_, err := u.readBit()
-	require.Error(t, err)
-}
-
-func TestReadOctet(t *testing.T) {
-	u := &unmarshaller{
-		reader: bytes.NewReader([]byte{0x6c, 0xa5}),
-		rbytes: 10,
-	}
-	octet, err := u.readOctet()
-	require.NoError(t, err)
-	assert.Equal(t, byte(0x6c), octet)
-	assert.Equal(t, uint64(11), u.rbytes)
-	octet, err = u.readOctet()
-	require.NoError(t, err)
-	assert.Equal(t, byte(0xa5), octet)
-	assert.Equal(t, uint64(12), u.rbytes)
-	_, err = u.readOctet()
-	require.Error(t, err)
-}
-
-func TestReadOctetInvalidAlignment(t *testing.T) {
-	u := &unmarshaller{
-		reader: bytes.NewReader([]byte{0x6c, 0x00}),
-		width:  3,
-		rbytes: 10,
-	}
-	_, err := u.readOctet()
-	require.Error(t, err)
 }
 
 func TestReadFieldConfig(t *testing.T) {
