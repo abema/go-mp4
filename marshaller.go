@@ -124,7 +124,9 @@ func (m *marshaller) marshalSlice(t reflect.Type, v reflect.Value, config fieldC
 
 	elemType := t.Elem()
 	if elemType.Kind() == reflect.Uint8 && config.Size == 8 && m.width == 0 {
-		io.CopyN(m.writer, bytes.NewBuffer(v.Bytes()), int64(length))
+		if _, err := io.CopyN(m.writer, bytes.NewBuffer(v.Bytes()), int64(length)); err != nil {
+			return err
+		}
 		m.wbytes += length
 		return nil
 	}
@@ -163,7 +165,9 @@ func (m *marshaller) marshalInt(t reflect.Type, v reflect.Value, config fieldCon
 			}
 		}
 
-		m.write(byte(v), size)
+		if err := m.write(byte(v), size); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -186,7 +190,9 @@ func (m *marshaller) marshalUint(t reflect.Type, v reflect.Value, config fieldCo
 			v = v << ((i + 8) - config.Size)
 			size = config.Size - i
 		}
-		m.write(byte(v), size)
+		if err := m.write(byte(v), size); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -199,34 +205,35 @@ func (m *marshaller) marshalBool(t reflect.Type, v reflect.Value, config fieldCo
 	} else {
 		val = 0x00
 	}
-	m.write(val, config.Size)
-
-	return nil
+	return m.write(val, config.Size)
 }
 
 func (m *marshaller) marshalString(t reflect.Type, v reflect.Value, config fieldConfig) error {
 	data := []byte(v.String())
 	for _, b := range data {
-		m.write(b, 8)
+		if err := m.write(b, 8); err != nil {
+			return err
+		}
 	}
-	m.write(0x00, 8) // null character
-
-	return nil
+	return m.write(0x00, 8) // null character
 }
 
-func (m *marshaller) writeUvarint(u uint64) {
+func (m *marshaller) writeUvarint(u uint64) error {
 	for i := 63; i >= 0; i -= 7 {
 		if u>>uint(i) != 0 {
 			data := byte(u>>uint(i)) & 0x7f
 			if i != 0 {
 				data |= 0x80
 			}
-			m.write(data, 8)
+			if err := m.write(data, 8); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
-func (m *marshaller) write(data byte, size uint) {
+func (m *marshaller) write(data byte, size uint) error {
 	for i := uint(0); i < size; i++ {
 		b := (data >> (7 - i)) & 0x01
 
@@ -234,12 +241,15 @@ func (m *marshaller) write(data byte, size uint) {
 		m.width++
 
 		if m.width == 8 {
-			m.writer.Write([]byte{m.octet})
+			if _, err := m.writer.Write([]byte{m.octet}); err != nil {
+				return err
+			}
 			m.octet = 0x00
 			m.width = 0
 			m.wbytes++
 		}
 	}
+	return nil
 }
 
 type unmarshaller struct {
