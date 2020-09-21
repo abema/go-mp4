@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/abema/go-mp4/bitio"
 )
 
 const (
@@ -19,10 +21,8 @@ const (
 var ErrUnsupportedBoxVersion = errors.New("unsupported box version")
 
 type marshaller struct {
-	writer io.Writer
-	octet  byte
-	width  uint
-	wbytes uint64
+	writer bitio.Writer
+	wbits  uint64
 	src    IImmutableBox
 }
 
@@ -31,7 +31,7 @@ func Marshal(w io.Writer, src IImmutableBox) (n uint64, err error) {
 	v := reflect.ValueOf(src).Elem()
 
 	m := &marshaller{
-		writer: w,
+		writer: bitio.NewWriter(w),
 		src:    src,
 	}
 
@@ -39,11 +39,11 @@ func Marshal(w io.Writer, src IImmutableBox) (n uint64, err error) {
 		return 0, err
 	}
 
-	if m.width != 0 {
-		return 0, fmt.Errorf("box size is not multiple of 8 bits: type=%s, width=%d", src.GetType().String(), m.width)
+	if m.wbits%8 != 0 {
+		return 0, fmt.Errorf("box size is not multiple of 8 bits: type=%s, bits=%d", src.GetType().String(), m.wbits)
 	}
 
-	return m.wbytes, nil
+	return m.wbits / 8, nil
 }
 
 func (m *marshaller) marshal(t reflect.Type, v reflect.Value, config fieldConfig) error {
@@ -123,11 +123,11 @@ func (m *marshaller) marshalSlice(t reflect.Type, v reflect.Value, config fieldC
 	}
 
 	elemType := t.Elem()
-	if elemType.Kind() == reflect.Uint8 && config.size == 8 && m.width == 0 {
+	if elemType.Kind() == reflect.Uint8 && config.size == 8 && m.wbits%8 == 0 {
 		if _, err := io.CopyN(m.writer, bytes.NewBuffer(v.Bytes()), int64(length)); err != nil {
 			return err
 		}
-		m.wbytes += length
+		m.wbits += length * 8
 		return nil
 	}
 
@@ -152,22 +152,22 @@ func (m *marshaller) marshalInt(t reflect.Type, v reflect.Value, config fieldCon
 		if config.size > i+8 {
 			v = v >> (config.size - (i + 8))
 		} else if config.size < i+8 {
-			v = v << ((i + 8) - config.size)
 			size = config.size - i
 		}
 
 		// set sign bit
 		if i == 0 {
 			if signBit {
-				v |= 0x80
+				v |= 0x1 << (size - 1)
 			} else {
-				v &= 0x7f
+				v &= 0x1<<(size-1) - 1
 			}
 		}
 
-		if err := m.write(byte(v), size); err != nil {
+		if err := m.writer.WriteBits([]byte{byte(v)}, size); err != nil {
 			return err
 		}
+		m.wbits += uint64(size)
 	}
 
 	return nil
@@ -187,12 +187,12 @@ func (m *marshaller) marshalUint(t reflect.Type, v reflect.Value, config fieldCo
 		if config.size > i+8 {
 			v = v >> (config.size - (i + 8))
 		} else if config.size < i+8 {
-			v = v << ((i + 8) - config.size)
 			size = config.size - i
 		}
-		if err := m.write(byte(v), size); err != nil {
+		if err := m.writer.WriteBits([]byte{byte(v)}, size); err != nil {
 			return err
 		}
+		m.wbits += uint64(size)
 	}
 
 	return nil
@@ -201,21 +201,31 @@ func (m *marshaller) marshalUint(t reflect.Type, v reflect.Value, config fieldCo
 func (m *marshaller) marshalBool(t reflect.Type, v reflect.Value, config fieldConfig) error {
 	var val byte
 	if v.Bool() {
-		val = 0x80
+		val = 0xff
 	} else {
 		val = 0x00
 	}
-	return m.write(val, config.size)
+	if err := m.writer.WriteBits([]byte{val}, config.size); err != nil {
+		return err
+	}
+	m.wbits += uint64(config.size)
+	return nil
 }
 
 func (m *marshaller) marshalString(t reflect.Type, v reflect.Value, config fieldConfig) error {
 	data := []byte(v.String())
 	for _, b := range data {
-		if err := m.write(b, 8); err != nil {
+		if err := m.writer.WriteBits([]byte{b}, 8); err != nil {
 			return err
 		}
+		m.wbits += 8
 	}
-	return m.write(0x00, 8) // null character
+	// null character
+	if err := m.writer.WriteBits([]byte{0x00}, 8); err != nil {
+		return err
+	}
+	m.wbits += 8
+	return nil
 }
 
 func (m *marshaller) writeUvarint(u uint64) error {
@@ -225,40 +235,20 @@ func (m *marshaller) writeUvarint(u uint64) error {
 			if i != 0 {
 				data |= 0x80
 			}
-			if err := m.write(data, 8); err != nil {
+			if err := m.writer.WriteBits([]byte{data}, 8); err != nil {
 				return err
 			}
-		}
-	}
-	return nil
-}
-
-func (m *marshaller) write(data byte, size uint) error {
-	for i := uint(0); i < size; i++ {
-		b := (data >> (7 - i)) & 0x01
-
-		m.octet |= b << (7 - m.width)
-		m.width++
-
-		if m.width == 8 {
-			if _, err := m.writer.Write([]byte{m.octet}); err != nil {
-				return err
-			}
-			m.octet = 0x00
-			m.width = 0
-			m.wbytes++
+			m.wbits += 8
 		}
 	}
 	return nil
 }
 
 type unmarshaller struct {
-	reader io.ReadSeeker
+	reader bitio.ReadSeeker
 	dst    IBox
-	octet  byte
-	width  uint
 	size   uint64
-	rbytes uint64
+	rbits  uint64
 }
 
 func UnmarshalAny(r io.ReadSeeker, boxType BoxType, payloadSize uint64) (box IBox, n uint64, err error) {
@@ -277,7 +267,7 @@ func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox) (n uint64, err err
 	dst.SetVersion(anyVersion)
 
 	u := &unmarshaller{
-		reader: r,
+		reader: bitio.NewReadSeeker(r),
 		dst:    dst,
 		size:   payloadSize,
 	}
@@ -287,25 +277,30 @@ func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox) (n uint64, err err
 	} else if override {
 		return n, nil
 	} else {
-		u.rbytes = n
+		u.rbits = n * 8
+	}
+
+	sn, err := r.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return 0, err
 	}
 
 	if err := u.unmarshalStruct(t, v); err != nil {
 		if err == ErrUnsupportedBoxVersion {
-			r.Seek(-int64(u.rbytes), io.SeekCurrent)
+			r.Seek(sn, io.SeekStart)
 		}
 		return 0, err
 	}
 
-	if u.width != 0 {
-		return 0, fmt.Errorf("box size is not multiple of 8 bits: type=%s, size=%d, readBytes=%d, width=%d", dst.GetType().String(), u.size, u.rbytes, u.width)
+	if u.rbits%8 != 0 {
+		return 0, fmt.Errorf("box size is not multiple of 8 bits: type=%s, size=%d, bits=%d", dst.GetType().String(), u.size, u.rbits)
 	}
 
-	if u.rbytes > u.size {
-		return 0, fmt.Errorf("overrun error: type=%s, size=%d, readBytes=%d, width=%d", dst.GetType().String(), u.size, u.rbytes, u.width)
+	if u.rbits > u.size*8 {
+		return 0, fmt.Errorf("overrun error: type=%s, size=%d, bits=%d", dst.GetType().String(), u.size, u.rbits)
 	}
 
-	return u.rbytes, nil
+	return u.rbits / 8, nil
 }
 
 func (u *unmarshaller) unmarshal(t reflect.Type, v reflect.Value, config fieldConfig) error {
@@ -389,7 +384,7 @@ func (u *unmarshaller) unmarshalSlice(t reflect.Type, v reflect.Value, config fi
 	length := uint64(config.length)
 	if config.length == lengthUnlimited {
 		if config.size != 0 {
-			left := (u.size-u.rbytes)*8 + uint64(u.width)
+			left := (u.size)*8 - u.rbits
 			if left%uint64(config.size) != 0 {
 				return errors.New("invalid alignment")
 			}
@@ -403,7 +398,7 @@ func (u *unmarshaller) unmarshalSlice(t reflect.Type, v reflect.Value, config fi
 		return fmt.Errorf("out of memory: requestedSize=%d", length)
 	}
 
-	if config.size != 0 && config.size%8 == 0 && u.width == 0 {
+	if config.size != 0 && config.size%8 == 0 && u.rbits%8 == 0 {
 		totalSize := length * uint64(config.size) / 8
 		buf := bytes.NewBuffer(make([]byte, 0, totalSize))
 		if _, err := io.CopyN(buf, u.reader, int64(totalSize)); err != nil {
@@ -413,12 +408,12 @@ func (u *unmarshaller) unmarshalSlice(t reflect.Type, v reflect.Value, config fi
 
 		if elemType.Kind() == reflect.Uint8 && config.size == 8 {
 			slice = reflect.ValueOf(data)
-			u.rbytes += uint64(totalSize)
+			u.rbits += uint64(totalSize) * 8
 
 		} else {
 			tmpReader := bytes.NewReader(data)
 			orgReader := u.reader
-			u.reader = tmpReader
+			u.reader = bitio.NewReadSeeker(tmpReader)
 			defer func() {
 				u.reader = orgReader
 			}()
@@ -446,7 +441,7 @@ func (u *unmarshaller) unmarshalSlice(t reflect.Type, v reflect.Value, config fi
 				break
 			}
 
-			if config.length == lengthUnlimited && u.rbytes >= u.size && u.width == 0 {
+			if config.length == lengthUnlimited && u.rbits >= u.size*8 {
 				break
 			}
 
@@ -458,7 +453,7 @@ func (u *unmarshaller) unmarshalSlice(t reflect.Type, v reflect.Value, config fi
 				return err
 			}
 
-			if u.rbytes > u.size {
+			if u.rbits > u.size*8 {
 				return fmt.Errorf("failed to read array completely: fieldName=\"%s\"", config.name)
 			}
 		}
@@ -477,10 +472,11 @@ func (u *unmarshaller) unmarshalInt(t reflect.Type, v reflect.Value, config fiel
 		return fmt.Errorf("size must not be zero: %s", config.name)
 	}
 
-	data, err := u.read(config.size)
+	data, err := u.reader.ReadBits(config.size)
 	if err != nil {
 		return err
 	}
+	u.rbits += uint64(config.size)
 
 	signBit := false
 	if len(data) > 0 {
@@ -517,10 +513,11 @@ func (u *unmarshaller) unmarshalUint(t reflect.Type, v reflect.Value, config fie
 		return fmt.Errorf("size must not be zero: %s", config.name)
 	}
 
-	data, err := u.read(config.size)
+	data, err := u.reader.ReadBits(config.size)
 	if err != nil {
 		return err
 	}
+	u.rbits += uint64(config.size)
 
 	val := uint64(0)
 	for i := range data {
@@ -537,10 +534,11 @@ func (u *unmarshaller) unmarshalBool(t reflect.Type, v reflect.Value, config fie
 		return fmt.Errorf("size must not be zero: %s", config.name)
 	}
 
-	data, err := u.read(config.size)
+	data, err := u.reader.ReadBits(config.size)
 	if err != nil {
 		return err
 	}
+	u.rbits += uint64(config.size)
 
 	val := false
 	for _, b := range data {
@@ -565,20 +563,21 @@ func (u *unmarshaller) unmarshalString(t reflect.Type, v reflect.Value, config f
 func (u *unmarshaller) unmarshalString_C(t reflect.Type, v reflect.Value, config fieldConfig) error {
 	data := make([]byte, 0, 16)
 	for {
-		if u.rbytes >= u.size {
+		if u.rbits >= u.size*8 {
 			break
 		}
 
-		c, err := u.readOctet()
+		c, err := u.reader.ReadBits(8)
 		if err != nil {
 			return err
 		}
+		u.rbits += 8
 
-		if c == 0 {
+		if c[0] == 0 {
 			break // null character
 		}
 
-		data = append(data, c)
+		data = append(data, c[0])
 	}
 	v.SetString(string(data))
 
@@ -595,7 +594,7 @@ func (u *unmarshaller) unmarshalString_C_P(t reflect.Type, v reflect.Value, conf
 }
 
 func (u *unmarshaller) tryReadPString(t reflect.Type, v reflect.Value, config fieldConfig) (ok bool, err error) {
-	remainingSize := u.size - u.rbytes
+	remainingSize := (u.size*8 - u.rbits) / 8
 	if remainingSize < 2 {
 		return false, nil
 	}
@@ -625,7 +624,7 @@ func (u *unmarshaller) tryReadPString(t reflect.Type, v reflect.Value, config fi
 	}
 	remainingSize -= uint64(plen)
 	if config.cfo.IsPString(config.name, buf, remainingSize) {
-		u.rbytes += uint64(len(buf)) + 1
+		u.rbits += uint64(len(buf)+1) * 8
 		v.SetString(string(buf))
 		return true, nil
 	}
@@ -635,66 +634,18 @@ func (u *unmarshaller) tryReadPString(t reflect.Type, v reflect.Value, config fi
 func (u *unmarshaller) readUvarint() (uint64, error) {
 	var val uint64
 	for {
-		octet, err := u.readOctet()
+		octet, err := u.reader.ReadBits(8)
 		if err != nil {
 			return 0, err
 		}
+		u.rbits += 8
 
-		val = (val << 7) + uint64(octet&0x7f)
+		val = (val << 7) + uint64(octet[0]&0x7f)
 
-		if octet&0x80 == 0 {
+		if octet[0]&0x80 == 0 {
 			return val, nil
 		}
 	}
-}
-
-func (u *unmarshaller) read(size uint) ([]byte, error) {
-	// return value format:
-	//  |-1-byte-block-|--------------|--------------|--------------|
-	//  |<-offset->|<-------------------data----------------------->|
-	bytes := (size + 7) / 8
-	result := make([]byte, bytes)
-	offset := (bytes * 8) - (size)
-
-	for i := uint(0); i < size; i++ {
-		b, err := u.readBit()
-		if err != nil {
-			return nil, err
-		}
-
-		byteIdx := (offset + i) / 8
-		bitIdx := 7 - (offset+i)%8
-		result[byteIdx] |= b << bitIdx
-	}
-
-	return result, nil
-}
-
-func (u *unmarshaller) readBit() (byte, error) {
-	if u.width == 0 {
-		octet, err := u.readOctet()
-		if err != nil {
-			return 0, err
-		}
-		u.octet = octet
-		u.width = 8
-	}
-
-	u.width--
-	return (u.octet >> u.width) & 0x01, nil
-}
-
-func (u *unmarshaller) readOctet() (byte, error) {
-	if u.width != 0 {
-		return 0, errors.New("invalid alignment")
-	}
-
-	buf := make([]byte, 1)
-	if _, err := u.reader.Read(buf); err != nil {
-		return 0, err
-	}
-	u.rbytes++
-	return buf[0], nil
 }
 
 type StringType int
