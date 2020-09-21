@@ -41,7 +41,7 @@ func (m *stringfier) stringify(t reflect.Type, v reflect.Value, config fieldConf
 	case reflect.Ptr:
 		return m.stringifyPtr(t, v, config, depth)
 	case reflect.Struct:
-		return m.stringifyStruct(t, v, depth, config.Extend)
+		return m.stringifyStruct(t, v, depth, config.extend)
 	case reflect.Array:
 		return m.stringifyArray(t, v, config, depth)
 	case reflect.Slice:
@@ -90,11 +90,11 @@ func (m *stringfier) stringifyStruct(t reflect.Type, v reflect.Value, depth int,
 			continue
 		}
 
-		if config.Const != "" {
+		if config.cnst != "" {
 			continue
 		}
 
-		if !config.Extend {
+		if !config.extend {
 			if m.indent != "" {
 				writeIndent(m.buf, m.indent, depth+1)
 			} else if m.buf.Len() != 0 && m.buf.Bytes()[m.buf.Len()-1] != '{' {
@@ -104,10 +104,10 @@ func (m *stringfier) stringifyStruct(t reflect.Type, v reflect.Value, depth int,
 			m.buf.WriteString("=")
 		}
 
-		str, ok := config.CFO.StringifyField(f.Name, m.indent, depth+1)
+		str, ok := config.cfo.StringifyField(f.Name, m.indent, depth+1)
 		if ok {
 			m.buf.WriteString(str)
-			if !config.Extend && m.indent != "" {
+			if !config.extend && m.indent != "" {
 				m.buf.WriteString("\n")
 			}
 			continue
@@ -124,7 +124,7 @@ func (m *stringfier) stringifyStruct(t reflect.Type, v reflect.Value, depth int,
 			}
 		}
 
-		if !config.Extend && m.indent != "" {
+		if !config.extend && m.indent != "" {
 			m.buf.WriteString("\n")
 		}
 	}
@@ -142,7 +142,7 @@ func (m *stringfier) stringifyStruct(t reflect.Type, v reflect.Value, depth int,
 
 func (m *stringfier) stringifyArray(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
 	begin, sep, end := "[", ", ", "]"
-	if config.String || config.ISO639_2 {
+	if config.str || config.iso639_2 {
 		begin, sep, end = "\"", "", "\""
 	}
 
@@ -168,14 +168,14 @@ func (m *stringfier) stringifyArray(t reflect.Type, v reflect.Value, config fiel
 
 func (m *stringfier) stringifySlice(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
 	begin, sep, end := "[", ", ", "]"
-	if config.String || config.ISO639_2 {
+	if config.str || config.iso639_2 {
 		begin, sep, end = "\"", "", "\""
 	}
 
 	m.buf.WriteString(begin)
 
 	for i := 0; i < v.Len(); i++ {
-		if config.Len != lengthUnlimited && uint(i) >= config.Len {
+		if config.length != lengthUnlimited && uint(i) >= config.length {
 			break
 		}
 
@@ -192,7 +192,7 @@ func (m *stringfier) stringifySlice(t reflect.Type, v reflect.Value, config fiel
 }
 
 func (m *stringfier) stringifyInt(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
-	if config.Hex {
+	if config.hex {
 		val := v.Int()
 		if val >= 0 {
 			m.buf.WriteString("0x")
@@ -208,11 +208,11 @@ func (m *stringfier) stringifyInt(t reflect.Type, v reflect.Value, config fieldC
 }
 
 func (m *stringfier) stringifyUint(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
-	if config.ISO639_2 {
+	if config.iso639_2 {
 		m.buf.WriteString(string([]byte{byte(v.Uint() + 0x60)}))
-	} else if config.String {
+	} else if config.str {
 		m.buf.WriteString(string([]byte{byte(v.Uint())}))
-	} else if config.Hex || t.Kind() == reflect.Uint8 || t.Kind() == reflect.Uintptr {
+	} else if config.hex || t.Kind() == reflect.Uint8 || t.Kind() == reflect.Uintptr {
 		m.buf.WriteString("0x")
 		m.buf.WriteString(strconv.FormatUint(v.Uint(), 16))
 	} else {
