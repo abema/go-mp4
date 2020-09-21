@@ -115,15 +115,15 @@ func (m *marshaller) marshalArray(t reflect.Type, v reflect.Value, config fieldC
 
 func (m *marshaller) marshalSlice(t reflect.Type, v reflect.Value, config fieldConfig) error {
 	length := uint64(v.Len())
-	if config.Len != lengthUnlimited {
-		if length < uint64(config.Len) {
-			return fmt.Errorf("the slice has too few elements: required=%d actual=%d", config.Len, length)
+	if config.length != lengthUnlimited {
+		if length < uint64(config.length) {
+			return fmt.Errorf("the slice has too few elements: required=%d actual=%d", config.length, length)
 		}
-		length = uint64(config.Len)
+		length = uint64(config.length)
 	}
 
 	elemType := t.Elem()
-	if elemType.Kind() == reflect.Uint8 && config.Size == 8 && m.width == 0 {
+	if elemType.Kind() == reflect.Uint8 && config.size == 8 && m.width == 0 {
 		if _, err := io.CopyN(m.writer, bytes.NewBuffer(v.Bytes()), int64(length)); err != nil {
 			return err
 		}
@@ -140,20 +140,20 @@ func (m *marshaller) marshalSlice(t reflect.Type, v reflect.Value, config fieldC
 func (m *marshaller) marshalInt(t reflect.Type, v reflect.Value, config fieldConfig) error {
 	signed := v.Int()
 
-	if config.Varint {
+	if config.varint {
 		return errors.New("signed varint is unsupported")
 	}
 
 	signBit := signed < 0
 	val := uint64(signed)
-	for i := uint(0); i < config.Size; i += 8 {
+	for i := uint(0); i < config.size; i += 8 {
 		v := val
 		size := uint(8)
-		if config.Size > i+8 {
-			v = v >> (config.Size - (i + 8))
-		} else if config.Size < i+8 {
-			v = v << ((i + 8) - config.Size)
-			size = config.Size - i
+		if config.size > i+8 {
+			v = v >> (config.size - (i + 8))
+		} else if config.size < i+8 {
+			v = v << ((i + 8) - config.size)
+			size = config.size - i
 		}
 
 		// set sign bit
@@ -176,19 +176,19 @@ func (m *marshaller) marshalInt(t reflect.Type, v reflect.Value, config fieldCon
 func (m *marshaller) marshalUint(t reflect.Type, v reflect.Value, config fieldConfig) error {
 	val := v.Uint()
 
-	if config.Varint {
+	if config.varint {
 		m.writeUvarint(val)
 		return nil
 	}
 
-	for i := uint(0); i < config.Size; i += 8 {
+	for i := uint(0); i < config.size; i += 8 {
 		v := val
 		size := uint(8)
-		if config.Size > i+8 {
-			v = v >> (config.Size - (i + 8))
-		} else if config.Size < i+8 {
-			v = v << ((i + 8) - config.Size)
-			size = config.Size - i
+		if config.size > i+8 {
+			v = v >> (config.size - (i + 8))
+		} else if config.size < i+8 {
+			v = v << ((i + 8) - config.size)
+			size = config.size - i
 		}
 		if err := m.write(byte(v), size); err != nil {
 			return err
@@ -205,7 +205,7 @@ func (m *marshaller) marshalBool(t reflect.Type, v reflect.Value, config fieldCo
 	} else {
 		val = 0x00
 	}
-	return m.write(val, config.Size)
+	return m.write(val, config.size)
 }
 
 func (m *marshaller) marshalString(t reflect.Type, v reflect.Value, config fieldConfig) error {
@@ -386,14 +386,14 @@ func (u *unmarshaller) unmarshalSlice(t reflect.Type, v reflect.Value, config fi
 	var slice reflect.Value
 	elemType := t.Elem()
 
-	length := uint64(config.Len)
-	if config.Len == lengthUnlimited {
-		if config.Size != 0 {
+	length := uint64(config.length)
+	if config.length == lengthUnlimited {
+		if config.size != 0 {
 			left := (u.size-u.rbytes)*8 + uint64(u.width)
-			if left%uint64(config.Size) != 0 {
+			if left%uint64(config.size) != 0 {
 				return errors.New("invalid alignment")
 			}
-			length = left / uint64(config.Size)
+			length = left / uint64(config.size)
 		} else {
 			length = 0
 		}
@@ -403,15 +403,15 @@ func (u *unmarshaller) unmarshalSlice(t reflect.Type, v reflect.Value, config fi
 		return fmt.Errorf("out of memory: requestedSize=%d", length)
 	}
 
-	if config.Size != 0 && config.Size%8 == 0 && u.width == 0 {
-		totalSize := length * uint64(config.Size) / 8
+	if config.size != 0 && config.size%8 == 0 && u.width == 0 {
+		totalSize := length * uint64(config.size) / 8
 		buf := bytes.NewBuffer(make([]byte, 0, totalSize))
 		if _, err := io.CopyN(buf, u.reader, int64(totalSize)); err != nil {
 			return err
 		}
 		data := buf.Bytes()
 
-		if elemType.Kind() == reflect.Uint8 && config.Size == 8 {
+		if elemType.Kind() == reflect.Uint8 && config.size == 8 {
 			slice = reflect.ValueOf(data)
 			u.rbytes += uint64(totalSize)
 
@@ -442,11 +442,11 @@ func (u *unmarshaller) unmarshalSlice(t reflect.Type, v reflect.Value, config fi
 	} else {
 		slice = reflect.MakeSlice(t, 0, int(length))
 		for i := 0; ; i++ {
-			if config.Len != lengthUnlimited && uint(i) >= config.Len {
+			if config.length != lengthUnlimited && uint(i) >= config.length {
 				break
 			}
 
-			if config.Len == lengthUnlimited && u.rbytes >= u.size && u.width == 0 {
+			if config.length == lengthUnlimited && u.rbytes >= u.size && u.width == 0 {
 				break
 			}
 
@@ -459,7 +459,7 @@ func (u *unmarshaller) unmarshalSlice(t reflect.Type, v reflect.Value, config fi
 			}
 
 			if u.rbytes > u.size {
-				return fmt.Errorf("failed to read array completely: fieldName=\"%s\"", config.Name)
+				return fmt.Errorf("failed to read array completely: fieldName=\"%s\"", config.name)
 			}
 		}
 	}
@@ -469,22 +469,22 @@ func (u *unmarshaller) unmarshalSlice(t reflect.Type, v reflect.Value, config fi
 }
 
 func (u *unmarshaller) unmarshalInt(t reflect.Type, v reflect.Value, config fieldConfig) error {
-	if config.Varint {
+	if config.varint {
 		return errors.New("signed varint is unsupported")
 	}
 
-	if config.Size == 0 {
-		return fmt.Errorf("size must not be zero: %s", config.Name)
+	if config.size == 0 {
+		return fmt.Errorf("size must not be zero: %s", config.name)
 	}
 
-	data, err := u.read(config.Size)
+	data, err := u.read(config.size)
 	if err != nil {
 		return err
 	}
 
 	signBit := false
 	if len(data) > 0 {
-		signMask := byte(0x01) << ((config.Size - 1) % 8)
+		signMask := byte(0x01) << ((config.size - 1) % 8)
 		signBit = data[0]&signMask != 0
 		if signBit {
 			data[0] |= ^(signMask - 1)
@@ -504,7 +504,7 @@ func (u *unmarshaller) unmarshalInt(t reflect.Type, v reflect.Value, config fiel
 }
 
 func (u *unmarshaller) unmarshalUint(t reflect.Type, v reflect.Value, config fieldConfig) error {
-	if config.Varint {
+	if config.varint {
 		val, err := u.readUvarint()
 		if err != nil {
 			return err
@@ -513,11 +513,11 @@ func (u *unmarshaller) unmarshalUint(t reflect.Type, v reflect.Value, config fie
 		return nil
 	}
 
-	if config.Size == 0 {
-		return fmt.Errorf("size must not be zero: %s", config.Name)
+	if config.size == 0 {
+		return fmt.Errorf("size must not be zero: %s", config.name)
 	}
 
-	data, err := u.read(config.Size)
+	data, err := u.read(config.size)
 	if err != nil {
 		return err
 	}
@@ -533,11 +533,11 @@ func (u *unmarshaller) unmarshalUint(t reflect.Type, v reflect.Value, config fie
 }
 
 func (u *unmarshaller) unmarshalBool(t reflect.Type, v reflect.Value, config fieldConfig) error {
-	if config.Size == 0 {
-		return fmt.Errorf("size must not be zero: %s", config.Name)
+	if config.size == 0 {
+		return fmt.Errorf("size must not be zero: %s", config.name)
 	}
 
-	data, err := u.read(config.Size)
+	data, err := u.read(config.size)
 	if err != nil {
 		return err
 	}
@@ -552,13 +552,13 @@ func (u *unmarshaller) unmarshalBool(t reflect.Type, v reflect.Value, config fie
 }
 
 func (u *unmarshaller) unmarshalString(t reflect.Type, v reflect.Value, config fieldConfig) error {
-	switch config.StringType {
+	switch config.strType {
 	case StringType_C:
 		return u.unmarshalString_C(t, v, config)
 	case StringType_C_P:
 		return u.unmarshalString_C_P(t, v, config)
 	default:
-		return fmt.Errorf("unknown string type: %d", config.StringType)
+		return fmt.Errorf("unknown string type: %d", config.strType)
 	}
 }
 
@@ -624,7 +624,7 @@ func (u *unmarshaller) tryReadPString(t reflect.Type, v reflect.Value, config fi
 		return false, err
 	}
 	remainingSize -= uint64(plen)
-	if config.CFO.IsPString(config.Name, buf, remainingSize) {
+	if config.cfo.IsPString(config.name, buf, remainingSize) {
 		u.rbytes += uint64(len(buf)) + 1
 		v.SetString(string(buf))
 		return true, nil
@@ -705,87 +705,87 @@ const (
 )
 
 type fieldConfig struct {
-	Name       string
-	CFO        ICustomFieldObject
-	Size       uint
-	Len        uint
-	Varint     bool
-	Version    uint8
-	NVersion   uint8
-	OptDynamic bool
-	OptFlag    uint32
-	NOptFlag   uint32
-	Const      string
-	Extend     bool
-	Hex        bool
-	String     bool
-	ISO639_2   bool
-	StringType StringType
+	name       string
+	cfo        ICustomFieldObject
+	size       uint
+	length     uint
+	varint     bool
+	version    uint8
+	nVersion   uint8
+	optDynamic bool
+	optFlag    uint32
+	nOptFlag   uint32
+	cnst       string
+	extend     bool
+	hex        bool
+	str        bool
+	iso639_2   bool
+	strType    StringType
 }
 
 func readFieldConfig(box IImmutableBox, parent reflect.Value, fieldName string, tag fieldTag) (config fieldConfig, err error) {
-	config.Name = fieldName
+	config.name = fieldName
 	cfo, ok := parent.Addr().Interface().(ICustomFieldObject)
 	if ok {
-		config.CFO = cfo
+		config.cfo = cfo
 	} else {
-		config.CFO = box
+		config.cfo = box
 	}
 
 	if val, contained := tag["size"]; contained {
 		if val == "dynamic" {
-			config.Size = config.CFO.GetFieldSize(fieldName)
+			config.size = config.cfo.GetFieldSize(fieldName)
 		} else {
 			var size uint64
 			size, err = strconv.ParseUint(val, 10, 32)
 			if err != nil {
 				return
 			}
-			config.Size = uint(size)
+			config.size = uint(size)
 		}
 	}
 
-	config.Len = lengthUnlimited
+	config.length = lengthUnlimited
 	if val, contained := tag["len"]; contained {
 		if val == "dynamic" {
-			config.Len = config.CFO.GetFieldLength(fieldName)
+			config.length = config.cfo.GetFieldLength(fieldName)
 		} else {
 			var l uint64
 			l, err = strconv.ParseUint(val, 10, 32)
 			if err != nil {
 				return
 			}
-			config.Len = uint(l)
+			config.length = uint(l)
 		}
 	}
 
 	if _, contained := tag["varint"]; contained {
-		config.Varint = true
+		config.varint = true
 	}
 
-	config.Version = anyVersion
+	config.version = anyVersion
 	if val, contained := tag["ver"]; contained {
 		var ver int
 		ver, err = strconv.Atoi(val)
 		if err != nil {
 			return
 		}
-		config.Version = uint8(ver)
+		config.version = uint8(ver)
 	}
 
-	config.NVersion = anyVersion
+	config.nVersion = anyVersion
 	if val, contained := tag["nver"]; contained {
 		var ver int
 		ver, err = strconv.Atoi(val)
 		if err != nil {
 			return
 		}
-		config.NVersion = uint8(ver)
+		config.nVersion = uint8(ver)
 	}
 
 	if val, contained := tag["opt"]; contained {
 		if val == "dynamic" {
-			config.OptDynamic = true
+			config.optDynamic = true
 		} else {
 			var opt uint64
 			if strings.HasPrefix(val, "0x") {
@@ -796,7 +796,7 @@ func readFieldConfig(box IImmutableBox, parent reflect.Value, fieldName string, 
 			if err != nil {
 				return
 			}
-			config.OptFlag = uint32(opt)
+			config.optFlag = uint32(opt)
 		}
 	}
 
@@ -810,30 +810,30 @@ func readFieldConfig(box IImmutableBox, parent reflect.Value, fieldName string, 
 		if err != nil {
 			return
 		}
-		config.NOptFlag = uint32(nopt)
+		config.nOptFlag = uint32(nopt)
 	}
 
 	if val, contained := tag["const"]; contained {
-		config.Const = val
+		config.cnst = val
 	}
 
 	if _, contained := tag["extend"]; contained {
-		config.Extend = true
+		config.extend = true
 	}
 
 	if _, contained := tag["hex"]; contained {
-		config.Hex = true
+		config.hex = true
 	}
 
 	if val, contained := tag["string"]; contained {
-		config.String = true
+		config.str = true
 		if val == "c_p" {
-			config.StringType = StringType_C_P
+			config.strType = StringType_C_P
 		}
 	}
 
 	if _, contained := tag["iso639-2"]; contained {
-		config.ISO639_2 = true
+		config.iso639_2 = true
 	}
 
 	return
@@ -859,24 +859,24 @@ func parseFieldTag(str string) fieldTag {
 
 func isTargetField(box IImmutableBox, config fieldConfig) bool {
 	if box.GetVersion() != anyVersion {
-		if config.Version != anyVersion && box.GetVersion() != config.Version {
+		if config.version != anyVersion && box.GetVersion() != config.version {
 			return false
 		}
 
-		if config.NVersion != anyVersion && box.GetVersion() == config.NVersion {
+		if config.nVersion != anyVersion && box.GetVersion() == config.nVersion {
 			return false
 		}
 	}
 
-	if config.OptFlag != 0 && box.GetFlags()&config.OptFlag == 0 {
+	if config.optFlag != 0 && box.GetFlags()&config.optFlag == 0 {
 		return false
 	}
 
-	if config.NOptFlag != 0 && box.GetFlags()&config.NOptFlag != 0 {
+	if config.nOptFlag != 0 && box.GetFlags()&config.nOptFlag != 0 {
 		return false
 	}
 
-	if config.OptDynamic && !config.CFO.IsOptFieldEnabled(config.Name) {
+	if config.optDynamic && !config.cfo.IsOptFieldEnabled(config.name) {
 		return false
 	}
 
