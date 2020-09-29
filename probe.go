@@ -14,6 +14,7 @@ type SegmentInfo struct {
 	DefaultSampleDuration uint32
 	SampleCount           uint32
 	Duration              uint32
+	CompositionTimeOffset int32
 }
 
 type FraProbeInfo struct {
@@ -233,6 +234,24 @@ func probeTrun(r io.ReadSeeker, bi *BoxInfo, segment *SegmentInfo) error {
 		}
 	} else {
 		segment.Duration = segment.DefaultSampleDuration * segment.SampleCount
+	}
+
+	var duration uint32
+	for ei := range trun.Entries {
+		var offset int32
+		if trun.GetVersion() == 0 {
+			offset = int32(duration) + int32(trun.Entries[ei].SampleCompositionTimeOffsetV0)
+		} else {
+			offset = int32(duration) + int32(trun.Entries[ei].SampleCompositionTimeOffsetV1)
+		}
+		if ei == 0 || offset < segment.CompositionTimeOffset {
+			segment.CompositionTimeOffset = offset
+		}
+		if trun.CheckFlag(0x000100) {
+			duration += trun.Entries[ei].SampleDuration
+		} else {
+			duration += segment.DefaultSampleDuration
+		}
 	}
 
 	return nil
