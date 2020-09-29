@@ -134,7 +134,6 @@ func (m *stringfier) stringifyStruct(t reflect.Type, v reflect.Value, depth int,
 			writeIndent(m.buf, m.indent, depth)
 		}
 		m.buf.WriteString("}")
-		depth--
 	}
 
 	return nil
