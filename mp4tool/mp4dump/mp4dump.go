@@ -26,9 +26,9 @@ func init() {
 func Main(args []string) {
 	flagSet := flag.NewFlagSet("dump", flag.ExitOnError)
 	full := flagSet.String("full", "", "Show full content of specified box types\nFor example: -full free,ctts,stts")
-	showAll := flagSet.Bool("a", false, "Deprecated: see -full")
-	mdat := flagSet.Bool("mdat", false, "Deprecated: see -full")
-	free := flagSet.Bool("free", false, "Deprecated: see -full")
+	showAll := flagSet.Bool("a", false, "Show full content of boxes excepting mdat, free and styp")
+	mdat := flagSet.Bool("mdat", false, "Deprecated: use \"-full mdat\"")
+	free := flagSet.Bool("free", false, "Deprecated: use \"-full free,styp\"")
 	offset := flagSet.Bool("offset", false, "Show offset of box")
 	flagSet.Parse(args)
 
