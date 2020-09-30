@@ -698,7 +698,7 @@ func TestBoxTypes(t *testing.T) {
 				`ModificationTimeV0=591751049 ` +
 				`Timescale=1164413355 ` +
 				`DurationV0=1737075661 ` +
-				`Rate=-19088743 ` +
+				`Rate=-291.27112 ` +
 				`Volume=291 ` +
 				`Matrix=[0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0] ` +
 				`PreDefined=[0, 0, 0, 0, 0, 0] ` +
@@ -745,7 +745,7 @@ func TestBoxTypes(t *testing.T) {
 				`ModificationTimeV1=2541551405711093505 ` +
 				`Timescale=2309737967 ` +
 				`DurationV1=5001117282205630755 ` +
-				`Rate=-19088743 ` +
+				`Rate=-291.27112 ` +
 				`Volume=291 ` +
 				`Matrix=[0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0] ` +
 				`PreDefined=[0, 0, 0, 0, 0, 0] ` +
@@ -1627,7 +1627,7 @@ func TestBoxTypes(t *testing.T) {
 				0x01, 0x23, // balance
 				0x00, 0x00, // reserved
 			},
-			str: `Version=0 Flags=0x000000 Balance=291`,
+			str: `Version=0 Flags=0x000000 Balance=1.1367188`,
 		},
 		{
 			name: "stbl",
@@ -2017,8 +2017,8 @@ func TestBoxTypes(t *testing.T) {
 					0, 0x00010000, 0,
 					0, 0, 0x40000000,
 				},
-				Width:  0x56789abc,
-				Height: 0x6789abcd,
+				Width:  125829120,
+				Height: 70778880,
 			},
 			dst: &Tkhd{},
 			bin: []byte{
@@ -2037,8 +2037,8 @@ func TestBoxTypes(t *testing.T) {
 				0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, // matrix
-				0x56, 0x78, 0x9a, 0xbc, // width
-				0x67, 0x89, 0xab, 0xcd, // height
+				0x07, 0x80, 0x00, 0x00, // width
+				0x04, 0x38, 0x00, 0x00, // height
 			},
 			str: `Version=0 Flags=0x000000 ` +
 				`CreationTimeV0=19088743 ` +
@@ -2049,7 +2049,7 @@ func TestBoxTypes(t *testing.T) {
 				`AlternateGroup=-23456 ` +
 				`Volume=256 ` +
 				`Matrix=[0x10000, 0x0, 0x0, 0x0, 0x10000, 0x0, 0x0, 0x0, 0x40000000] ` +
-				`Width=1450744508 Height=1737075661`,
+				`Width=1920 Height=1080`,
 		},
 		{
 			name: "traf",
@@ -2405,4 +2405,20 @@ func TestAvcCInconsistentError(t *testing.T) {
 	_, err := Marshal(buf, avcc)
 	require.Error(t, err)
 	assert.Equal(t, "each values of Profile and HighProfileFieldsEnabled are inconsistent", err.Error())
+}
+
+func TestFixedPoint(t *testing.T) {
+	mvhd := Mvhd{Rate: 0x4d2b000}
+	assert.Equal(t, float64(1234.6875), mvhd.GetRate())
+	assert.Equal(t, int16(1234), mvhd.GetRateInt())
+
+	smhd := Smhd{Balance: 0x3420}
+	assert.Equal(t, float32(52.125), smhd.GetBalance())
+	assert.Equal(t, int8(52), smhd.GetBalanceInt())
+
+	tkhd := Tkhd{Width: 0x205800, Height: 0x5ec2c00}
+	assert.Equal(t, float64(32.34375), tkhd.GetWidth())
+	assert.Equal(t, uint16(32), tkhd.GetWidthInt())
+	assert.Equal(t, float64(1516.171875), tkhd.GetHeight())
+	assert.Equal(t, uint16(1516), tkhd.GetHeightInt())
 }
