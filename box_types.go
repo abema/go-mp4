@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 
 	"github.com/abema/go-mp4/bitio"
 )
@@ -773,7 +774,7 @@ type Mvhd struct {
 	Timescale          uint32    `mp4:"size=32"`
 	DurationV0         uint32    `mp4:"size=32,ver=0"`
 	DurationV1         uint64    `mp4:"size=64,ver=1"`
-	Rate               int32     `mp4:"size=32"` // template=0x00010000
+	Rate               int32     `mp4:"size=32"` // fixed-point 16.16 - template=0x00010000
 	Volume             int16     `mp4:"size=16"` // template=0x0100
 	Reserved           int16     `mp4:"size=16,const=0"`
 	Reserved2          [2]uint32 `mp4:"size=32,const=0"`
@@ -785,6 +786,26 @@ type Mvhd struct {
 // GetType returns the BoxType
 func (*Mvhd) GetType() BoxType {
 	return BoxTypeMvhd()
+}
+
+// StringifyField returns field value as string
+func (mvhd *Mvhd) StringifyField(name string, indent string, depth int) (string, bool) {
+	switch name {
+	case "Rate":
+		return strconv.FormatFloat(mvhd.GetRate(), 'f', -1, 32), true
+	default:
+		return "", false
+	}
+}
+
+// GetRate returns value of rate as float64
+func (mvhd *Mvhd) GetRate() float64 {
+	return float64(mvhd.Rate) / (1 << 16)
+}
+
+// GetRateInt returns value of rate as int16
+func (mvhd *Mvhd) GetRateInt() int16 {
+	return int16(mvhd.Rate >> 16)
 }
 
 /*************************** pssh ****************************/
@@ -1280,12 +1301,32 @@ func init() {
 
 type Smhd struct {
 	FullBox  `mp4:"extend"`
-	Balance  int16  `mp4:"size=16"` // template=0
+	Balance  int16  `mp4:"size=16"` // fixed-point 8.8 template=0
 	Reserved uint16 `mp4:"size=16,const=0"`
 }
 
 func (*Smhd) GetType() BoxType {
 	return BoxTypeSmhd()
+}
+
+// StringifyField returns field value as string
+func (smhd *Smhd) StringifyField(name string, indent string, depth int) (string, bool) {
+	switch name {
+	case "Balance":
+		return strconv.FormatFloat(float64(smhd.GetBalance()), 'f', -1, 32), true
+	default:
+		return "", false
+	}
+}
+
+// GetBalance returns value of width as float32
+func (smhd *Smhd) GetBalance() float32 {
+	return float32(smhd.Balance) / (1 << 8)
+}
+
+// GetBalanceInt returns value of width as int8
+func (smhd *Smhd) GetBalanceInt() int8 {
+	return int8(smhd.Balance >> 8)
 }
 
 /*************************** stbl ****************************/
@@ -1664,13 +1705,45 @@ type Tkhd struct {
 	Volume         int16     `mp4:"size=16"` // template={if track_is_audio 0x0100 else 0}
 	Reserved2      uint16    `mp4:"size=16,const=0"`
 	Matrix         [9]int32  `mp4:"size=32,hex"` // template={ 0x00010000,0,0,0,0x00010000,0,0,0,0x40000000 };
-	Width          uint32    `mp4:"size=32"`
-	Height         uint32    `mp4:"size=32"`
+	Width          uint32    `mp4:"size=32"`     // fixed-point 16.16
+	Height         uint32    `mp4:"size=32"`     // fixed-point 16.16
 }
 
 // GetType returns the BoxType
 func (*Tkhd) GetType() BoxType {
 	return BoxTypeTkhd()
+}
+
+// StringifyField returns field value as string
+func (tkhd *Tkhd) StringifyField(name string, indent string, depth int) (string, bool) {
+	switch name {
+	case "Width":
+		return strconv.FormatFloat(tkhd.GetWidth(), 'f', -1, 32), true
+	case "Height":
+		return strconv.FormatFloat(tkhd.GetHeight(), 'f', -1, 32), true
+	default:
+		return "", false
+	}
+}
+
+// GetWidth returns value of width as float64
+func (tkhd *Tkhd) GetWidth() float64 {
+	return float64(tkhd.Width) / (1 << 16)
+}
+
+// GetWidthInt returns value of width as uint16
+func (tkhd *Tkhd) GetWidthInt() uint16 {
+	return uint16(tkhd.Width >> 16)
+}
+
+// GetHeight returns value of height as float64
+func (tkhd *Tkhd) GetHeight() float64 {
+	return float64(tkhd.Height) / (1 << 16)
+}
+
+// GetHeightInt returns value of height as uint16
+func (tkhd *Tkhd) GetHeightInt() uint16 {
+	return uint16(tkhd.Height >> 16)
 }
 
 /*************************** traf ****************************/
