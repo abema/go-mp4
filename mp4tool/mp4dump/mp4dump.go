@@ -127,30 +127,33 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 			}
 
 			box, _, err := h.ReadPayload()
-			if err != nil {
-				panic(err)
-			}
+			if err != mp4.ErrUnsupportedBoxVersion {
+				if err != nil {
+					return nil, err
+				}
 
-			str, err := mp4.Stringify(box)
-			if err != nil {
-				panic(err)
-			}
-			if !full && line.Len()+len(str)+2 > terminalWidth {
-				fmt.Fprintf(line, " ... (use \"-full %s\" to show all)", h.BoxInfo.Type)
-			} else {
-				fmt.Fprintf(line, " %s", str)
-			}
+				str, err := mp4.Stringify(box)
+				if err != nil {
+					return nil, err
+				}
+				if !full && line.Len()+len(str)+2 > terminalWidth {
+					fmt.Fprintf(line, " ... (use \"-full %s\" to show all)", h.BoxInfo.Type)
+				} else {
+					fmt.Fprintf(line, " %s", str)
+				}
 
-			fmt.Println(line.String())
-			_, err = h.Expand()
-			return nil, err
+				fmt.Println(line.String())
+				_, err = h.Expand()
+				return nil, err
+			}
+			fmt.Fprintf(line, " (unsupported box version)")
 		}
 
 		// unsupported box type
 		if full {
 			buf := bytes.NewBuffer(make([]byte, 0, h.BoxInfo.Size-h.BoxInfo.HeaderSize))
 			if _, err := h.ReadData(buf); err != nil {
-				panic(err)
+				return nil, err
 			}
 			fmt.Fprintf(line, " Data=[")
 			for i, d := range buf.Bytes() {
