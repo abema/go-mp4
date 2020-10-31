@@ -241,7 +241,7 @@ func TestBoxTypes(t *testing.T) {
 				`{SegmentDurationV1=144115188075855882 MediaTimeV1=144115188075855883 MediaRateInteger=524}]`,
 		},
 		{
-			name: "emsg",
+			name: "emsg: version 0",
 			src: &Emsg{
 				FullBox: FullBox{
 					Version: 0,
@@ -272,6 +272,42 @@ func TestBoxTypes(t *testing.T) {
 				`Value="foo" ` +
 				`Timescale=1000 ` +
 				`PresentationTimeDelta=123 ` +
+				`EventDuration=3000 ` +
+				`Id=43981 ` +
+				`MessageData="abema"`,
+		},
+		{
+			name: "emsg: version 1",
+			src: &Emsg{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				SchemeIdUri:      "urn:test",
+				Value:            "foo",
+				Timescale:        1000,
+				PresentationTime: 123,
+				EventDuration:    3000,
+				Id:               0xabcd,
+				MessageData:      []byte("abema"),
+			},
+			dst: &Emsg{},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				0x00, 0x00, 0x03, 0xe8, // timescale
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7b, // presentation time
+				0x00, 0x00, 0x0b, 0xb8, // event duration
+				0x00, 0x00, 0xab, 0xcd, // id
+				0x75, 0x72, 0x6e, 0x3a, 0x74, 0x65, 0x73, 0x74, 0x00, // scheme id uri
+				0x66, 0x6f, 0x6f, 0x00, // value
+				0x61, 0x62, 0x65, 0x6d, 0x61, // message data
+			},
+			str: `Version=1 Flags=0x000000 ` +
+				`SchemeIdUri="urn:test" ` +
+				`Value="foo" ` +
+				`Timescale=1000 ` +
+				`PresentationTime=123 ` +
 				`EventDuration=3000 ` +
 				`Id=43981 ` +
 				`MessageData="abema"`,
