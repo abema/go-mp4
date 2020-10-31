@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/abema/go-mp4/bitio"
+	"github.com/abema/go-mp4/util"
 )
 
 /*************************** co64 ****************************/
@@ -260,7 +261,7 @@ func (elst *Elst) GetFieldLength(name string) uint {
 func BoxTypeEmsg() BoxType { return StrToBoxType("emsg") }
 
 func init() {
-	AddBoxDef(&Emsg{}, 0)
+	AddBoxDef(&Emsg{}, 0, 1)
 }
 
 // Emsg is ISOBMFF emsg box type
@@ -269,10 +270,57 @@ type Emsg struct {
 	SchemeIdUri           string `mp4:"string"`
 	Value                 string `mp4:"string"`
 	Timescale             uint32 `mp4:"size=32"`
-	PresentationTimeDelta uint32 `mp4:"size=32"`
+	PresentationTimeDelta uint32 `mp4:"size=32,ver=0"`
+	PresentationTime      uint64 `mp4:"size=64,ver=1"`
 	EventDuration         uint32 `mp4:"size=32"`
 	Id                    uint32 `mp4:"size=32"`
 	MessageData           []byte `mp4:"size=8,string"`
+}
+
+func (emsg *Emsg) OnReadField(name string, r bitio.ReadSeeker, leftBits uint64) (rbits uint64, override bool, err error) {
+	if emsg.GetVersion() == 0 {
+		return
+	}
+	switch name {
+	case "SchemeIdUri", "Value":
+		override = true
+		return
+	case "MessageData":
+		emsg.SchemeIdUri, err = util.ReadString(r)
+		if err != nil {
+			return
+		}
+		emsg.Value, err = util.ReadString(r)
+		if err != nil {
+			return
+		}
+		rbits += uint64(len(emsg.SchemeIdUri)+len(emsg.Value)+2) * 8
+		return
+	default:
+		return
+	}
+}
+
+func (emsg *Emsg) OnWriteField(name string, w bitio.Writer) (wbits uint64, override bool, err error) {
+	if emsg.GetVersion() == 0 {
+		return
+	}
+	switch name {
+	case "SchemeIdUri", "Value":
+		override = true
+		return
+	case "MessageData":
+		if err = util.WriteString(w, emsg.SchemeIdUri); err != nil {
+			return
+		}
+		if err = util.WriteString(w, emsg.Value); err != nil {
+			return
+		}
+		wbits += uint64(len(emsg.SchemeIdUri)+len(emsg.Value)+2) * 8
+		return
+	default:
+		return
+	}
 }
 
 // GetType returns the BoxType
