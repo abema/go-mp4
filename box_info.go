@@ -7,6 +7,14 @@ import (
 	"math"
 )
 
+type BoxStructureStatus struct {
+	// IsQuickTimeCompatible represents whether ftyp.compatible_brands contains "qt  ".
+	IsQuickTimeCompatible bool
+
+	// UnderWave represents whether current box is under the wave box.
+	UnderWave bool
+}
+
 // BoxInfo has common infomations of box
 type BoxInfo struct {
 	// Offset specifies an offset of the box in a file.
@@ -23,6 +31,9 @@ type BoxInfo struct {
 
 	// ExtendToEOF is set true when Box.size is zero. It means that end of box equals to end of file.
 	ExtendToEOF bool
+
+	// BoxStructureStatus would be set by ReadBoxStructure, not ReadBoxInfo.
+	BoxStructureStatus
 }
 
 const (

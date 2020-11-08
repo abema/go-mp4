@@ -26,7 +26,11 @@ func ExtractBoxesWithPayload(r io.ReadSeeker, parent *BoxInfo, paths []BoxPath) 
 			return nil, err
 		}
 
-		box, _, err := UnmarshalAny(r, bi.Type, bi.Size-bi.HeaderSize)
+		var bss BoxStructureStatus
+		if parent != nil {
+			bss = parent.BoxStructureStatus
+		}
+		box, _, err := UnmarshalAny(r, bi.Type, bi.Size-bi.HeaderSize, bss)
 		if err != nil {
 			return nil, err
 		}

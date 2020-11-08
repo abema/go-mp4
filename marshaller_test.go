@@ -21,7 +21,7 @@ func (m *mockBox) GetType() BoxType {
 	return m.Type
 }
 
-func (m *mockBox) GetFieldSize(n string) uint {
+func (m *mockBox) GetFieldSize(n string, bss BoxStructureStatus) uint {
 	if s, ok := m.DynSizeMap[n]; !ok {
 		panic(fmt.Errorf("invalid name of dynamic-size field: %s", n))
 	} else {
@@ -29,7 +29,7 @@ func (m *mockBox) GetFieldSize(n string) uint {
 	}
 }
 
-func (m *mockBox) GetFieldLength(n string) uint {
+func (m *mockBox) GetFieldLength(n string, bss BoxStructureStatus) uint {
 	if l, ok := m.DynLenMap[n]; !ok {
 		panic(fmt.Errorf("invalid name of dynamic-length field: %s", n))
 	} else {
@@ -180,14 +180,14 @@ func TestMarshal(t *testing.T) {
 
 	// marshal
 	buf := &bytes.Buffer{}
-	n, err := Marshal(buf, &src)
+	n, err := Marshal(buf, &src, BoxStructureStatus{})
 	require.NoError(t, err)
 	assert.Equal(t, uint64(len(bin)), n)
 	assert.Equal(t, bin, buf.Bytes())
 
 	// unmarshal
 	dst := testBox{mockBox: mb}
-	n, err = Unmarshal(bytes.NewReader(bin), uint64(len(bin)+8), &dst)
+	n, err = Unmarshal(bytes.NewReader(bin), uint64(len(bin)+8), &dst, BoxStructureStatus{})
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(len(bin)), n)
 	assert.Equal(t, src, dst)
@@ -229,7 +229,7 @@ func TestUnsupportedBoxVersionErr(t *testing.T) {
 		}
 
 		dst := testBox{mockBox: mb}
-		n, err := Unmarshal(bytes.NewReader(bin), uint64(len(bin)+8), &dst)
+		n, err := Unmarshal(bytes.NewReader(bin), uint64(len(bin)+8), &dst, BoxStructureStatus{})
 
 		if e.enabled {
 			assert.NoError(t, err, "version=%d", e.version)
@@ -308,7 +308,7 @@ func TestReadFieldConfig(t *testing.T) {
 				name:     "ByteArray",
 				cfo:      box,
 				size:     8,
-				length:   lengthUnlimited,
+				length:   LengthUnlimited,
 				version:  anyVersion,
 				nVersion: anyVersion,
 			},
@@ -329,7 +329,7 @@ func TestReadFieldConfig(t *testing.T) {
 				name:     "ByteArray",
 				cfo:      box,
 				size:     3,
-				length:   lengthUnlimited,
+				length:   LengthUnlimited,
 				version:  anyVersion,
 				nVersion: anyVersion,
 			},
@@ -378,7 +378,7 @@ func TestReadFieldConfig(t *testing.T) {
 				name:     "Int",
 				cfo:      box,
 				size:     13,
-				length:   lengthUnlimited,
+				length:   LengthUnlimited,
 				version:  anyVersion,
 				nVersion: anyVersion,
 				varint:   true,
@@ -393,7 +393,7 @@ func TestReadFieldConfig(t *testing.T) {
 				name:     "Int",
 				cfo:      box,
 				size:     32,
-				length:   lengthUnlimited,
+				length:   LengthUnlimited,
 				version:  0,
 				nVersion: anyVersion,
 			},
@@ -407,7 +407,7 @@ func TestReadFieldConfig(t *testing.T) {
 				name:     "Int",
 				cfo:      box,
 				size:     32,
-				length:   lengthUnlimited,
+				length:   LengthUnlimited,
 				version:  1,
 				nVersion: anyVersion,
 			},
@@ -428,7 +428,7 @@ func TestReadFieldConfig(t *testing.T) {
 				name:     "Int",
 				cfo:      box,
 				size:     32,
-				length:   lengthUnlimited,
+				length:   LengthUnlimited,
 				version:  anyVersion,
 				nVersion: 0,
 			},
@@ -442,7 +442,7 @@ func TestReadFieldConfig(t *testing.T) {
 				name:     "Int",
 				cfo:      box,
 				size:     32,
-				length:   lengthUnlimited,
+				length:   LengthUnlimited,
 				version:  anyVersion,
 				nVersion: 1,
 			},
@@ -462,7 +462,7 @@ func TestReadFieldConfig(t *testing.T) {
 			expected: fieldConfig{
 				name:       "String",
 				cfo:        box,
-				length:     lengthUnlimited,
+				length:     LengthUnlimited,
 				version:    anyVersion,
 				nVersion:   anyVersion,
 				optDynamic: true,
@@ -476,7 +476,7 @@ func TestReadFieldConfig(t *testing.T) {
 			expected: fieldConfig{
 				name:     "String",
 				cfo:      box,
-				length:   lengthUnlimited,
+				length:   LengthUnlimited,
 				version:  anyVersion,
 				nVersion: anyVersion,
 				optFlag:  0x0100,
@@ -490,7 +490,7 @@ func TestReadFieldConfig(t *testing.T) {
 			expected: fieldConfig{
 				name:     "String",
 				cfo:      box,
-				length:   lengthUnlimited,
+				length:   LengthUnlimited,
 				version:  anyVersion,
 				nVersion: anyVersion,
 				optFlag:  0x0020,
@@ -511,7 +511,7 @@ func TestReadFieldConfig(t *testing.T) {
 			expected: fieldConfig{
 				name:     "String",
 				cfo:      box,
-				length:   lengthUnlimited,
+				length:   LengthUnlimited,
 				version:  anyVersion,
 				nVersion: anyVersion,
 				nOptFlag: 0x0100,
@@ -525,7 +525,7 @@ func TestReadFieldConfig(t *testing.T) {
 			expected: fieldConfig{
 				name:     "String",
 				cfo:      box,
-				length:   lengthUnlimited,
+				length:   LengthUnlimited,
 				version:  anyVersion,
 				nVersion: anyVersion,
 				nOptFlag: 0x0020,
@@ -547,7 +547,7 @@ func TestReadFieldConfig(t *testing.T) {
 				name:     "Int",
 				cfo:      box,
 				size:     32,
-				length:   lengthUnlimited,
+				length:   LengthUnlimited,
 				version:  anyVersion,
 				nVersion: anyVersion,
 				cnst:     "0",
@@ -561,7 +561,7 @@ func TestReadFieldConfig(t *testing.T) {
 			expected: fieldConfig{
 				name:     "FullBox",
 				cfo:      box,
-				length:   lengthUnlimited,
+				length:   LengthUnlimited,
 				version:  anyVersion,
 				nVersion: anyVersion,
 				extend:   true,
@@ -576,7 +576,7 @@ func TestReadFieldConfig(t *testing.T) {
 				name:     "Int",
 				cfo:      box,
 				size:     32,
-				length:   lengthUnlimited,
+				length:   LengthUnlimited,
 				version:  anyVersion,
 				nVersion: anyVersion,
 				hex:      true,
@@ -590,7 +590,7 @@ func TestReadFieldConfig(t *testing.T) {
 			expected: fieldConfig{
 				name:     "String",
 				cfo:      box,
-				length:   lengthUnlimited,
+				length:   LengthUnlimited,
 				version:  anyVersion,
 				nVersion: anyVersion,
 				str:      true,
@@ -605,7 +605,7 @@ func TestReadFieldConfig(t *testing.T) {
 			expected: fieldConfig{
 				name:     "String",
 				cfo:      box,
-				length:   lengthUnlimited,
+				length:   LengthUnlimited,
 				version:  anyVersion,
 				nVersion: anyVersion,
 				str:      true,
@@ -620,7 +620,7 @@ func TestReadFieldConfig(t *testing.T) {
 			expected: fieldConfig{
 				name:     "String",
 				cfo:      box,
-				length:   lengthUnlimited,
+				length:   LengthUnlimited,
 				version:  anyVersion,
 				nVersion: anyVersion,
 				iso639_2: true,
@@ -631,7 +631,7 @@ func TestReadFieldConfig(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			v := reflect.ValueOf(tc.box).Elem()
-			config, err := readFieldConfig(tc.box, v, tc.fieldName, tc.fieldTag)
+			config, err := readFieldConfig(tc.box, v, tc.fieldName, tc.fieldTag, BoxStructureStatus{})
 			if tc.err {
 				assert.Error(t, err)
 				return

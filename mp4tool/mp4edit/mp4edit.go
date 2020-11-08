@@ -108,7 +108,7 @@ func editFile(inputPath, outputPath string) error {
 				}
 			}
 
-			n, err := mp4.Marshal(outputFile, box)
+			n, err := mp4.Marshal(outputFile, box, bi.BoxStructureStatus)
 			if err != nil {
 				return nil, err
 			}

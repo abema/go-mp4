@@ -121,3 +121,99 @@ func TestReadBoxStructure(t *testing.T) {
 // 54	      [ilst] Size=45
 // 55	        [0xa9746f6f] (unsupported box type) Size=37 Data=[...] (use "-full 0xa9746f6f" to show all)
 // 56	    [loci] (unsupported box type) Size=35 Data=[...] (use "-full loci" to show all)
+
+func TestReadBoxStructureQT(t *testing.T) {
+	f, err := os.Open("./_examples/sample_qt.mp4")
+	require.NoError(t, err)
+	defer f.Close()
+
+	var n int
+	_, err = ReadBoxStructure(f, func(h *ReadHandle) (interface{}, error) {
+		n++
+		switch n {
+		case 5, 42, 45: // unsupported
+			require.False(t, h.BoxInfo.Type.IsSupported())
+			buf := bytes.NewBuffer(nil)
+			n, err := h.ReadData(buf)
+			require.NoError(t, err)
+			require.Equal(t, h.BoxInfo.Size-h.BoxInfo.HeaderSize, n)
+			assert.Len(t, buf.Bytes(), int(n))
+		case 40: // mp4a
+			require.True(t, h.BoxInfo.Type.IsSupported())
+			require.Equal(t, StrToBoxType("mp4a"), h.BoxInfo.Type)
+			box, n, err := h.ReadPayload()
+			require.NoError(t, err)
+			require.Equal(t, uint64(44), n)
+			assert.Equal(t, []byte{0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2}, box.(*AudioSampleEntry).QuickTimeData)
+			_, err = h.Expand()
+			require.NoError(t, err)
+		case 43: // mp4a
+			require.True(t, h.BoxInfo.Type.IsSupported())
+			require.Equal(t, StrToBoxType("mp4a"), h.BoxInfo.Type)
+			box, n, err := h.ReadPayload()
+			require.NoError(t, err)
+			require.Equal(t, uint64(4), n)
+			assert.Equal(t, []byte{0x0, 0x0, 0x0, 0x0}, box.(*AudioSampleEntry).QuickTimeData)
+			_, err = h.Expand()
+			require.NoError(t, err)
+		default: // otherwise
+			require.True(t, h.BoxInfo.Type.IsSupported())
+			_, err = h.Expand()
+			require.NoError(t, err)
+		}
+		return nil, nil
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 49, n)
+}
+
+// > mp4tool dump -full mp4a sample_qt.mp4 | cat -n
+//  1	[ftyp] Size=20 MajorBrand="qt  " MinorVersion=512 CompatibleBrands=[{CompatibleBrand="qt  "}]
+//  2	[free] Size=42 Data=[...] (use "-full free" to show all)
+//  3	[moov] Size=340232
+//  4	  [udta] Size=31
+//  5	    [(c)enc] (unsupported box type) Size=23 Data=[...] (use "-full (c)enc" to show all)
+//  6	  [mvhd] Size=108 ... (use "-full mvhd" to show all)
+//  7	  [trak] Size=115889
+//  8	    [tkhd] Size=92 ... (use "-full tkhd" to show all)
+//  9	    [mdia] Size=115789
+// 10	      [mdhd] Size=32 Version=0 Flags=0x000000 CreationTimeV0=2082844800 ModificationTimeV0=2082844800 Timescale=24 DurationV0=14315 Pad=false Language="```" PreDefined=0
+// 11	      [hdlr] Size=45 Version=0 Flags=0x000000 PreDefined=1835560050 HandlerType="vide" Name="VideoHandler"
+// 12	      [minf] Size=115704
+// 13	        [hdlr] Size=44 Version=0 Flags=0x000000 PreDefined=1684565106 HandlerType="url " Name="DataHandler"
+// 14	        [vmhd] Size=20 Version=0 Flags=0x000001 Graphicsmode=0 Opcolor=[0, 0, 0]
+// 15	        [dinf] Size=36
+// 16	          [dref] Size=28 Version=0 Flags=0x000000 EntryCount=1
+// 17	            [url ] Size=12 Version=0 Flags=0x000001
+// 18	        [stbl] Size=115596
+// 19	          [stsd] Size=148 Version=0 Flags=0x000000 EntryCount=1
+// 20	            [avc1] Size=132 ... (use "-full avc1" to show all)
+// 21	              [avcC] Size=46 ... (use "-full avcC" to show all)
+// 22	          [stts] Size=24 Version=0 Flags=0x000000 EntryCount=1 Entries=[{SampleCount=14315 SampleDelta=1}]
+// 23	          [stss] Size=832 ... (use "-full stss" to show all)
+// 24	          [stsc] Size=28 Version=0 Flags=0x000000 EntryCount=1 Entries=[{FirstChunk=1 SamplesPerChunk=1 SampleDescriptionIndex=1}]
+// 25	          [stsz] Size=57280 ... (use "-full stsz" to show all)
+// 26	          [stco] Size=57276 ... (use "-full stco" to show all)
+// 27	  [trak] Size=224196
+// 28	    [tkhd] Size=92 ... (use "-full tkhd" to show all)
+// 29	    [mdia] Size=224096
+// 30	      [mdhd] Size=32 Version=0 Flags=0x000000 CreationTimeV0=2082844800 ModificationTimeV0=2082844800 Timescale=48000 DurationV0=28628992 Pad=false Language="```" PreDefined=0
+// 31	      [hdlr] Size=45 Version=0 Flags=0x000000 PreDefined=1835560050 HandlerType="soun" Name="SoundHandler"
+// 32	      [minf] Size=224011
+// 33	        [hdlr] Size=44 Version=0 Flags=0x000000 PreDefined=1684565106 HandlerType="url " Name="DataHandler"
+// 34	        [smhd] Size=16 Version=0 Flags=0x000000 Balance=0
+// 35	        [dinf] Size=36
+// 36	          [dref] Size=28 Version=0 Flags=0x000000 EntryCount=1
+// 37	            [url ] Size=12 Version=0 Flags=0x000001
+// 38	        [stbl] Size=223907
+// 39	          [stsd] Size=147 Version=0 Flags=0x000000 EntryCount=1
+// 40	            [mp4a] Size=131 DataReferenceIndex=1 EntryVersion=1 ChannelCount=2 SampleSize=16 PreDefined=65534 SampleRate=3145728000 QuickTimeData=[0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2]
+// 41	              [wave] Size=79
+// 42	                [frma] (unsupported box type) Size=12 Data=[...] (use "-full frma" to show all)
+// 43	                [mp4a] Size=12 QuickTimeData=[0x0, 0x0, 0x0, 0x0]
+// 44	                [esds] Size=39 ... (use "-full esds" to show all)
+// 45	                [0x00000000] (unsupported box type) Size=8 Data=[...] (use "-full 0x00000000" to show all)
+// 46	          [stts] Size=24 Version=0 Flags=0x000000 EntryCount=1 Entries=[{SampleCount=27958 SampleDelta=1024}]
+// 47	          [stsc] Size=28 Version=0 Flags=0x000000 EntryCount=1 Entries=[{FirstChunk=1 SamplesPerChunk=1 SampleDescriptionIndex=1}]
+// 48	          [stsz] Size=111852 ... (use "-full stsz" to show all)
+// 49	          [stco] Size=111848 ... (use "-full stco" to show all)

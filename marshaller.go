@@ -14,8 +14,7 @@ import (
 )
 
 const (
-	anyVersion      = math.MaxUint8
-	lengthUnlimited = math.MaxUint32
+	anyVersion = math.MaxUint8
 )
 
 var ErrUnsupportedBoxVersion = errors.New("unsupported box version")
@@ -24,15 +23,17 @@ type marshaller struct {
 	writer bitio.Writer
 	wbits  uint64
 	src    IImmutableBox
+	bss    BoxStructureStatus
 }
 
-func Marshal(w io.Writer, src IImmutableBox) (n uint64, err error) {
+func Marshal(w io.Writer, src IImmutableBox, bss BoxStructureStatus) (n uint64, err error) {
 	t := reflect.TypeOf(src).Elem()
 	v := reflect.ValueOf(src).Elem()
 
 	m := &marshaller{
 		writer: bitio.NewWriter(w),
 		src:    src,
+		bss:    bss,
 	}
 
 	if err := m.marshalStruct(t, v); err != nil {
@@ -83,16 +84,16 @@ func (m *marshaller) marshalStruct(t reflect.Type, v reflect.Value) error {
 		if !ok {
 			continue
 		}
-		config, err := readFieldConfig(m.src, v, f.Name, parseFieldTag(tagStr))
+		config, err := readFieldConfig(m.src, v, f.Name, parseFieldTag(tagStr), m.bss)
 		if err != nil {
 			return err
 		}
 
-		if !isTargetField(m.src, config) {
+		if !isTargetField(m.src, config, m.bss) {
 			continue
 		}
 
-		wbits, override, err := config.cfo.OnWriteField(f.Name, m.writer)
+		wbits, override, err := config.cfo.OnWriteField(f.Name, m.writer, m.bss)
 		if err != nil {
 			return err
 		}
@@ -124,7 +125,7 @@ func (m *marshaller) marshalArray(t reflect.Type, v reflect.Value, config fieldC
 
 func (m *marshaller) marshalSlice(t reflect.Type, v reflect.Value, config fieldConfig) error {
 	length := uint64(v.Len())
-	if config.length != lengthUnlimited {
+	if config.length != LengthUnlimited {
 		if length < uint64(config.length) {
 			return fmt.Errorf("the slice has too few elements: required=%d actual=%d", config.length, length)
 		}
@@ -258,18 +259,19 @@ type unmarshaller struct {
 	dst    IBox
 	size   uint64
 	rbits  uint64
+	bss    BoxStructureStatus
 }
 
-func UnmarshalAny(r io.ReadSeeker, boxType BoxType, payloadSize uint64) (box IBox, n uint64, err error) {
+func UnmarshalAny(r io.ReadSeeker, boxType BoxType, payloadSize uint64, bss BoxStructureStatus) (box IBox, n uint64, err error) {
 	if dst, err := boxType.New(); err != nil {
 		return nil, 0, err
 	} else {
-		n, err := Unmarshal(r, payloadSize, dst)
+		n, err := Unmarshal(r, payloadSize, dst, bss)
 		return dst, n, err
 	}
 }
 
-func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox) (n uint64, err error) {
+func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox, bss BoxStructureStatus) (n uint64, err error) {
 	t := reflect.TypeOf(dst).Elem()
 	v := reflect.ValueOf(dst).Elem()
 
@@ -279,9 +281,10 @@ func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox) (n uint64, err err
 		reader: bitio.NewReadSeeker(r),
 		dst:    dst,
 		size:   payloadSize,
+		bss:    bss,
 	}
 
-	if n, override, err := dst.BeforeUnmarshal(r, payloadSize); err != nil {
+	if n, override, err := dst.BeforeUnmarshal(r, payloadSize, u.bss); err != nil {
 		return 0, err
 	} else if override {
 		return n, nil
@@ -370,16 +373,16 @@ func (u *unmarshaller) unmarshalStruct(t reflect.Type, v reflect.Value) error {
 		if !ok {
 			continue
 		}
-		config, err := readFieldConfig(u.dst, v, f.Name, parseFieldTag(tagStr))
+		config, err := readFieldConfig(u.dst, v, f.Name, parseFieldTag(tagStr), u.bss)
 		if err != nil {
 			return err
 		}
 
-		if !isTargetField(u.dst, config) {
+		if !isTargetField(u.dst, config, u.bss) {
 			continue
 		}
 
-		rbits, override, err := config.cfo.OnReadField(f.Name, u.reader, u.size*8-u.rbits)
+		rbits, override, err := config.cfo.OnReadField(f.Name, u.reader, u.size*8-u.rbits, u.bss)
 		if err != nil {
 			return err
 		}
@@ -418,7 +421,7 @@ func (u *unmarshaller) unmarshalSlice(t reflect.Type, v reflect.Value, config fi
 	elemType := t.Elem()
 
 	length := uint64(config.length)
-	if config.length == lengthUnlimited {
+	if config.length == LengthUnlimited {
 		if config.size != 0 {
 			left := (u.size)*8 - u.rbits
 			if left%uint64(config.size) != 0 {
@@ -446,11 +449,11 @@ func (u *unmarshaller) unmarshalSlice(t reflect.Type, v reflect.Value, config fi
 	} else {
 		slice = reflect.MakeSlice(t, 0, int(length))
 		for i := 0; ; i++ {
-			if config.length != lengthUnlimited && uint(i) >= config.length {
+			if config.length != LengthUnlimited && uint(i) >= config.length {
 				break
 			}
 
-			if config.length == lengthUnlimited && u.rbits >= u.size*8 {
+			if config.length == LengthUnlimited && u.rbits >= u.size*8 {
 				break
 			}
 
@@ -632,7 +635,7 @@ func (u *unmarshaller) tryReadPString(t reflect.Type, v reflect.Value, config fi
 		return false, err
 	}
 	remainingSize -= uint64(plen)
-	if config.cfo.IsPString(config.name, buf, remainingSize) {
+	if config.cfo.IsPString(config.name, buf, remainingSize, u.bss) {
 		u.rbits += uint64(len(buf)+1) * 8
 		v.SetString(string(buf))
 		return true, nil
@@ -684,7 +687,7 @@ type fieldConfig struct {
 	hidden     bool
 }
 
-func readFieldConfig(box IImmutableBox, parent reflect.Value, fieldName string, tag fieldTag) (config fieldConfig, err error) {
+func readFieldConfig(box IImmutableBox, parent reflect.Value, fieldName string, tag fieldTag, bss BoxStructureStatus) (config fieldConfig, err error) {
 	config.name = fieldName
 	cfo, ok := parent.Addr().Interface().(ICustomFieldObject)
 	if ok {
@@ -695,7 +698,7 @@ func readFieldConfig(box IImmutableBox, parent reflect.Value, fieldName string, 
 
 	if val, contained := tag["size"]; contained {
 		if val == "dynamic" {
-			config.size = config.cfo.GetFieldSize(fieldName)
+			config.size = config.cfo.GetFieldSize(fieldName, bss)
 		} else {
 			var size uint64
 			size, err = strconv.ParseUint(val, 10, 32)
@@ -706,10 +709,10 @@ func readFieldConfig(box IImmutableBox, parent reflect.Value, fieldName string, 
 		}
 	}
 
-	config.length = lengthUnlimited
+	config.length = LengthUnlimited
 	if val, contained := tag["len"]; contained {
 		if val == "dynamic" {
-			config.length = config.cfo.GetFieldLength(fieldName)
+			config.length = config.cfo.GetFieldLength(fieldName, bss)
 		} else {
 			var l uint64
 			l, err = strconv.ParseUint(val, 10, 32)
@@ -822,7 +825,7 @@ func parseFieldTag(str string) fieldTag {
 	return tag
 }
 
-func isTargetField(box IImmutableBox, config fieldConfig) bool {
+func isTargetField(box IImmutableBox, config fieldConfig, bss BoxStructureStatus) bool {
 	if box.GetVersion() != anyVersion {
 		if config.version != anyVersion && box.GetVersion() != config.version {
 			return false
@@ -841,7 +844,7 @@ func isTargetField(box IImmutableBox, config fieldConfig) bool {
 		return false
 	}
 
-	if config.optDynamic && !config.cfo.IsOptFieldEnabled(config.name) {
+	if config.optDynamic && !config.cfo.IsOptFieldEnabled(config.name, bss) {
 		return false
 	}
 

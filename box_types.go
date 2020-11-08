@@ -31,7 +31,7 @@ func (*Co64) GetType() BoxType {
 }
 
 // GetFieldLength returns length of dynamic field
-func (co64 *Co64) GetFieldLength(name string) uint {
+func (co64 *Co64) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "ChunkOffset":
 		return uint(co64.EntryCount)
@@ -59,7 +59,7 @@ type Colr struct {
 	Unknown                 []byte  `mp4:"size=8,opt=dynamic"`
 }
 
-func (colr *Colr) IsOptFieldEnabled(name string) bool {
+func (colr *Colr) IsOptFieldEnabled(name string, bss BoxStructureStatus) bool {
 	switch colr.ColourType {
 	case [4]byte{'n', 'c', 'l', 'x'}:
 		switch name {
@@ -111,7 +111,7 @@ func (*Ctts) GetType() BoxType {
 }
 
 // GetFieldLength returns length of dynamic field
-func (ctts *Ctts) GetFieldLength(name string) uint {
+func (ctts *Ctts) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "Entries":
 		return uint(ctts.EntryCount)
@@ -231,7 +231,7 @@ func (*Elst) GetType() BoxType {
 }
 
 // GetFieldSize returns size of dynamic field
-func (elst *Elst) GetFieldSize(name string) uint {
+func (elst *Elst) GetFieldSize(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "Entries":
 		switch elst.GetVersion() {
@@ -253,7 +253,7 @@ func (elst *Elst) GetFieldSize(name string) uint {
 }
 
 // GetFieldLength returns length of dynamic field
-func (elst *Elst) GetFieldLength(name string) uint {
+func (elst *Elst) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "Entries":
 		return uint(elst.EntryCount)
@@ -282,7 +282,7 @@ type Emsg struct {
 	MessageData           []byte `mp4:"size=8,string"`
 }
 
-func (emsg *Emsg) OnReadField(name string, r bitio.ReadSeeker, leftBits uint64) (rbits uint64, override bool, err error) {
+func (emsg *Emsg) OnReadField(name string, r bitio.ReadSeeker, leftBits uint64, bss BoxStructureStatus) (rbits uint64, override bool, err error) {
 	if emsg.GetVersion() == 0 {
 		return
 	}
@@ -306,7 +306,7 @@ func (emsg *Emsg) OnReadField(name string, r bitio.ReadSeeker, leftBits uint64) 
 	}
 }
 
-func (emsg *Emsg) OnWriteField(name string, w bitio.Writer) (wbits uint64, override bool, err error) {
+func (emsg *Emsg) OnWriteField(name string, w bitio.Writer, bss BoxStructureStatus) (wbits uint64, override bool, err error) {
 	if emsg.GetVersion() == 0 {
 		return
 	}
@@ -371,7 +371,7 @@ type Descriptor struct {
 }
 
 // GetFieldLength returns length of dynamic field
-func (ds *Descriptor) GetFieldLength(name string) uint {
+func (ds *Descriptor) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "Data":
 		return uint(ds.Size)
@@ -379,7 +379,7 @@ func (ds *Descriptor) GetFieldLength(name string) uint {
 	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=esds fieldName=%s", name))
 }
 
-func (ds *Descriptor) IsOptFieldEnabled(name string) bool {
+func (ds *Descriptor) IsOptFieldEnabled(name string, bss BoxStructureStatus) bool {
 	switch ds.Tag {
 	case ESDescrTag:
 		return name == "ESDescriptor"
@@ -391,7 +391,7 @@ func (ds *Descriptor) IsOptFieldEnabled(name string) bool {
 }
 
 // StringifyField returns field value as string
-func (ds *Descriptor) StringifyField(name string, indent string, depth int) (string, bool) {
+func (ds *Descriptor) StringifyField(name string, indent string, depth int, bss BoxStructureStatus) (string, bool) {
 	switch name {
 	case "Tag":
 		switch ds.Tag {
@@ -424,7 +424,7 @@ type ESDescriptor struct {
 	OCRESID              uint16 `mp4:"size=16,opt=dynamic"`
 }
 
-func (esds *ESDescriptor) GetFieldLength(name string) uint {
+func (esds *ESDescriptor) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "URLString":
 		return uint(esds.URLLength)
@@ -432,7 +432,7 @@ func (esds *ESDescriptor) GetFieldLength(name string) uint {
 	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=ESDescriptor fieldName=%s", name))
 }
 
-func (esds *ESDescriptor) IsOptFieldEnabled(name string) bool {
+func (esds *ESDescriptor) IsOptFieldEnabled(name string, bss BoxStructureStatus) bool {
 	switch name {
 	case "DependsOnESID":
 		return esds.StreamDependenceFlag
@@ -491,6 +491,8 @@ func init() {
 	AddBoxDef(&Ftyp{})
 }
 
+func CompatibleBrandQT() [4]byte { return [4]byte{'q', 't', ' ', ' '} }
+
 // Ftyp is ISOBMFF ftyp box type
 type Ftyp struct {
 	Box
@@ -534,7 +536,7 @@ func (*Hdlr) GetType() BoxType {
 	return BoxTypeHdlr()
 }
 
-func (hdlr *Hdlr) IsPString(name string, bytes []byte, remainingSize uint64) bool {
+func (hdlr *Hdlr) IsPString(name string, bytes []byte, remainingSize uint64, bss BoxStructureStatus) bool {
 	switch name {
 	case "Name":
 		return remainingSize == 0 && hdlr.PreDefined != 0
@@ -664,7 +666,7 @@ func (*Meta) GetType() BoxType {
 	return BoxTypeMeta()
 }
 
-func (meta *Meta) BeforeUnmarshal(r io.ReadSeeker, size uint64) (n uint64, override bool, err error) {
+func (meta *Meta) BeforeUnmarshal(r io.ReadSeeker, size uint64, bss BoxStructureStatus) (n uint64, override bool, err error) {
 	// for Apple Quick Time
 	buf := make([]byte, 4)
 	if _, err := io.ReadFull(r, buf); err != nil {
@@ -842,7 +844,7 @@ func (*Mvhd) GetType() BoxType {
 }
 
 // StringifyField returns field value as string
-func (mvhd *Mvhd) StringifyField(name string, indent string, depth int) (string, bool) {
+func (mvhd *Mvhd) StringifyField(name string, indent string, depth int, bss BoxStructureStatus) (string, bool) {
 	switch name {
 	case "Rate":
 		return strconv.FormatFloat(mvhd.GetRate(), 'f', -1, 32), true
@@ -884,7 +886,7 @@ type PsshKID struct {
 }
 
 // GetFieldLength returns length of dynamic field
-func (pssh *Pssh) GetFieldLength(name string) uint {
+func (pssh *Pssh) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "KIDs":
 		return uint(pssh.KIDCount)
@@ -895,7 +897,7 @@ func (pssh *Pssh) GetFieldLength(name string) uint {
 }
 
 // StringifyField returns field value as string
-func (pssh *Pssh) StringifyField(name string, indent string, depth int) (string, bool) {
+func (pssh *Pssh) StringifyField(name string, indent string, depth int, bss BoxStructureStatus) (string, bool) {
 	switch name {
 	case "SystemID":
 		buf := bytes.NewBuffer(nil)
@@ -967,7 +969,7 @@ type VisualSampleEntry struct {
 }
 
 // StringifyField returns field value as string
-func (vse *VisualSampleEntry) StringifyField(name string, indent string, depth int) (string, bool) {
+func (vse *VisualSampleEntry) StringifyField(name string, indent string, depth int, bss BoxStructureStatus) (string, bool) {
 	switch name {
 	case "Compressorname":
 		if vse.Compressorname[0] <= 31 {
@@ -980,14 +982,38 @@ func (vse *VisualSampleEntry) StringifyField(name string, indent string, depth i
 }
 
 type AudioSampleEntry struct {
-	SampleEntry  `mp4:"extend"`
-	EntryVersion uint16    `mp4:"size=16"`
-	Reserved     [3]uint16 `mp4:"size=16,const=0"`
-	ChannelCount uint16    `mp4:"size=16"`
-	SampleSize   uint16    `mp4:"size=16"`
-	PreDefined   uint16    `mp4:"size=16"`
-	Reserved2    uint16    `mp4:"size=16,const=0"`
-	SampleRate   uint32    `mp4:"size=32"`
+	SampleEntry   `mp4:"extend,opt=dynamic"`
+	EntryVersion  uint16    `mp4:"size=16,opt=dynamic"`
+	Reserved      [3]uint16 `mp4:"size=16,opt=dynamic,const=0"`
+	ChannelCount  uint16    `mp4:"size=16,opt=dynamic"`
+	SampleSize    uint16    `mp4:"size=16,opt=dynamic"`
+	PreDefined    uint16    `mp4:"size=16,opt=dynamic"`
+	Reserved2     uint16    `mp4:"size=16,opt=dynamic,const=0"`
+	SampleRate    uint32    `mp4:"size=32,opt=dynamic"`
+	QuickTimeData []byte    `mp4:"size=8,opt=dynamic,len=dynamic"`
+}
+
+func (ase *AudioSampleEntry) IsOptFieldEnabled(name string, bss BoxStructureStatus) bool {
+	if name == "QuickTimeData" {
+		return bss.IsQuickTimeCompatible && (bss.UnderWave || ase.EntryVersion == 1 || ase.EntryVersion == 2)
+	}
+	if bss.IsQuickTimeCompatible && bss.UnderWave {
+		return false
+	}
+	return true
+}
+
+func (ase *AudioSampleEntry) GetFieldLength(name string, bss BoxStructureStatus) uint {
+	if name == "QuickTimeData" && bss.IsQuickTimeCompatible {
+		if bss.UnderWave {
+			return LengthUnlimited
+		} else if ase.EntryVersion == 1 {
+			return 16
+		} else if ase.EntryVersion == 2 {
+			return 36
+		}
+	}
+	return 0
 }
 
 const (
@@ -1023,7 +1049,7 @@ type AVCDecoderConfiguration struct {
 	SequenceParameterSetsExt     []AVCParameterSet `mp4:"len=dynamic,opt=dynamic"`
 }
 
-func (avcc *AVCDecoderConfiguration) GetFieldLength(name string) uint {
+func (avcc *AVCDecoderConfiguration) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "SequenceParameterSets":
 		return uint(avcc.NumOfSequenceParameterSets)
@@ -1035,7 +1061,7 @@ func (avcc *AVCDecoderConfiguration) GetFieldLength(name string) uint {
 	return 0
 }
 
-func (avcc *AVCDecoderConfiguration) IsOptFieldEnabled(name string) bool {
+func (avcc *AVCDecoderConfiguration) IsOptFieldEnabled(name string, bss BoxStructureStatus) bool {
 	switch name {
 	case "Reserved3",
 		"ChromaFormat",
@@ -1050,7 +1076,7 @@ func (avcc *AVCDecoderConfiguration) IsOptFieldEnabled(name string) bool {
 	return false
 }
 
-func (avcc *AVCDecoderConfiguration) OnReadField(name string, r bitio.ReadSeeker, leftBits uint64) (rbits uint64, override bool, err error) {
+func (avcc *AVCDecoderConfiguration) OnReadField(name string, r bitio.ReadSeeker, leftBits uint64, bss BoxStructureStatus) (rbits uint64, override bool, err error) {
 	if name == "HighProfileFieldsEnabled" {
 		avcc.HighProfileFieldsEnabled = leftBits >= 32 &&
 			(avcc.Profile == AVCHighProfile ||
@@ -1062,7 +1088,7 @@ func (avcc *AVCDecoderConfiguration) OnReadField(name string, r bitio.ReadSeeker
 	return 0, false, nil
 }
 
-func (avcc *AVCDecoderConfiguration) OnWriteField(name string, w bitio.Writer) (wbits uint64, override bool, err error) {
+func (avcc *AVCDecoderConfiguration) OnWriteField(name string, w bitio.Writer, bss BoxStructureStatus) (wbits uint64, override bool, err error) {
 	if name == "HighProfileFieldsEnabled" {
 		if avcc.HighProfileFieldsEnabled &&
 			avcc.Profile != AVCHighProfile &&
@@ -1082,7 +1108,7 @@ type AVCParameterSet struct {
 	NALUnit []byte `mp4:"size=8,len=dynamic"`
 }
 
-func (s *AVCParameterSet) GetFieldLength(name string) uint {
+func (s *AVCParameterSet) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "NALUnit":
 		return uint(s.Length)
@@ -1117,7 +1143,7 @@ type SbgpEntry struct {
 	GroupDescriptionIndex uint32 `mp4:"size=32"`
 }
 
-func (sbgp *Sbgp) GetFieldLength(name string) uint {
+func (sbgp *Sbgp) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "Entries":
 		return uint(sbgp.EntryCount)
@@ -1213,7 +1239,7 @@ type TemporalLevelEntryL struct {
 	TemporalLevelEntry `mp4:"extend"`
 }
 
-func (sgpd *Sgpd) GetFieldSize(name string) uint {
+func (sgpd *Sgpd) GetFieldSize(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "AlternativeStartupEntries":
 		return uint(sgpd.DefaultLength * 8)
@@ -1221,7 +1247,7 @@ func (sgpd *Sgpd) GetFieldSize(name string) uint {
 	return 0
 }
 
-func (sgpd *Sgpd) GetFieldLength(name string) uint {
+func (sgpd *Sgpd) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "RollDistances", "RollDistancesL",
 		"AlternativeStartupEntries", "AlternativeStartupEntriesL",
@@ -1232,7 +1258,7 @@ func (sgpd *Sgpd) GetFieldLength(name string) uint {
 	return 0
 }
 
-func (sgpd *Sgpd) IsOptFieldEnabled(name string) bool {
+func (sgpd *Sgpd) IsOptFieldEnabled(name string, bss BoxStructureStatus) bool {
 	noDefaultLength := sgpd.Version == 1 && sgpd.DefaultLength == 0
 	rollDistances := sgpd.GroupingType == [4]byte{'r', 'o', 'l', 'l'} ||
 		sgpd.GroupingType == [4]byte{'p', 'r', 'o', 'l'}
@@ -1270,7 +1296,7 @@ func (*Sgpd) GetType() BoxType {
 	return BoxTypeSgpd()
 }
 
-func (entry *AlternativeStartupEntry) GetFieldLength(name string) uint {
+func (entry *AlternativeStartupEntry) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "SampleOffset":
 		return uint(entry.RollCount)
@@ -1278,7 +1304,7 @@ func (entry *AlternativeStartupEntry) GetFieldLength(name string) uint {
 	return 0
 }
 
-func (entry *AlternativeStartupEntryL) GetFieldSize(name string) uint {
+func (entry *AlternativeStartupEntryL) GetFieldSize(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "AlternativeStartupEntry":
 		return uint(entry.DescriptionLength * 8)
@@ -1320,7 +1346,7 @@ func (*Sidx) GetType() BoxType {
 	return BoxTypeSidx()
 }
 
-func (sidx *Sidx) GetFieldLength(name string) uint {
+func (sidx *Sidx) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "References":
 		return uint(sidx.ReferenceCount)
@@ -1363,7 +1389,7 @@ func (*Smhd) GetType() BoxType {
 }
 
 // StringifyField returns field value as string
-func (smhd *Smhd) StringifyField(name string, indent string, depth int) (string, bool) {
+func (smhd *Smhd) StringifyField(name string, indent string, depth int, bss BoxStructureStatus) (string, bool) {
 	switch name {
 	case "Balance":
 		return strconv.FormatFloat(float64(smhd.GetBalance()), 'f', -1, 32), true
@@ -1421,7 +1447,7 @@ func (*Stco) GetType() BoxType {
 }
 
 // GetFieldLength returns length of dynamic field
-func (stco *Stco) GetFieldLength(name string) uint {
+func (stco *Stco) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "ChunkOffset":
 		return uint(stco.EntryCount)
@@ -1456,7 +1482,7 @@ func (*Stsc) GetType() BoxType {
 }
 
 // GetFieldLength returns length of dynamic field
-func (stsc *Stsc) GetFieldLength(name string) uint {
+func (stsc *Stsc) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "Entries":
 		return uint(stsc.EntryCount)
@@ -1503,7 +1529,7 @@ func (*Stss) GetType() BoxType {
 }
 
 // GetFieldLength returns length of dynamic field
-func (stss *Stss) GetFieldLength(name string) uint {
+func (stss *Stss) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "SampleNumber":
 		return uint(stss.EntryCount)
@@ -1533,7 +1559,7 @@ func (*Stsz) GetType() BoxType {
 }
 
 // GetFieldLength returns length of dynamic field
-func (stsz *Stsz) GetFieldLength(name string) uint {
+func (stsz *Stsz) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "EntrySize":
 		if stsz.SampleSize == 0 {
@@ -1571,7 +1597,7 @@ func (*Stts) GetType() BoxType {
 }
 
 // GetFieldLength returns length of dynamic field
-func (stts *Stts) GetFieldLength(name string) uint {
+func (stts *Stts) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "Entries":
 		return uint(stts.EntryCount)
@@ -1690,7 +1716,7 @@ func (*Tfra) GetType() BoxType {
 }
 
 // GetFieldSize returns size of dynamic field
-func (tfra *Tfra) GetFieldSize(name string) uint {
+func (tfra *Tfra) GetFieldSize(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "TrafNumber":
 		return (uint(tfra.LengthSizeOfTrafNum) + 1) * 8
@@ -1720,7 +1746,7 @@ func (tfra *Tfra) GetFieldSize(name string) uint {
 }
 
 // GetFieldLength returns length of dynamic field
-func (tfra *Tfra) GetFieldLength(name string) uint {
+func (tfra *Tfra) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "Entries":
 		return uint(tfra.NumberOfEntry)
@@ -1768,7 +1794,7 @@ func (*Tkhd) GetType() BoxType {
 }
 
 // StringifyField returns field value as string
-func (tkhd *Tkhd) StringifyField(name string, indent string, depth int) (string, bool) {
+func (tkhd *Tkhd) StringifyField(name string, indent string, depth int, bss BoxStructureStatus) (string, bool) {
 	switch name {
 	case "Width":
 		return strconv.FormatFloat(tkhd.GetWidth(), 'f', -1, 32), true
@@ -1891,7 +1917,7 @@ func (*Trun) GetType() BoxType {
 }
 
 // GetFieldSize returns size of dynamic field
-func (trun *Trun) GetFieldSize(name string) uint {
+func (trun *Trun) GetFieldSize(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "Entries":
 		var size uint
@@ -1914,7 +1940,7 @@ func (trun *Trun) GetFieldSize(name string) uint {
 }
 
 // GetFieldLength returns length of dynamic field
-func (trun *Trun) GetFieldLength(name string) uint {
+func (trun *Trun) GetFieldLength(name string, bss BoxStructureStatus) uint {
 	switch name {
 	case "Entries":
 		return uint(trun.SampleCount)
@@ -1958,4 +1984,22 @@ type Vmhd struct {
 // GetType returns the BoxType
 func (*Vmhd) GetType() BoxType {
 	return BoxTypeVmhd()
+}
+
+/*************************** wave ****************************/
+
+func BoxTypeWave() BoxType { return StrToBoxType("wave") }
+
+func init() {
+	AddBoxDef(&Wave{})
+}
+
+// Wave is QuickTime wave box
+type Wave struct {
+	Box
+}
+
+// GetType returns the BoxType
+func (*Wave) GetType() BoxType {
+	return BoxTypeWave()
 }
