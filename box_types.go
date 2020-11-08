@@ -56,22 +56,27 @@ type Colr struct {
 	FullRangeFlag           bool    `mp4:"size=1,opt=dynamic"`
 	Reserved                uint8   `mp4:"size=7,opt=dynamic"`
 	Profile                 []byte  `mp4:"size=8,opt=dynamic"`
+	Unknown                 []byte  `mp4:"size=8,opt=dynamic"`
 }
 
 func (colr *Colr) IsOptFieldEnabled(name string) bool {
-	switch name {
-	case "ColourType",
-		"ColourPrimaries",
-		"TransferCharacteristics",
-		"MatrixCoefficients",
-		"FullRangeFlag",
-		"Reserved":
-		return colr.ColourType == [4]byte{'n', 'c', 'l', 'x'}
-	case "Profile":
-		return colr.ColourType == [4]byte{'r', 'I', 'C', 'C'} ||
-			colr.ColourType == [4]byte{'p', 'r', 'o', 'f'}
+	switch colr.ColourType {
+	case [4]byte{'n', 'c', 'l', 'x'}:
+		switch name {
+		case "ColourType",
+			"ColourPrimaries",
+			"TransferCharacteristics",
+			"MatrixCoefficients",
+			"FullRangeFlag",
+			"Reserved":
+			return true
+		default:
+			return false
+		}
+	case [4]byte{'r', 'I', 'C', 'C'}, [4]byte{'p', 'r', 'o', 'f'}:
+		return name == "Profile"
 	default:
-		return false
+		return name == "Unknown"
 	}
 }
 

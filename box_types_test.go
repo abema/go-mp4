@@ -76,6 +76,19 @@ func TestBoxTypes(t *testing.T) {
 			str: `ColourType="rICC" Profile=[0x12, 0x34, 0x56, 0x78, 0xab]`,
 		},
 		{
+			name: "colr: nclc",
+			src: &Colr{
+				ColourType: [4]byte{'n', 'c', 'l', 'c'},
+				Unknown:    []byte{0x01, 0x23, 0x45},
+			},
+			dst: &Colr{},
+			bin: []byte{
+				'n', 'c', 'l', 'c',
+				0x01, 0x23, 0x45,
+			},
+			str: `ColourType="nclc" Unknown=[0x1, 0x23, 0x45]`,
+		},
+		{
 			name: "ctts: version 0",
 			src: &Ctts{
 				FullBox: FullBox{
