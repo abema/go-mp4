@@ -12,13 +12,14 @@ type stringfier struct {
 	buf    *bytes.Buffer
 	src    IImmutableBox
 	indent string
+	bss    BoxStructureStatus
 }
 
-func Stringify(src IImmutableBox) (string, error) {
-	return StringifyWithIndent(src, "")
+func Stringify(src IImmutableBox, bss BoxStructureStatus) (string, error) {
+	return StringifyWithIndent(src, "", bss)
 }
 
-func StringifyWithIndent(src IImmutableBox, indent string) (string, error) {
+func StringifyWithIndent(src IImmutableBox, indent string, bss BoxStructureStatus) (string, error) {
 	t := reflect.TypeOf(src).Elem()
 	v := reflect.ValueOf(src).Elem()
 
@@ -26,6 +27,7 @@ func StringifyWithIndent(src IImmutableBox, indent string) (string, error) {
 		buf:    bytes.NewBuffer(nil),
 		src:    src,
 		indent: indent,
+		bss:    bss,
 	}
 
 	err := m.stringifyStruct(t, v, 0, true)
@@ -81,12 +83,12 @@ func (m *stringfier) stringifyStruct(t reflect.Type, v reflect.Value, depth int,
 		if !ok {
 			continue
 		}
-		config, err := readFieldConfig(m.src, v, f.Name, parseFieldTag(tagStr))
+		config, err := readFieldConfig(m.src, v, f.Name, parseFieldTag(tagStr), m.bss)
 		if err != nil {
 			return err
 		}
 
-		if !isTargetField(m.src, config) {
+		if !isTargetField(m.src, config, m.bss) {
 			continue
 		}
 
@@ -104,7 +106,7 @@ func (m *stringfier) stringifyStruct(t reflect.Type, v reflect.Value, depth int,
 			m.buf.WriteString("=")
 		}
 
-		str, ok := config.cfo.StringifyField(f.Name, m.indent, depth+1)
+		str, ok := config.cfo.StringifyField(f.Name, m.indent, depth+1, m.bss)
 		if ok {
 			m.buf.WriteString(str)
 			if !config.extend && m.indent != "" {
@@ -174,7 +176,7 @@ func (m *stringfier) stringifySlice(t reflect.Type, v reflect.Value, config fiel
 	m.buf.WriteString(begin)
 
 	for i := 0; i < v.Len(); i++ {
-		if config.length != lengthUnlimited && uint(i) >= config.length {
+		if config.length != LengthUnlimited && uint(i) >= config.length {
 			break
 		}
 

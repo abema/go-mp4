@@ -39,7 +39,7 @@ func ReadBoxStructure(r io.ReadSeeker, handler ReadHandler, params ...interface{
 	if _, err := r.Seek(0, io.SeekStart); err != nil {
 		return nil, err
 	}
-	return readBoxStructure(r, 0, true, nil, handler, params)
+	return readBoxStructure(r, 0, true, nil, BoxStructureStatus{}, handler, params)
 }
 
 func ReadBoxStructureFromInternal(r io.ReadSeeker, bi *BoxInfo, handler ReadHandler, params ...interface{}) (interface{}, error) {
@@ -47,8 +47,28 @@ func ReadBoxStructureFromInternal(r io.ReadSeeker, bi *BoxInfo, handler ReadHand
 }
 
 func readBoxStructureFromInternal(r io.ReadSeeker, bi *BoxInfo, path BoxPath, handler ReadHandler, params []interface{}) (interface{}, error) {
-	if _, err := r.Seek(int64(bi.Offset+bi.HeaderSize), io.SeekCurrent); err != nil {
+	if _, err := bi.SeekToPayload(r); err != nil {
 		return nil, err
+	}
+
+	// check comatible-brands
+	if len(path) == 0 && bi.Type == BoxTypeFtyp() {
+		var ftyp Ftyp
+		if _, err := Unmarshal(r, bi.Size-bi.HeaderSize, &ftyp, bi.BoxStructureStatus); err != nil {
+			return nil, err
+		}
+		for _, cb := range ftyp.CompatibleBrands {
+			if cb.CompatibleBrand == CompatibleBrandQT() {
+				bi.IsQuickTimeCompatible = true
+			}
+		}
+		if _, err := bi.SeekToPayload(r); err != nil {
+			return nil, err
+		}
+	}
+
+	if bi.Type == BoxTypeWave() {
+		bi.UnderWave = true
 	}
 
 	newPath := make(BoxPath, len(path)+1)
@@ -68,7 +88,7 @@ func readBoxStructureFromInternal(r io.ReadSeeker, bi *BoxInfo, path BoxPath, ha
 			return nil, 0, err
 		}
 
-		if box, n, err := UnmarshalAny(r, bi.Type, bi.Size-bi.HeaderSize); err != nil {
+		if box, n, err := UnmarshalAny(r, bi.Type, bi.Size-bi.HeaderSize, bi.BoxStructureStatus); err != nil {
 			return nil, 0, err
 		} else {
 			childrenOffset = bi.Offset + bi.HeaderSize + n
@@ -94,7 +114,7 @@ func readBoxStructureFromInternal(r io.ReadSeeker, bi *BoxInfo, path BoxPath, ha
 				return nil, err
 			}
 
-			if _, n, err := UnmarshalAny(r, bi.Type, bi.Size-bi.HeaderSize); err != nil {
+			if _, n, err := UnmarshalAny(r, bi.Type, bi.Size-bi.HeaderSize, bi.BoxStructureStatus); err != nil {
 				return nil, err
 			} else {
 				childrenOffset = bi.Offset + bi.HeaderSize + n
@@ -106,7 +126,7 @@ func readBoxStructureFromInternal(r io.ReadSeeker, bi *BoxInfo, path BoxPath, ha
 		}
 
 		childrenSize := bi.Offset + bi.Size - childrenOffset
-		return readBoxStructure(r, childrenSize, false, newPath, handler, params)
+		return readBoxStructure(r, childrenSize, false, newPath, bi.BoxStructureStatus, handler, params)
 	}
 
 	if val, err := handler(h); err != nil {
@@ -118,7 +138,7 @@ func readBoxStructureFromInternal(r io.ReadSeeker, bi *BoxInfo, path BoxPath, ha
 	}
 }
 
-func readBoxStructure(r io.ReadSeeker, totalSize uint64, isRoot bool, path BoxPath, handler ReadHandler, params []interface{}) ([]interface{}, error) {
+func readBoxStructure(r io.ReadSeeker, totalSize uint64, isRoot bool, path BoxPath, bss BoxStructureStatus, handler ReadHandler, params []interface{}) ([]interface{}, error) {
 	vals := make([]interface{}, 0, 8)
 
 	for isRoot || totalSize != 0 {
@@ -134,11 +154,17 @@ func readBoxStructure(r io.ReadSeeker, totalSize uint64, isRoot bool, path BoxPa
 		}
 		totalSize -= bi.Size
 
+		bi.BoxStructureStatus = bss
+
 		val, err := readBoxStructureFromInternal(r, bi, path, handler, params)
 		if err != nil {
 			return nil, err
 		}
 		vals = append(vals, val)
+
+		if bi.IsQuickTimeCompatible {
+			bss.IsQuickTimeCompatible = true
+		}
 	}
 
 	if totalSize != 0 {
