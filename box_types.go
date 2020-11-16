@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strconv"
 
 	"github.com/abema/go-mp4/bitio"
 	"github.com/abema/go-mp4/util"
@@ -847,7 +846,7 @@ func (*Mvhd) GetType() BoxType {
 func (mvhd *Mvhd) StringifyField(name string, indent string, depth int, bss BoxStructureStatus) (string, bool) {
 	switch name {
 	case "Rate":
-		return strconv.FormatFloat(mvhd.GetRate(), 'f', -1, 32), true
+		return util.FormatSignedFixedFloat1616(mvhd.Rate), true
 	default:
 		return "", false
 	}
@@ -1392,7 +1391,7 @@ func (*Smhd) GetType() BoxType {
 func (smhd *Smhd) StringifyField(name string, indent string, depth int, bss BoxStructureStatus) (string, bool) {
 	switch name {
 	case "Balance":
-		return strconv.FormatFloat(float64(smhd.GetBalance()), 'f', -1, 32), true
+		return util.FormatSignedFixedFloat88(smhd.Balance), true
 	default:
 		return "", false
 	}
@@ -1797,9 +1796,9 @@ func (*Tkhd) GetType() BoxType {
 func (tkhd *Tkhd) StringifyField(name string, indent string, depth int, bss BoxStructureStatus) (string, bool) {
 	switch name {
 	case "Width":
-		return strconv.FormatFloat(tkhd.GetWidth(), 'f', -1, 32), true
+		return util.FormatUnsignedFixedFloat1616(tkhd.Width), true
 	case "Height":
-		return strconv.FormatFloat(tkhd.GetHeight(), 'f', -1, 32), true
+		return util.FormatUnsignedFixedFloat1616(tkhd.Height), true
 	default:
 		return "", false
 	}
