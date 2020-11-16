@@ -748,7 +748,7 @@ func TestBoxTypes(t *testing.T) {
 				`ModificationTimeV0=591751049 ` +
 				`Timescale=1164413355 ` +
 				`DurationV0=1737075661 ` +
-				`Rate=-291.27112 ` +
+				`Rate=-291.27110 ` +
 				`Volume=291 ` +
 				`Matrix=[0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0] ` +
 				`PreDefined=[0, 0, 0, 0, 0, 0] ` +
@@ -795,7 +795,7 @@ func TestBoxTypes(t *testing.T) {
 				`ModificationTimeV1=2541551405711093505 ` +
 				`Timescale=2309737967 ` +
 				`DurationV1=5001117282205630755 ` +
-				`Rate=-291.27112 ` +
+				`Rate=-291.27110 ` +
 				`Volume=291 ` +
 				`Matrix=[0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0] ` +
 				`PreDefined=[0, 0, 0, 0, 0, 0] ` +
@@ -1823,7 +1823,7 @@ func TestBoxTypes(t *testing.T) {
 				0x01, 0x23, // balance
 				0x00, 0x00, // reserved
 			},
-			str: `Version=0 Flags=0x000000 Balance=1.1367188`,
+			str: `Version=0 Flags=0x000000 Balance=1.137`,
 		},
 		{
 			name: "stbl",
