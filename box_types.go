@@ -1170,6 +1170,30 @@ func (*Schi) GetType() BoxType {
 	return BoxTypeSchi()
 }
 
+/*************************** sdtp ****************************/
+
+func BoxTypeSdtp() BoxType { return StrToBoxType("sdtp") }
+
+func init() {
+	AddBoxDef(&Sdtp{}, 0)
+}
+
+type Sdtp struct {
+	FullBox `mp4:"extend"`
+	Samples []SdtpSampleElem `mp4:"size=8"`
+}
+
+type SdtpSampleElem struct {
+	IsLeading           uint8 `mp4:"size=2"`
+	SampleDependsOn     uint8 `mp4:"size=2"`
+	SampleIsDependedOon uint8 `mp4:"size=2"`
+	SampleHasRedundancy uint8 `mp4:"size=2"`
+}
+
+func (*Sdtp) GetType() BoxType {
+	return BoxTypeSdtp()
+}
+
 /*************************** sgpd ****************************/
 
 func BoxTypeSgpd() BoxType { return StrToBoxType("sgpd") }
