@@ -1371,6 +1371,32 @@ func TestBoxTypes(t *testing.T) {
 			str:  ``,
 		},
 		{
+			name: "sdtp",
+			src: &Sdtp{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				Samples: []SdtpSampleElem{
+					{IsLeading: 0, SampleDependsOn: 0, SampleIsDependedOon: 0, SampleHasRedundancy: 0},
+					{IsLeading: 0, SampleDependsOn: 1, SampleIsDependedOon: 2, SampleHasRedundancy: 3},
+					{IsLeading: 3, SampleDependsOn: 2, SampleIsDependedOon: 1, SampleHasRedundancy: 0},
+				},
+			},
+			dst: &Sdtp{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x00, // 0<<6 + 0<<4 + 0<<2 + 0,
+				0x1b, // 0<<6 + 1<<4 + 2<<2 + 3,
+				0xe4, // 3<<6 + 2<<4 + 1<<2 + 0,
+			},
+			str: `Version=0 Flags=0x000000 Samples=[` +
+				`{IsLeading=0x0 SampleDependsOn=0x0 SampleIsDependedOon=0x0 SampleHasRedundancy=0x0}, ` +
+				`{IsLeading=0x0 SampleDependsOn=0x1 SampleIsDependedOon=0x2 SampleHasRedundancy=0x3}, ` +
+				`{IsLeading=0x3 SampleDependsOn=0x2 SampleIsDependedOon=0x1 SampleHasRedundancy=0x0}]`,
+		},
+		{
 			name: "sgpd: version 1 roll",
 			src: &Sgpd{
 				FullBox: FullBox{
