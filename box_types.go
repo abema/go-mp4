@@ -2123,8 +2123,20 @@ func (trun *Trun) GetFieldLength(name string, ctx Context) uint {
 
 func BoxTypeUdta() BoxType { return StrToBoxType("udta") }
 
+var udta3GppMetaBoxTypes = []BoxType{
+	StrToBoxType("titl"),
+	StrToBoxType("dscp"),
+	StrToBoxType("cprt"),
+	StrToBoxType("perf"),
+	StrToBoxType("auth"),
+	StrToBoxType("gnre"),
+}
+
 func init() {
 	AddBoxDef(&Udta{})
+	for _, bt := range udta3GppMetaBoxTypes {
+		AddAnyTypeBoxDefEx(&Udta3GppString{}, bt, isUnderUdta, 0)
+	}
 }
 
 // Udta is ISOBMFF udta box type
@@ -2135,6 +2147,18 @@ type Udta struct {
 // GetType returns the BoxType
 func (*Udta) GetType() BoxType {
 	return BoxTypeUdta()
+}
+
+type Udta3GppString struct {
+	AnyTypeBox
+	FullBox  `mp4:"extend"`
+	Pad      bool    `mp4:"size=1,hidden"`
+	Language [3]byte `mp4:"size=5,iso639-2"` // ISO-639-2/T language code
+	Data     []byte  `mp4:"size=8,string"`
+}
+
+func isUnderUdta(ctx Context) bool {
+	return ctx.UnderUdta
 }
 
 /*************************** vmhd ****************************/

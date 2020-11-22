@@ -2561,6 +2561,25 @@ func TestBoxTypes(t *testing.T) {
 			str:  ``,
 		},
 		{
+			name: "udta 3gpp string",
+			src: &Udta3GppString{
+				AnyTypeBox: AnyTypeBox{Type: StrToBoxType("titl")},
+				Language:   [3]byte{0x5, 0xe, 0x7},
+				Data:       []byte("SING"),
+			},
+			dst: &Udta3GppString{
+				AnyTypeBox: AnyTypeBox{Type: StrToBoxType("titl")},
+			},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x15, 0xc7, // language
+				0x53, 0x49, 0x4e, 0x47, // data
+			},
+			str: `Version=0 Flags=0x000000 Language="eng" Data="SING"`,
+			ctx: Context{UnderUdta: true},
+		},
+		{
 			name: "vmhd",
 			src: &Vmhd{
 				FullBox: FullBox{
