@@ -77,6 +77,8 @@ func readBoxStructureFromInternal(r io.ReadSeeker, bi *BoxInfo, path BoxPath, ha
 		if bi.Type == StrToBoxType("----") {
 			ctx.UnderIlstFreeMeta = true
 		}
+	} else if bi.Type == BoxTypeUdta() {
+		ctx.UnderUdta = true
 	}
 
 	newPath := make(BoxPath, len(path)+1)

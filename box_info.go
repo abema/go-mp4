@@ -22,6 +22,9 @@ type Context struct {
 
 	// UnderIlstFreeMeta represents whether current box is under "----" box.
 	UnderIlstFreeMeta bool
+
+	// UnderUdta represents whether current box is under the udta box.
+	UnderUdta bool
 }
 
 // BoxInfo has common infomations of box
