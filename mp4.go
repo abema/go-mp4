@@ -52,32 +52,59 @@ func BoxTypeAny() BoxType {
 type boxDef struct {
 	dataType reflect.Type
 	versions []uint8
+	isTarget func(Context) bool
 }
 
-var boxMap = make(map[BoxType]boxDef, 64)
+var boxMap = make(map[BoxType][]boxDef, 64)
 
 func AddBoxDef(payload IBox, versions ...uint8) {
-	boxMap[payload.GetType()] = boxDef{
+	boxMap[payload.GetType()] = append(boxMap[payload.GetType()], boxDef{
 		dataType: reflect.TypeOf(payload).Elem(),
 		versions: versions,
-	}
+	})
+}
+
+func AddBoxDefEx(payload IBox, isTarget func(Context) bool, versions ...uint8) {
+	boxMap[payload.GetType()] = append(boxMap[payload.GetType()], boxDef{
+		dataType: reflect.TypeOf(payload).Elem(),
+		versions: versions,
+		isTarget: isTarget,
+	})
 }
 
 func AddAnyTypeBoxDef(payload IAnyType, boxType BoxType, versions ...uint8) {
-	boxMap[boxType] = boxDef{
+	boxMap[boxType] = append(boxMap[boxType], boxDef{
 		dataType: reflect.TypeOf(payload).Elem(),
 		versions: versions,
+	})
+}
+
+func AddAnyTypeBoxDefEx(payload IAnyType, boxType BoxType, isTarget func(Context) bool, versions ...uint8) {
+	boxMap[boxType] = append(boxMap[boxType], boxDef{
+		dataType: reflect.TypeOf(payload).Elem(),
+		versions: versions,
+		isTarget: isTarget,
+	})
+}
+
+func (boxType BoxType) getBoxDef(ctx Context) *boxDef {
+	boxDefs := boxMap[boxType]
+	for i := len(boxDefs) - 1; i >= 0; i-- {
+		boxDef := &boxDefs[i]
+		if boxDef.isTarget == nil || boxDef.isTarget(ctx) {
+			return boxDef
+		}
 	}
+	return nil
 }
 
-func (boxType BoxType) IsSupported() bool {
-	_, ok := boxMap[boxType]
-	return ok
+func (boxType BoxType) IsSupported(ctx Context) bool {
+	return boxType.getBoxDef(ctx) != nil
 }
 
-func (boxType BoxType) New() (IBox, error) {
-	boxDef, ok := boxMap[boxType]
-	if !ok {
+func (boxType BoxType) New(ctx Context) (IBox, error) {
+	boxDef := boxType.getBoxDef(ctx)
+	if boxDef == nil {
 		return nil, ErrBoxInfoNotFound
 	}
 
@@ -94,17 +121,17 @@ func (boxType BoxType) New() (IBox, error) {
 	return box, nil
 }
 
-func (boxType BoxType) GetSupportedVersions() ([]uint8, error) {
-	boxDef, ok := boxMap[boxType]
-	if !ok {
+func (boxType BoxType) GetSupportedVersions(ctx Context) ([]uint8, error) {
+	boxDef := boxType.getBoxDef(ctx)
+	if boxDef == nil {
 		return nil, ErrBoxInfoNotFound
 	}
 	return boxDef.versions, nil
 }
 
-func (boxType BoxType) IsSupportedVersion(ver uint8) bool {
-	boxDef, ok := boxMap[boxType]
-	if !ok {
+func (boxType BoxType) IsSupportedVersion(ver uint8, ctx Context) bool {
+	boxDef := boxType.getBoxDef(ctx)
+	if boxDef == nil {
 		return false
 	}
 	if len(boxDef.versions) == 0 {

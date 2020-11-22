@@ -263,7 +263,7 @@ type unmarshaller struct {
 }
 
 func UnmarshalAny(r io.ReadSeeker, boxType BoxType, payloadSize uint64, ctx Context) (box IBox, n uint64, err error) {
-	if dst, err := boxType.New(); err != nil {
+	if dst, err := boxType.New(ctx); err != nil {
 		return nil, 0, err
 	} else {
 		n, err := Unmarshal(r, payloadSize, dst, ctx)
@@ -396,7 +396,7 @@ func (u *unmarshaller) unmarshalStruct(t reflect.Type, v reflect.Value) error {
 			return err
 		}
 
-		if ft == reflect.TypeOf(FullBox{}) && !u.dst.GetType().IsSupportedVersion(u.dst.GetVersion()) {
+		if ft == reflect.TypeOf(FullBox{}) && !u.dst.GetType().IsSupportedVersion(u.dst.GetVersion(), u.ctx) {
 			return ErrUnsupportedBoxVersion
 		}
 	}

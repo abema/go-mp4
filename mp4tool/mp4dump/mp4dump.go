@@ -86,7 +86,7 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 		printIndent(line, len(h.Path)-1)
 
 		fmt.Fprintf(line, "[%s]", h.BoxInfo.Type.String())
-		if !h.BoxInfo.Type.IsSupported() {
+		if !h.BoxInfo.IsSupportedType() {
 			fmt.Fprintf(line, " (unsupported box type)")
 		}
 		if m.offset {
@@ -106,7 +106,7 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 		full = full || m.showAll
 
 		// supported box type
-		if h.BoxInfo.Type.IsSupported() {
+		if h.BoxInfo.IsSupportedType() {
 			if !full && h.BoxInfo.Size-h.BoxInfo.HeaderSize >= 64 &&
 				(h.BoxInfo.Type == mp4.BoxTypeEmsg() ||
 					h.BoxInfo.Type == mp4.BoxTypeEsds() ||

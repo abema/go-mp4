@@ -18,21 +18,21 @@ func TestReadBoxStructure(t *testing.T) {
 	_, err = ReadBoxStructure(f, func(h *ReadHandle) (interface{}, error) {
 		n++
 		switch n {
-		case 55, 56: // unsupported
-			require.False(t, h.BoxInfo.Type.IsSupported())
+		case 57: // unsupported
+			require.False(t, h.BoxInfo.IsSupportedType())
 			buf := bytes.NewBuffer(nil)
 			n, err := h.ReadData(buf)
 			require.NoError(t, err)
 			require.Equal(t, h.BoxInfo.Size-h.BoxInfo.HeaderSize, n)
 			assert.Len(t, buf.Bytes(), int(n))
 		case 41: // stbl
-			require.True(t, h.BoxInfo.Type.IsSupported())
+			require.True(t, h.BoxInfo.IsSupportedType())
 			require.Equal(t, BoxTypeStbl(), h.BoxInfo.Type)
 			infos, err := h.Expand()
 			require.NoError(t, err)
 			assert.Equal(t, []interface{}{"stsd", "stts", nil, nil, "stco", nil, nil}, infos)
 		case 42: // stsd
-			require.True(t, h.BoxInfo.Type.IsSupported())
+			require.True(t, h.BoxInfo.IsSupportedType())
 			require.Equal(t, BoxTypeStsd(), h.BoxInfo.Type)
 			box, n, err := h.ReadPayload()
 			require.NoError(t, err)
@@ -42,26 +42,36 @@ func TestReadBoxStructure(t *testing.T) {
 			require.NoError(t, err)
 			return "stsd", nil
 		case 45: // stts
-			require.True(t, h.BoxInfo.Type.IsSupported())
+			require.True(t, h.BoxInfo.IsSupportedType())
 			require.Equal(t, BoxTypeStts(), h.BoxInfo.Type)
 			_, err = h.Expand()
 			require.NoError(t, err)
 			return "stts", nil
 		case 48: // stco
-			require.True(t, h.BoxInfo.Type.IsSupported())
+			require.True(t, h.BoxInfo.IsSupportedType())
 			require.Equal(t, BoxTypeStco(), h.BoxInfo.Type)
 			_, err = h.Expand()
 			require.NoError(t, err)
 			return "stco", nil
+		case 56: // data
+			require.True(t, h.BoxInfo.IsSupportedType())
+			require.Equal(t, BoxTypeData(), h.BoxInfo.Type)
+			box, n, err := h.ReadPayload()
+			require.NoError(t, err)
+			require.Equal(t, uint64(21), n)
+			assert.Equal(t, &Data{DataType: DataTypeStringUTF8, DataLang: 0, Data: []byte("Lavf58.29.100")}, box)
+			_, err = h.Expand()
+			require.NoError(t, err)
+			return "stco", nil
 		default: // otherwise
-			require.True(t, h.BoxInfo.Type.IsSupported())
+			require.True(t, h.BoxInfo.IsSupportedType())
 			_, err = h.Expand()
 			require.NoError(t, err)
 		}
 		return nil, nil
 	})
 	require.NoError(t, err)
-	assert.Equal(t, 56, n)
+	assert.Equal(t, 57, n)
 }
 
 // > mp4tool dump _examples/sample.mp4 | cat -n
@@ -119,8 +129,9 @@ func TestReadBoxStructure(t *testing.T) {
 // 52	    [meta] Size=90 Version=0 Flags=0x000000
 // 53	      [hdlr] Size=33 Version=0 Flags=0x000000 PreDefined=0 HandlerType="mdir" Name=""
 // 54	      [ilst] Size=45
-// 55	        [0xa9746f6f] (unsupported box type) Size=37 Data=[...] (use "-full 0xa9746f6f" to show all)
-// 56	    [loci] (unsupported box type) Size=35 Data=[...] (use "-full loci" to show all)
+// 55	        [(c)too] Size=37
+// 56	          [data] Size=29 DataType=UTF8 DataLang=0 Data="Lavf58.29.100"
+// 57	    [loci] (unsupported box type) Size=35 Data=[...] (use "-full loci" to show all)
 
 func TestReadBoxStructureQT(t *testing.T) {
 	f, err := os.Open("./_examples/sample_qt.mp4")
@@ -132,14 +143,14 @@ func TestReadBoxStructureQT(t *testing.T) {
 		n++
 		switch n {
 		case 5, 42, 45: // unsupported
-			require.False(t, h.BoxInfo.Type.IsSupported())
+			require.False(t, h.BoxInfo.IsSupportedType())
 			buf := bytes.NewBuffer(nil)
 			n, err := h.ReadData(buf)
 			require.NoError(t, err)
 			require.Equal(t, h.BoxInfo.Size-h.BoxInfo.HeaderSize, n)
 			assert.Len(t, buf.Bytes(), int(n))
 		case 40: // mp4a
-			require.True(t, h.BoxInfo.Type.IsSupported())
+			require.True(t, h.BoxInfo.IsSupportedType())
 			require.Equal(t, StrToBoxType("mp4a"), h.BoxInfo.Type)
 			box, n, err := h.ReadPayload()
 			require.NoError(t, err)
@@ -148,7 +159,7 @@ func TestReadBoxStructureQT(t *testing.T) {
 			_, err = h.Expand()
 			require.NoError(t, err)
 		case 43: // mp4a
-			require.True(t, h.BoxInfo.Type.IsSupported())
+			require.True(t, h.BoxInfo.IsSupportedType())
 			require.Equal(t, StrToBoxType("mp4a"), h.BoxInfo.Type)
 			box, n, err := h.ReadPayload()
 			require.NoError(t, err)
@@ -157,7 +168,7 @@ func TestReadBoxStructureQT(t *testing.T) {
 			_, err = h.Expand()
 			require.NoError(t, err)
 		default: // otherwise
-			require.True(t, h.BoxInfo.Type.IsSupported())
+			require.True(t, h.BoxInfo.IsSupportedType())
 			_, err = h.Expand()
 			require.NoError(t, err)
 		}

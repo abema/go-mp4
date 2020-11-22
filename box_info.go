@@ -13,6 +13,15 @@ type Context struct {
 
 	// UnderWave represents whether current box is under the wave box.
 	UnderWave bool
+
+	// UnderIlst represents whether current box is under the ilst box.
+	UnderIlst bool
+
+	// UnderIlstMeta represents whether current box is under the metadata box under the ilst box.
+	UnderIlstMeta bool
+
+	// UnderIlstFreeMeta represents whether current box is under "----" box.
+	UnderIlstFreeMeta bool
 }
 
 // BoxInfo has common infomations of box
@@ -34,6 +43,10 @@ type BoxInfo struct {
 
 	// Context would be set by ReadBoxStructure, not ReadBoxInfo.
 	Context
+}
+
+func (bi *BoxInfo) IsSupportedType() bool {
+	return bi.Type.IsSupported(bi.Context)
 }
 
 const (

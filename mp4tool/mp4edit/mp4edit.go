@@ -90,7 +90,7 @@ func editFile(inputPath, outputPath string) error {
 
 		bi.Size = bi.HeaderSize
 
-		if bi.Type.IsSupported() && bi.Type != mp4.BoxTypeMdat() {
+		if bi.IsSupportedType() && bi.Type != mp4.BoxTypeMdat() {
 			box, _, err := h.ReadPayload()
 			if err != nil {
 				return nil, err
