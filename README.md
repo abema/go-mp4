@@ -23,7 +23,7 @@ _, err := mp4.ReadBoxStructure(file, func(h *mp4.ReadHandle) (interface{}, error
 	// Box Size
 	fmt.Println(h.BoxInfo.Size)
 
-	if h.BoxInfo.Type.IsSupported() {
+	if h.BoxInfo.IsSupportedType() {
 		// Payload
 		box, _, _ := h.ReadPayload()
 		fmt.Println(mp4.Stringify(box))

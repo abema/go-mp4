@@ -17,18 +17,18 @@ func TestBoxTypeString(t *testing.T) {
 }
 
 func TestIsSupported(t *testing.T) {
-	assert.True(t, StrToBoxType("pssh").IsSupported())
-	assert.False(t, StrToBoxType("1234").IsSupported())
+	assert.True(t, StrToBoxType("pssh").IsSupported(Context{}))
+	assert.False(t, StrToBoxType("1234").IsSupported(Context{}))
 }
 
 func TestGetSupportedVersions(t *testing.T) {
-	vers, err := BoxTypePssh().GetSupportedVersions()
+	vers, err := BoxTypePssh().GetSupportedVersions(Context{})
 	require.NoError(t, err)
 	assert.Equal(t, []uint8{0, 1}, vers)
 }
 
 func TestIsSupportedVersion(t *testing.T) {
-	assert.True(t, BoxTypePssh().IsSupportedVersion(0))
-	assert.True(t, BoxTypePssh().IsSupportedVersion(1))
-	assert.False(t, BoxTypePssh().IsSupportedVersion(2))
+	assert.True(t, BoxTypePssh().IsSupportedVersion(0, Context{}))
+	assert.True(t, BoxTypePssh().IsSupportedVersion(1, Context{}))
+	assert.False(t, BoxTypePssh().IsSupportedVersion(2, Context{}))
 }

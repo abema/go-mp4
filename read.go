@@ -67,8 +67,16 @@ func readBoxStructureFromInternal(r io.ReadSeeker, bi *BoxInfo, path BoxPath, ha
 		}
 	}
 
+	ctx := bi.Context
 	if bi.Type == BoxTypeWave() {
-		bi.UnderWave = true
+		ctx.UnderWave = true
+	} else if bi.Type == BoxTypeIlst() {
+		ctx.UnderIlst = true
+	} else if bi.UnderIlst && !bi.UnderIlstMeta && IsIlstMetaBoxType(bi.Type) {
+		ctx.UnderIlstMeta = true
+		if bi.Type == StrToBoxType("----") {
+			ctx.UnderIlstFreeMeta = true
+		}
 	}
 
 	newPath := make(BoxPath, len(path)+1)
@@ -126,7 +134,7 @@ func readBoxStructureFromInternal(r io.ReadSeeker, bi *BoxInfo, path BoxPath, ha
 		}
 
 		childrenSize := bi.Offset + bi.Size - childrenOffset
-		return readBoxStructure(r, childrenSize, false, newPath, bi.Context, handler, params)
+		return readBoxStructure(r, childrenSize, false, newPath, ctx, handler, params)
 	}
 
 	if val, err := handler(h); err != nil {
