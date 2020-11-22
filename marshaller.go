@@ -23,17 +23,17 @@ type marshaller struct {
 	writer bitio.Writer
 	wbits  uint64
 	src    IImmutableBox
-	bss    BoxStructureStatus
+	ctx    Context
 }
 
-func Marshal(w io.Writer, src IImmutableBox, bss BoxStructureStatus) (n uint64, err error) {
+func Marshal(w io.Writer, src IImmutableBox, ctx Context) (n uint64, err error) {
 	t := reflect.TypeOf(src).Elem()
 	v := reflect.ValueOf(src).Elem()
 
 	m := &marshaller{
 		writer: bitio.NewWriter(w),
 		src:    src,
-		bss:    bss,
+		ctx:    ctx,
 	}
 
 	if err := m.marshalStruct(t, v); err != nil {
@@ -84,16 +84,16 @@ func (m *marshaller) marshalStruct(t reflect.Type, v reflect.Value) error {
 		if !ok {
 			continue
 		}
-		config, err := readFieldConfig(m.src, v, f.Name, parseFieldTag(tagStr), m.bss)
+		config, err := readFieldConfig(m.src, v, f.Name, parseFieldTag(tagStr), m.ctx)
 		if err != nil {
 			return err
 		}
 
-		if !isTargetField(m.src, config, m.bss) {
+		if !isTargetField(m.src, config, m.ctx) {
 			continue
 		}
 
-		wbits, override, err := config.cfo.OnWriteField(f.Name, m.writer, m.bss)
+		wbits, override, err := config.cfo.OnWriteField(f.Name, m.writer, m.ctx)
 		if err != nil {
 			return err
 		}
@@ -259,19 +259,19 @@ type unmarshaller struct {
 	dst    IBox
 	size   uint64
 	rbits  uint64
-	bss    BoxStructureStatus
+	ctx    Context
 }
 
-func UnmarshalAny(r io.ReadSeeker, boxType BoxType, payloadSize uint64, bss BoxStructureStatus) (box IBox, n uint64, err error) {
+func UnmarshalAny(r io.ReadSeeker, boxType BoxType, payloadSize uint64, ctx Context) (box IBox, n uint64, err error) {
 	if dst, err := boxType.New(); err != nil {
 		return nil, 0, err
 	} else {
-		n, err := Unmarshal(r, payloadSize, dst, bss)
+		n, err := Unmarshal(r, payloadSize, dst, ctx)
 		return dst, n, err
 	}
 }
 
-func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox, bss BoxStructureStatus) (n uint64, err error) {
+func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox, ctx Context) (n uint64, err error) {
 	t := reflect.TypeOf(dst).Elem()
 	v := reflect.ValueOf(dst).Elem()
 
@@ -281,10 +281,10 @@ func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox, bss BoxStructureSt
 		reader: bitio.NewReadSeeker(r),
 		dst:    dst,
 		size:   payloadSize,
-		bss:    bss,
+		ctx:    ctx,
 	}
 
-	if n, override, err := dst.BeforeUnmarshal(r, payloadSize, u.bss); err != nil {
+	if n, override, err := dst.BeforeUnmarshal(r, payloadSize, u.ctx); err != nil {
 		return 0, err
 	} else if override {
 		return n, nil
@@ -373,16 +373,16 @@ func (u *unmarshaller) unmarshalStruct(t reflect.Type, v reflect.Value) error {
 		if !ok {
 			continue
 		}
-		config, err := readFieldConfig(u.dst, v, f.Name, parseFieldTag(tagStr), u.bss)
+		config, err := readFieldConfig(u.dst, v, f.Name, parseFieldTag(tagStr), u.ctx)
 		if err != nil {
 			return err
 		}
 
-		if !isTargetField(u.dst, config, u.bss) {
+		if !isTargetField(u.dst, config, u.ctx) {
 			continue
 		}
 
-		rbits, override, err := config.cfo.OnReadField(f.Name, u.reader, u.size*8-u.rbits, u.bss)
+		rbits, override, err := config.cfo.OnReadField(f.Name, u.reader, u.size*8-u.rbits, u.ctx)
 		if err != nil {
 			return err
 		}
@@ -635,7 +635,7 @@ func (u *unmarshaller) tryReadPString(t reflect.Type, v reflect.Value, config fi
 		return false, err
 	}
 	remainingSize -= uint64(plen)
-	if config.cfo.IsPString(config.name, buf, remainingSize, u.bss) {
+	if config.cfo.IsPString(config.name, buf, remainingSize, u.ctx) {
 		u.rbits += uint64(len(buf)+1) * 8
 		v.SetString(string(buf))
 		return true, nil
@@ -687,7 +687,7 @@ type fieldConfig struct {
 	hidden     bool
 }
 
-func readFieldConfig(box IImmutableBox, parent reflect.Value, fieldName string, tag fieldTag, bss BoxStructureStatus) (config fieldConfig, err error) {
+func readFieldConfig(box IImmutableBox, parent reflect.Value, fieldName string, tag fieldTag, ctx Context) (config fieldConfig, err error) {
 	config.name = fieldName
 	cfo, ok := parent.Addr().Interface().(ICustomFieldObject)
 	if ok {
@@ -698,7 +698,7 @@ func readFieldConfig(box IImmutableBox, parent reflect.Value, fieldName string, 
 
 	if val, contained := tag["size"]; contained {
 		if val == "dynamic" {
-			config.size = config.cfo.GetFieldSize(fieldName, bss)
+			config.size = config.cfo.GetFieldSize(fieldName, ctx)
 		} else {
 			var size uint64
 			size, err = strconv.ParseUint(val, 10, 32)
@@ -712,7 +712,7 @@ func readFieldConfig(box IImmutableBox, parent reflect.Value, fieldName string, 
 	config.length = LengthUnlimited
 	if val, contained := tag["len"]; contained {
 		if val == "dynamic" {
-			config.length = config.cfo.GetFieldLength(fieldName, bss)
+			config.length = config.cfo.GetFieldLength(fieldName, ctx)
 		} else {
 			var l uint64
 			l, err = strconv.ParseUint(val, 10, 32)
@@ -825,7 +825,7 @@ func parseFieldTag(str string) fieldTag {
 	return tag
 }
 
-func isTargetField(box IImmutableBox, config fieldConfig, bss BoxStructureStatus) bool {
+func isTargetField(box IImmutableBox, config fieldConfig, ctx Context) bool {
 	if box.GetVersion() != anyVersion {
 		if config.version != anyVersion && box.GetVersion() != config.version {
 			return false
@@ -844,7 +844,7 @@ func isTargetField(box IImmutableBox, config fieldConfig, bss BoxStructureStatus
 		return false
 	}
 
-	if config.optDynamic && !config.cfo.IsOptFieldEnabled(config.name, bss) {
+	if config.optDynamic && !config.cfo.IsOptFieldEnabled(config.name, ctx) {
 		return false
 	}
 

@@ -106,7 +106,7 @@ func probeTkhd(r io.ReadSeeker, bi *BoxInfo, info *TrackInfo) error {
 	}
 
 	tkhd := Tkhd{}
-	_, err := Unmarshal(r, bi.Size-bi.HeaderSize, &tkhd, bi.BoxStructureStatus)
+	_, err := Unmarshal(r, bi.Size-bi.HeaderSize, &tkhd, bi.Context)
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func probeMdhd(r io.ReadSeeker, bi *BoxInfo, info *TrackInfo) error {
 	}
 
 	mdhd := Mdhd{}
-	_, err := Unmarshal(r, bi.Size-bi.HeaderSize, &mdhd, bi.BoxStructureStatus)
+	_, err := Unmarshal(r, bi.Size-bi.HeaderSize, &mdhd, bi.Context)
 	if err != nil {
 		return err
 	}
@@ -183,7 +183,7 @@ func probeTfhd(r io.ReadSeeker, bi *BoxInfo, segment *SegmentInfo) error {
 	}
 
 	tfhd := Tfhd{}
-	_, err := Unmarshal(r, bi.Size-bi.HeaderSize, &tfhd, bi.BoxStructureStatus)
+	_, err := Unmarshal(r, bi.Size-bi.HeaderSize, &tfhd, bi.Context)
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func probeTfdt(r io.ReadSeeker, bi *BoxInfo, segment *SegmentInfo) error {
 	}
 
 	tfdt := Tfdt{}
-	_, err := Unmarshal(r, bi.Size-bi.HeaderSize, &tfdt, bi.BoxStructureStatus)
+	_, err := Unmarshal(r, bi.Size-bi.HeaderSize, &tfdt, bi.Context)
 	if err != nil {
 		return err
 	}
@@ -220,7 +220,7 @@ func probeTrun(r io.ReadSeeker, bi *BoxInfo, segment *SegmentInfo) error {
 	}
 
 	trun := Trun{}
-	_, err := Unmarshal(r, bi.Size-bi.HeaderSize, &trun, bi.BoxStructureStatus)
+	_, err := Unmarshal(r, bi.Size-bi.HeaderSize, &trun, bi.Context)
 	if err != nil {
 		return err
 	}
@@ -263,7 +263,7 @@ func probeTfra(r io.ReadSeeker, bi *BoxInfo, info *FraProbeInfo) error {
 	}
 
 	tfra := Tfra{}
-	_, err := Unmarshal(r, bi.Size-bi.HeaderSize, &tfra, bi.BoxStructureStatus)
+	_, err := Unmarshal(r, bi.Size-bi.HeaderSize, &tfra, bi.Context)
 	if err != nil {
 		return err
 	}

@@ -54,7 +54,7 @@ func TestEmsgStringify(t *testing.T) {
 		Bool:  true,
 	}
 
-	str, err := StringifyWithIndent(&box, " ", BoxStructureStatus{})
+	str, err := StringifyWithIndent(&box, " ", Context{})
 	require.NoError(t, err)
 	assert.Equal(t, ` Version=0`+"\n"+
 		` Flags=0x000000`+"\n"+
@@ -74,7 +74,7 @@ func TestEmsgStringify(t *testing.T) {
 		` Array="hoge"`+"\n"+
 		` Bool=true`+"\n", str)
 
-	str, err = Stringify(&box, BoxStructureStatus{})
+	str, err = Stringify(&box, Context{})
 	require.NoError(t, err)
 	assert.Equal(t, `Version=0 Flags=0x000000 String="abema.tv" Int32=-1234567890 Int32Hex=0x12345678 Uint32=1234567890 Bytes="abema" Ptr={Uint64=0x1234567890} Uint64=0x1234567890 Struct={Uint64=0x1234567890} Uint64=0x1234567890 Array="hoge" Bool=true`, str)
 }

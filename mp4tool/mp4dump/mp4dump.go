@@ -132,7 +132,7 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 					return nil, err
 				}
 
-				str, err := mp4.Stringify(box, h.BoxInfo.BoxStructureStatus)
+				str, err := mp4.Stringify(box, h.BoxInfo.Context)
 				if err != nil {
 					return nil, err
 				}
