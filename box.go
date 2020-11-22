@@ -12,62 +12,62 @@ const LengthUnlimited = math.MaxUint32
 
 type ICustomFieldObject interface {
 	// GetFieldSize returns size of dynamic field
-	GetFieldSize(name string, bss BoxStructureStatus) uint
+	GetFieldSize(name string, ctx Context) uint
 
 	// GetFieldLength returns length of dynamic field
-	GetFieldLength(name string, bss BoxStructureStatus) uint
+	GetFieldLength(name string, ctx Context) uint
 
 	// IsOptFieldEnabled check whether if the optional field is enabled
-	IsOptFieldEnabled(name string, bss BoxStructureStatus) bool
+	IsOptFieldEnabled(name string, ctx Context) bool
 
 	// StringifyField returns field value as string
-	StringifyField(name string, indent string, depth int, bss BoxStructureStatus) (string, bool)
+	StringifyField(name string, indent string, depth int, ctx Context) (string, bool)
 
-	IsPString(name string, bytes []byte, remainingSize uint64, bss BoxStructureStatus) bool
+	IsPString(name string, bytes []byte, remainingSize uint64, ctx Context) bool
 
-	BeforeUnmarshal(r io.ReadSeeker, size uint64, bss BoxStructureStatus) (n uint64, override bool, err error)
+	BeforeUnmarshal(r io.ReadSeeker, size uint64, ctx Context) (n uint64, override bool, err error)
 
-	OnReadField(name string, r bitio.ReadSeeker, leftBits uint64, bss BoxStructureStatus) (rbits uint64, override bool, err error)
+	OnReadField(name string, r bitio.ReadSeeker, leftBits uint64, ctx Context) (rbits uint64, override bool, err error)
 
-	OnWriteField(name string, w bitio.Writer, bss BoxStructureStatus) (wbits uint64, override bool, err error)
+	OnWriteField(name string, w bitio.Writer, ctx Context) (wbits uint64, override bool, err error)
 }
 
 type BaseCustomFieldObject struct {
 }
 
 // GetFieldSize returns size of dynamic field
-func (box *BaseCustomFieldObject) GetFieldSize(string, BoxStructureStatus) uint {
+func (box *BaseCustomFieldObject) GetFieldSize(string, Context) uint {
 	panic(errors.New("GetFieldSize not implemented"))
 }
 
 // GetFieldLength returns length of dynamic field
-func (box *BaseCustomFieldObject) GetFieldLength(string, BoxStructureStatus) uint {
+func (box *BaseCustomFieldObject) GetFieldLength(string, Context) uint {
 	panic(errors.New("GetFieldLength not implemented"))
 }
 
 // IsOptFieldEnabled check whether if the optional field is enabled
-func (box *BaseCustomFieldObject) IsOptFieldEnabled(string, BoxStructureStatus) bool {
+func (box *BaseCustomFieldObject) IsOptFieldEnabled(string, Context) bool {
 	return false
 }
 
 // StringifyField returns field value as string
-func (box *BaseCustomFieldObject) StringifyField(string, string, int, BoxStructureStatus) (string, bool) {
+func (box *BaseCustomFieldObject) StringifyField(string, string, int, Context) (string, bool) {
 	return "", false
 }
 
-func (*BaseCustomFieldObject) IsPString(name string, bytes []byte, remainingSize uint64, bss BoxStructureStatus) bool {
+func (*BaseCustomFieldObject) IsPString(name string, bytes []byte, remainingSize uint64, ctx Context) bool {
 	return true
 }
 
-func (*BaseCustomFieldObject) BeforeUnmarshal(io.ReadSeeker, uint64, BoxStructureStatus) (uint64, bool, error) {
+func (*BaseCustomFieldObject) BeforeUnmarshal(io.ReadSeeker, uint64, Context) (uint64, bool, error) {
 	return 0, false, nil
 }
 
-func (*BaseCustomFieldObject) OnReadField(string, bitio.ReadSeeker, uint64, BoxStructureStatus) (uint64, bool, error) {
+func (*BaseCustomFieldObject) OnReadField(string, bitio.ReadSeeker, uint64, Context) (uint64, bool, error) {
 	return 0, false, nil
 }
 
-func (*BaseCustomFieldObject) OnWriteField(string, bitio.Writer, BoxStructureStatus) (uint64, bool, error) {
+func (*BaseCustomFieldObject) OnWriteField(string, bitio.Writer, Context) (uint64, bool, error) {
 	return 0, false, nil
 }
 

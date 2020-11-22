@@ -7,7 +7,7 @@ import (
 	"math"
 )
 
-type BoxStructureStatus struct {
+type Context struct {
 	// IsQuickTimeCompatible represents whether ftyp.compatible_brands contains "qt  ".
 	IsQuickTimeCompatible bool
 
@@ -32,8 +32,8 @@ type BoxInfo struct {
 	// ExtendToEOF is set true when Box.size is zero. It means that end of box equals to end of file.
 	ExtendToEOF bool
 
-	// BoxStructureStatus would be set by ReadBoxStructure, not ReadBoxInfo.
-	BoxStructureStatus
+	// Context would be set by ReadBoxStructure, not ReadBoxInfo.
+	Context
 }
 
 const (

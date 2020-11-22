@@ -16,7 +16,7 @@ func TestBoxTypes(t *testing.T) {
 		dst  IBox
 		bin  []byte
 		str  string
-		bss  BoxStructureStatus
+		ctx  Context
 	}{
 		{
 			name: "co64",
@@ -1010,7 +1010,7 @@ func TestBoxTypes(t *testing.T) {
 				`SampleSize=17767 ` +
 				`PreDefined=26505 ` +
 				`SampleRate=19088743`,
-			bss: BoxStructureStatus{IsQuickTimeCompatible: true},
+			ctx: Context{IsQuickTimeCompatible: true},
 		},
 		{
 			name: "AudioSampleEntry (QuickTime v1)",
@@ -1046,7 +1046,7 @@ func TestBoxTypes(t *testing.T) {
 				`PreDefined=26505 ` +
 				`SampleRate=19088743 ` +
 				`QuickTimeData=[0x0, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]`,
-			bss: BoxStructureStatus{IsQuickTimeCompatible: true},
+			ctx: Context{IsQuickTimeCompatible: true},
 		},
 		{
 			name: "AudioSampleEntry (QuickTime v2)",
@@ -1091,7 +1091,7 @@ func TestBoxTypes(t *testing.T) {
 				`0x0, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, ` +
 				`0x0, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, ` +
 				`0x0, 0x11, 0x22, 0x33]`,
-			bss: BoxStructureStatus{IsQuickTimeCompatible: true},
+			ctx: Context{IsQuickTimeCompatible: true},
 		},
 		{
 			name: "AVCDecoderConfiguration main profile",
@@ -2463,14 +2463,14 @@ func TestBoxTypes(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Marshal
 			buf := bytes.NewBuffer(nil)
-			n, err := Marshal(buf, tc.src, tc.bss)
+			n, err := Marshal(buf, tc.src, tc.ctx)
 			require.NoError(t, err)
 			assert.Equal(t, uint64(len(tc.bin)), n)
 			assert.Equal(t, tc.bin, buf.Bytes())
 
 			// Unmarshal
 			r := bytes.NewReader(tc.bin)
-			n, err = Unmarshal(r, uint64(len(tc.bin)), tc.dst, tc.bss)
+			n, err = Unmarshal(r, uint64(len(tc.bin)), tc.dst, tc.ctx)
 			require.NoError(t, err)
 			assert.Equal(t, uint64(buf.Len()), n)
 			assert.Equal(t, tc.src, tc.dst)
@@ -2479,7 +2479,7 @@ func TestBoxTypes(t *testing.T) {
 			assert.Equal(t, int64(buf.Len()), s)
 
 			// UnmarshalAny
-			dst, n, err := UnmarshalAny(bytes.NewReader(tc.bin), tc.src.GetType(), uint64(len(tc.bin)), tc.bss)
+			dst, n, err := UnmarshalAny(bytes.NewReader(tc.bin), tc.src.GetType(), uint64(len(tc.bin)), tc.ctx)
 			require.NoError(t, err)
 			assert.Equal(t, uint64(buf.Len()), n)
 			assert.Equal(t, tc.src, dst)
@@ -2488,7 +2488,7 @@ func TestBoxTypes(t *testing.T) {
 			assert.Equal(t, int64(buf.Len()), s)
 
 			// Stringify
-			str, err := Stringify(tc.src, tc.bss)
+			str, err := Stringify(tc.src, tc.ctx)
 			require.NoError(t, err)
 			assert.Equal(t, tc.str, str)
 		})
@@ -2560,7 +2560,7 @@ func TestHdlrUnmarshalHandlerName(t *testing.T) {
 			// unmarshal
 			dst := Hdlr{}
 			r := bytes.NewReader(bin)
-			n, err := Unmarshal(r, uint64(len(bin)), &dst, BoxStructureStatus{})
+			n, err := Unmarshal(r, uint64(len(bin)), &dst, Context{})
 			assert.NoError(t, err)
 			assert.Equal(t, uint64(len(bin)), n)
 			assert.Equal(t, [4]byte{'v', 'i', 'd', 'e'}, dst.HandlerType)
@@ -2581,7 +2581,7 @@ func TestMetaMarshalAppleQuickTime(t *testing.T) {
 	// unmarshal
 	dst := Meta{}
 	r := bytes.NewReader(bin)
-	n, err := Unmarshal(r, uint64(len(bin)), &dst, BoxStructureStatus{})
+	n, err := Unmarshal(r, uint64(len(bin)), &dst, Context{})
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(0), n)
 	s, _ := r.Seek(0, io.SeekCurrent)
@@ -2624,7 +2624,7 @@ func TestAvcCInconsistentError(t *testing.T) {
 		},
 	}
 	buf := bytes.NewBuffer(nil)
-	_, err := Marshal(buf, avcc, BoxStructureStatus{})
+	_, err := Marshal(buf, avcc, Context{})
 	require.Error(t, err)
 	assert.Equal(t, "each values of Profile and HighProfileFieldsEnabled are inconsistent", err.Error())
 }

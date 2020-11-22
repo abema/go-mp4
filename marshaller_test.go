@@ -21,7 +21,7 @@ func (m *mockBox) GetType() BoxType {
 	return m.Type
 }
 
-func (m *mockBox) GetFieldSize(n string, bss BoxStructureStatus) uint {
+func (m *mockBox) GetFieldSize(n string, ctx Context) uint {
 	if s, ok := m.DynSizeMap[n]; !ok {
 		panic(fmt.Errorf("invalid name of dynamic-size field: %s", n))
 	} else {
@@ -29,7 +29,7 @@ func (m *mockBox) GetFieldSize(n string, bss BoxStructureStatus) uint {
 	}
 }
 
-func (m *mockBox) GetFieldLength(n string, bss BoxStructureStatus) uint {
+func (m *mockBox) GetFieldLength(n string, ctx Context) uint {
 	if l, ok := m.DynLenMap[n]; !ok {
 		panic(fmt.Errorf("invalid name of dynamic-length field: %s", n))
 	} else {
@@ -180,14 +180,14 @@ func TestMarshal(t *testing.T) {
 
 	// marshal
 	buf := &bytes.Buffer{}
-	n, err := Marshal(buf, &src, BoxStructureStatus{})
+	n, err := Marshal(buf, &src, Context{})
 	require.NoError(t, err)
 	assert.Equal(t, uint64(len(bin)), n)
 	assert.Equal(t, bin, buf.Bytes())
 
 	// unmarshal
 	dst := testBox{mockBox: mb}
-	n, err = Unmarshal(bytes.NewReader(bin), uint64(len(bin)+8), &dst, BoxStructureStatus{})
+	n, err = Unmarshal(bytes.NewReader(bin), uint64(len(bin)+8), &dst, Context{})
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(len(bin)), n)
 	assert.Equal(t, src, dst)
@@ -229,7 +229,7 @@ func TestUnsupportedBoxVersionErr(t *testing.T) {
 		}
 
 		dst := testBox{mockBox: mb}
-		n, err := Unmarshal(bytes.NewReader(bin), uint64(len(bin)+8), &dst, BoxStructureStatus{})
+		n, err := Unmarshal(bytes.NewReader(bin), uint64(len(bin)+8), &dst, Context{})
 
 		if e.enabled {
 			assert.NoError(t, err, "version=%d", e.version)
@@ -631,7 +631,7 @@ func TestReadFieldConfig(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			v := reflect.ValueOf(tc.box).Elem()
-			config, err := readFieldConfig(tc.box, v, tc.fieldName, tc.fieldTag, BoxStructureStatus{})
+			config, err := readFieldConfig(tc.box, v, tc.fieldName, tc.fieldTag, Context{})
 			if tc.err {
 				assert.Error(t, err)
 				return
