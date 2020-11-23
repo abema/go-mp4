@@ -666,7 +666,6 @@ func TestBoxTypes(t *testing.T) {
 				`ModificationTimeV0=591751049 ` +
 				`Timescale=16909060 ` +
 				`DurationV0=33752069 ` +
-				`Pad=true ` +
 				`Language="jpn" ` +
 				`PreDefined=0`,
 		},
@@ -701,7 +700,6 @@ func TestBoxTypes(t *testing.T) {
 				`ModificationTimeV1=2541551405711093505 ` +
 				`Timescale=16909060 ` +
 				`DurationV1=144964032628459529 ` +
-				`Pad=true ` +
 				`Language="jpn" ` +
 				`PreDefined=0`,
 		},

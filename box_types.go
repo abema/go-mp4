@@ -747,7 +747,7 @@ type Mdhd struct {
 	DurationV0         uint32 `mp4:"size=32,ver=0"`
 	DurationV1         uint64 `mp4:"size=64,ver=1"`
 	//
-	Pad        bool    `mp4:"size=1"`
+	Pad        bool    `mp4:"size=1,hidden"`
 	Language   [3]byte `mp4:"size=5,iso639-2"` // ISO-639-2/T language code
 	PreDefined uint16  `mp4:"size=16"`
 }
