@@ -1334,7 +1334,7 @@ type Sdtp struct {
 type SdtpSampleElem struct {
 	IsLeading           uint8 `mp4:"size=2"`
 	SampleDependsOn     uint8 `mp4:"size=2"`
-	SampleIsDependedOon uint8 `mp4:"size=2"`
+	SampleIsDependedOn  uint8 `mp4:"size=2"`
 	SampleHasRedundancy uint8 `mp4:"size=2"`
 }
 
