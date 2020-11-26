@@ -239,6 +239,13 @@ func (m *marshaller) marshalString(t reflect.Type, v reflect.Value, config field
 }
 
 func (m *marshaller) writeUvarint(u uint64) error {
+	if u == 0 {
+		if err := m.writer.WriteBits([]byte{0}, 8); err != nil {
+			return err
+		}
+		m.wbits += 8
+		return nil
+	}
 	for i := 63; i >= 0; i -= 7 {
 		if u>>uint(i) != 0 {
 			data := byte(u>>uint(i)) & 0x7f

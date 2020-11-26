@@ -248,6 +248,7 @@ func TestReadVarint(t *testing.T) {
 		err      bool
 		expected uint64
 	}{
+		{name: "0", input: []byte{0x0}, expected: 0},
 		{name: "1 byte", input: []byte{0x6c}, expected: 0x6c},
 		{name: "2 bytes", input: []byte{0xac, 0x52}, expected: 0x1652},
 		{name: "3 bytes", input: []byte{0xac, 0xd2, 0x43}, expected: 0xb2943},
@@ -269,6 +270,30 @@ func TestReadVarint(t *testing.T) {
 			}
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected, val)
+		})
+	}
+}
+
+func TestWriteVarint(t *testing.T) {
+	testCases := []struct {
+		name     string
+		input    uint64
+		expected []byte
+	}{
+		{name: "0", input: 0x0, expected: []byte{0x0}},
+		{name: "1 byte", input: 0x6c, expected: []byte{0x6c}},
+		{name: "2 bytes", input: 0x1652, expected: []byte{0xac, 0x52}},
+		{name: "3 bytes", input: 0xb2943, expected: []byte{0xac, 0xd2, 0x43}},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var b bytes.Buffer
+			m := &marshaller{
+				writer: bitio.NewWriter(&b),
+			}
+			err := m.writeUvarint(tc.input)
+			require.NoError(t, err)
+			assert.Equal(t, tc.expected, b.Bytes())
 		})
 	}
 }
