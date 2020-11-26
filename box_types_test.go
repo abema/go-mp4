@@ -1791,8 +1791,8 @@ func TestBoxTypes(t *testing.T) {
 				DefaultLength: 1,
 				EntryCount:    2,
 				TemporalLevelEntries: []TemporalLevelEntry{
-					{LevelUndependentlyUecodable: true},
-					{LevelUndependentlyUecodable: false},
+					{LevelIndependentlyDecodable: true},
+					{LevelIndependentlyDecodable: false},
 				},
 			},
 			dst: &Sgpd{},
@@ -1809,8 +1809,8 @@ func TestBoxTypes(t *testing.T) {
 				`DefaultLength=1 ` +
 				`EntryCount=2 ` +
 				`TemporalLevelEntries=[` +
-				`{LevelUndependentlyUecodable=true}, ` +
-				`{LevelUndependentlyUecodable=false}]`,
+				`{LevelIndependentlyDecodable=true}, ` +
+				`{LevelIndependentlyDecodable=false}]`,
 		},
 		{
 			name: "sgpd: version 2 roll",
