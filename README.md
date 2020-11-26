@@ -18,15 +18,22 @@ _, err := mp4.ReadBoxStructure(file, func(h *mp4.ReadHandle) (interface{}, error
 	fmt.Println("depth", len(h.Path))
 
 	// Box Type (e.g. "mdhd", "tfdt", "mdat")
-	fmt.Println(h.BoxInfo.Type.String())
+	fmt.Println("type", h.BoxInfo.Type.String())
 
 	// Box Size
-	fmt.Println(h.BoxInfo.Size)
+	fmt.Println("size", h.BoxInfo.Size)
 
 	if h.BoxInfo.IsSupportedType() {
 		// Payload
-		box, _, _ := h.ReadPayload()
-		fmt.Println(mp4.Stringify(box))
+		box, _, err := h.ReadPayload()
+		if err != nil {
+			return nil, err
+		}
+		str, err := mp4.Stringify(box, h.BoxInfo.Context)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Println("payload", str)
 
 		// Expands children
 		return h.Expand()
