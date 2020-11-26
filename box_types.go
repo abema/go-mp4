@@ -1401,7 +1401,7 @@ type VisualRandomAccessEntryL struct {
 }
 
 type TemporalLevelEntry struct {
-	LevelUndependentlyUecodable bool  `mp4:"size=1"`
+	LevelIndependentlyDecodable bool  `mp4:"size=1"`
 	Reserved                    uint8 `mp4:"size=7,const=0"`
 }
 
