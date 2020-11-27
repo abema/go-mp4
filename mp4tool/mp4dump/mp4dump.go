@@ -113,11 +113,14 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 					h.BoxInfo.Type == mp4.BoxTypeFtyp() ||
 					h.BoxInfo.Type == mp4.BoxTypePssh() ||
 					h.BoxInfo.Type == mp4.BoxTypeCtts() ||
+					h.BoxInfo.Type == mp4.BoxTypeCo64() ||
 					h.BoxInfo.Type == mp4.BoxTypeElst() ||
 					h.BoxInfo.Type == mp4.BoxTypeSbgp() ||
+					h.BoxInfo.Type == mp4.BoxTypeSdtp() ||
 					h.BoxInfo.Type == mp4.BoxTypeStco() ||
 					h.BoxInfo.Type == mp4.BoxTypeStsc() ||
 					h.BoxInfo.Type == mp4.BoxTypeStts() ||
+					h.BoxInfo.Type == mp4.BoxTypeStss() ||
 					h.BoxInfo.Type == mp4.BoxTypeStsz() ||
 					h.BoxInfo.Type == mp4.BoxTypeTfra() ||
 					h.BoxInfo.Type == mp4.BoxTypeTrun()) {
