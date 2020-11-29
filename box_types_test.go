@@ -955,7 +955,7 @@ func TestBoxTypes(t *testing.T) {
 				0x21, 0x22, 0x23, 0x24, 0x25, // data
 			},
 			str: `Version=0 Flags=0x000000 ` +
-				`SystemID="0102030405060708090a0b0c0d0e0f10" ` +
+				`SystemID=01020304-0506-0708-090a-0b0c0d0e0f10 ` +
 				`DataSize=5 ` +
 				`Data=[0x21, 0x22, 0x23, 0x24, 0x25]`,
 		},
@@ -989,9 +989,9 @@ func TestBoxTypes(t *testing.T) {
 				0x21, 0x22, 0x23, 0x24, 0x25, // data
 			},
 			str: `Version=1 Flags=0x000000 ` +
-				`SystemID="0102030405060708090a0b0c0d0e0f10" ` +
+				`SystemID=01020304-0506-0708-090a-0b0c0d0e0f10 ` +
 				`KIDCount=2 ` +
-				`KIDs=["1112131415161718191a1b1c1d1e1f10" "2122232425262728292a2b2c2d2e2f20"] ` +
+				`KIDs=[11121314-1516-1718-191a-1b1c1d1e1f10, 21222324-2526-2728-292a-2b2c2d2e2f20] ` +
 				`DataSize=5 ` +
 				`Data=[0x21, 0x22, 0x23, 0x24, 0x25]`,
 		},
