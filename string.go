@@ -6,6 +6,8 @@ import (
 	"io"
 	"reflect"
 	"strconv"
+
+	"github.com/abema/go-mp4/util"
 )
 
 type stringfier struct {
@@ -149,17 +151,24 @@ func (m *stringfier) stringifyArray(t reflect.Type, v reflect.Value, config fiel
 
 	m.buf.WriteString(begin)
 
+	m2 := *m
+	if config.str {
+		m2.buf = bytes.NewBuffer(nil)
+	}
 	size := t.Size()
 	for i := 0; i < int(size)/int(t.Elem().Size()); i++ {
 		if i != 0 {
-			m.buf.WriteString(sep)
+			m2.buf.WriteString(sep)
 		}
 
 		var err error
-		err = m.stringify(t.Elem(), v.Index(i), config, depth+1)
+		err = m2.stringify(t.Elem(), v.Index(i), config, depth+1)
 		if err != nil {
 			return err
 		}
+	}
+	if config.str {
+		m.buf.WriteString(util.EscapeUnprintables(m2.buf.String()))
 	}
 
 	m.buf.WriteString(end)
@@ -175,16 +184,23 @@ func (m *stringfier) stringifySlice(t reflect.Type, v reflect.Value, config fiel
 
 	m.buf.WriteString(begin)
 
+	m2 := *m
+	if config.str {
+		m2.buf = bytes.NewBuffer(nil)
+	}
 	for i := 0; i < v.Len(); i++ {
 		if config.length != LengthUnlimited && uint(i) >= config.length {
 			break
 		}
 
 		if i != 0 {
-			m.buf.WriteString(sep)
+			m2.buf.WriteString(sep)
 		}
 
-		m.stringify(t.Elem(), v.Index(i), config, depth+1)
+		m2.stringify(t.Elem(), v.Index(i), config, depth+1)
+	}
+	if config.str {
+		m.buf.WriteString(util.EscapeUnprintables(m2.buf.String()))
 	}
 
 	m.buf.WriteString(end)
@@ -231,7 +247,7 @@ func (m *stringfier) stringifyBool(t reflect.Type, v reflect.Value, config field
 
 func (m *stringfier) stringifyString(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
 	m.buf.WriteString("\"")
-	m.buf.WriteString(v.String())
+	m.buf.WriteString(util.EscapeUnprintables(v.String()))
 	m.buf.WriteString("\"")
 
 	return nil

@@ -24,7 +24,7 @@ func TestEmsgStringify(t *testing.T) {
 		PtrEx    *inner  `mp4:"extend"`
 		Struct   inner   `mp4:""`
 		StructEx inner   `mp4:"extend"`
-		Array    [4]byte `mp4:"size=8,string"`
+		Array    [7]byte `mp4:"size=8,string"`
 		Bool     bool    `mp4:"size=1"`
 	}
 
@@ -37,7 +37,7 @@ func TestEmsgStringify(t *testing.T) {
 		Int32:    -1234567890,
 		Int32Hex: 0x12345678,
 		Uint32:   1234567890,
-		Bytes:    []byte("abema"),
+		Bytes:    []byte{'A', 'B', 'E', 'M', 'A', 0x00, 'T', 'V'},
 		Ptr: &inner{
 			Uint64: 0x1234567890,
 		},
@@ -50,7 +50,7 @@ func TestEmsgStringify(t *testing.T) {
 		StructEx: inner{
 			Uint64: 0x1234567890,
 		},
-		Array: [4]byte{'h', 'o', 'g', 'e'},
+		Array: [7]byte{'f', 'o', 'o', 0x00, 'b', 'a', 'r'},
 		Bool:  true,
 	}
 
@@ -62,7 +62,7 @@ func TestEmsgStringify(t *testing.T) {
 		` Int32=-1234567890`+"\n"+
 		` Int32Hex=0x12345678`+"\n"+
 		` Uint32=1234567890`+"\n"+
-		` Bytes="abema"`+"\n"+
+		` Bytes="ABEMA.TV"`+"\n"+
 		` Ptr={`+"\n"+
 		`  Uint64=0x1234567890`+"\n"+
 		` }`+"\n"+
@@ -71,10 +71,10 @@ func TestEmsgStringify(t *testing.T) {
 		`  Uint64=0x1234567890`+"\n"+
 		` }`+"\n"+
 		` Uint64=0x1234567890`+"\n"+
-		` Array="hoge"`+"\n"+
+		` Array="foo.bar"`+"\n"+
 		` Bool=true`+"\n", str)
 
 	str, err = Stringify(&box, Context{})
 	require.NoError(t, err)
-	assert.Equal(t, `Version=0 Flags=0x000000 String="abema.tv" Int32=-1234567890 Int32Hex=0x12345678 Uint32=1234567890 Bytes="abema" Ptr={Uint64=0x1234567890} Uint64=0x1234567890 Struct={Uint64=0x1234567890} Uint64=0x1234567890 Array="hoge" Bool=true`, str)
+	assert.Equal(t, `Version=0 Flags=0x000000 String="abema.tv" Int32=-1234567890 Int32Hex=0x12345678 Uint32=1234567890 Bytes="ABEMA.TV" Ptr={Uint64=0x1234567890} Uint64=0x1234567890 Struct={Uint64=0x1234567890} Uint64=0x1234567890 Array="foo.bar" Bool=true`, str)
 }
