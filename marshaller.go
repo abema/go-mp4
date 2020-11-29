@@ -687,9 +687,11 @@ type fieldConfig struct {
 	nOptFlag   uint32
 	cnst       string
 	extend     bool
+	dec        bool
 	hex        bool
 	str        bool
 	iso639_2   bool
+	uuid       bool
 	strType    StringType
 	hidden     bool
 }
@@ -792,6 +794,10 @@ func readFieldConfig(box IImmutableBox, parent reflect.Value, fieldName string, 
 		config.extend = true
 	}
 
+	if _, contained := tag["dec"]; contained {
+		config.dec = true
+	}
+
 	if _, contained := tag["hex"]; contained {
 		config.hex = true
 	}
@@ -805,6 +811,10 @@ func readFieldConfig(box IImmutableBox, parent reflect.Value, fieldName string, 
 
 	if _, contained := tag["iso639-2"]; contained {
 		config.iso639_2 = true
+	}
+
+	if _, contained := tag["uuid"]; contained {
+		config.uuid = true
 	}
 
 	if _, contained := tag["hidden"]; contained {

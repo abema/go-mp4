@@ -11,6 +11,26 @@ import (
 	"github.com/google/uuid"
 )
 
+/*************************** btrt ****************************/
+
+func BoxTypeBtrt() BoxType { return StrToBoxType("btrt") }
+
+func init() {
+	AddBoxDef(&Btrt{}, 0)
+}
+
+type Btrt struct {
+	Box
+	BufferSizeDB uint32 `mp4:"size=32"`
+	MaxBitrate   uint32 `mp4:"size=32"`
+	AvgBitrate   uint32 `mp4:"size=32"`
+}
+
+// GetType returns the BoxType
+func (*Btrt) GetType() BoxType {
+	return BoxTypeBtrt()
+}
+
 /*************************** co64 ****************************/
 
 func BoxTypeCo64() BoxType { return StrToBoxType("co64") }
@@ -83,6 +103,33 @@ func (colr *Colr) IsOptFieldEnabled(name string, ctx Context) bool {
 // GetType returns the BoxType
 func (*Colr) GetType() BoxType {
 	return BoxTypeColr()
+}
+
+/*************************** cslg ****************************/
+
+func BoxTypeCslg() BoxType { return StrToBoxType("cslg") }
+
+func init() {
+	AddBoxDef(&Cslg{}, 0, 1)
+}
+
+type Cslg struct {
+	FullBox                        `mp4:"extend"`
+	CompositionToDTSShiftV0        int32 `mp4:"size=32,ver=0"`
+	LeastDecodeToDisplayDeltaV0    int32 `mp4:"size=32,ver=0"`
+	GreatestDecodeToDisplayDeltaV0 int32 `mp4:"size=32,ver=0"`
+	CompositionStartTimeV0         int32 `mp4:"size=32,ver=0"`
+	CompositionEndTimeV0           int32 `mp4:"size=32,ver=0"`
+	CompositionToDTSShiftV1        int64 `mp4:"size=64,nver=0"`
+	LeastDecodeToDisplayDeltaV1    int64 `mp4:"size=64,nver=0"`
+	GreatestDecodeToDisplayDeltaV1 int64 `mp4:"size=64,nver=0"`
+	CompositionStartTimeV1         int64 `mp4:"size=64,nver=0"`
+	CompositionEndTimeV1           int64 `mp4:"size=64,nver=0"`
+}
+
+// GetType returns the BoxType
+func (*Cslg) GetType() BoxType {
+	return BoxTypeCslg()
 }
 
 /*************************** ctts ****************************/
@@ -481,6 +528,25 @@ type Skip FreeSpace
 
 func (*Skip) GetType() BoxType {
 	return BoxTypeSkip()
+}
+
+/*************************** frma ****************************/
+
+func BoxTypeFrma() BoxType { return StrToBoxType("frma") }
+
+func init() {
+	AddBoxDef(&Frma{})
+}
+
+// Frma is ISOBMFF frma box type
+type Frma struct {
+	Box
+	DataFormat [4]byte `mp4:"size=8,string"`
+}
+
+// GetType returns the BoxType
+func (*Frma) GetType() BoxType {
+	return BoxTypeFrma()
 }
 
 /*************************** ftyp ****************************/
@@ -1022,7 +1088,7 @@ func init() {
 // Pssh is ISOBMFF pssh box type
 type Pssh struct {
 	FullBox  `mp4:"extend"`
-	SystemID [16]byte  `mp4:"size=8"`
+	SystemID [16]byte  `mp4:"size=8,uuid"`
 	KIDCount uint32    `mp4:"size=32,nver=0"`
 	KIDs     []PsshKID `mp4:"nver=0,len=dynamic,size=128"`
 	DataSize int32     `mp4:"size=32"`
@@ -1030,7 +1096,7 @@ type Pssh struct {
 }
 
 type PsshKID struct {
-	KID [16]byte `mp4:"size=8"`
+	KID [16]byte `mp4:"size=8,uuid"`
 }
 
 // GetFieldLength returns length of dynamic field
@@ -1047,9 +1113,6 @@ func (pssh *Pssh) GetFieldLength(name string, ctx Context) uint {
 // StringifyField returns field value as string
 func (pssh *Pssh) StringifyField(name string, indent string, depth int, ctx Context) (string, bool) {
 	switch name {
-	case "SystemID":
-		return uuid.UUID(pssh.SystemID).String(), true
-
 	case "KIDs":
 		buf := bytes.NewBuffer(nil)
 		buf.WriteString("[")
@@ -1070,6 +1133,72 @@ func (pssh *Pssh) StringifyField(name string, indent string, depth int, ctx Cont
 // GetType returns the BoxType
 func (*Pssh) GetType() BoxType {
 	return BoxTypePssh()
+}
+
+/*************************** saio ****************************/
+
+func BoxTypeSaio() BoxType { return StrToBoxType("saio") }
+
+func init() {
+	AddBoxDef(&Saio{}, 0, 1)
+}
+
+type Saio struct {
+	FullBox              `mp4:"extend"`
+	AuxInfoType          [4]byte  `mp4:"size=8,opt=0x000001,string"`
+	AuxInfoTypeParameter uint32   `mp4:"size=32,opt=0x000001,hex"`
+	EntryCount           uint32   `mp4:"size=32"`
+	OffsetV0             []uint32 `mp4:"size=32,ver=0,len=dynamic"`
+	OffsetV1             []uint64 `mp4:"size=64,nver=0,len=dynamic"`
+}
+
+func (saio *Saio) GetFieldLength(name string, ctx Context) uint {
+	switch name {
+	case "OffsetV0", "OffsetV1":
+		return uint(saio.EntryCount)
+	}
+	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=saio fieldName=%s", name))
+}
+
+func (*Saio) GetType() BoxType {
+	return BoxTypeSaio()
+}
+
+/*************************** saiz ****************************/
+
+func BoxTypeSaiz() BoxType { return StrToBoxType("saiz") }
+
+func init() {
+	AddBoxDef(&Saiz{}, 0)
+}
+
+type Saiz struct {
+	FullBox               `mp4:"extend"`
+	AuxInfoType           [4]byte `mp4:"size=8,opt=0x000001,string"`
+	AuxInfoTypeParameter  uint32  `mp4:"size=32,opt=0x000001,hex"`
+	DefaultSampleInfoSize uint8   `mp4:"size=8,dec"`
+	SampleCount           uint32  `mp4:"size=32"`
+	SampleInfoSize        []uint8 `mp4:"size=8,opt=dynamic,len=dynamic,dec"`
+}
+
+func (saiz *Saiz) IsOptFieldEnabled(name string, ctx Context) bool {
+	switch name {
+	case "SampleInfoSize":
+		return saiz.DefaultSampleInfoSize == 0
+	}
+	return false
+}
+
+func (saiz *Saiz) GetFieldLength(name string, ctx Context) uint {
+	switch name {
+	case "SampleInfoSize":
+		return uint(saiz.SampleCount)
+	}
+	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=saiz fieldName=%s", name))
+}
+
+func (*Saiz) GetType() BoxType {
+	return BoxTypeSaiz()
 }
 
 /*********************** SampleEntry *************************/
@@ -1306,6 +1435,25 @@ type Schi struct {
 
 func (*Schi) GetType() BoxType {
 	return BoxTypeSchi()
+}
+
+/*************************** schm ****************************/
+
+func BoxTypeSchm() BoxType { return StrToBoxType("schm") }
+
+func init() {
+	AddBoxDef(&Schm{}, 0)
+}
+
+type Schm struct {
+	FullBox       `mp4:"extend"`
+	SchemeType    [4]byte `mp4:"size=8,string"`
+	SchemeVersion uint32  `mp4:"size=32,hex"`
+	SchemeUri     []byte  `mp4:"size=8,opt=0x000001,string"`
+}
+
+func (*Schm) GetType() BoxType {
+	return BoxTypeSchm()
 }
 
 /*************************** sdtp ****************************/
@@ -1785,6 +1933,48 @@ func (*Styp) GetType() BoxType {
 	return BoxTypeStyp()
 }
 
+/*************************** tenc ****************************/
+
+func BoxTypeTenc() BoxType { return StrToBoxType("tenc") }
+
+func init() {
+	AddBoxDef(&Tenc{}, 0, 1)
+}
+
+// Tenc is ISOBMFF tenc box type
+type Tenc struct {
+	FullBox                `mp4:"extend"`
+	Reserved               uint8    `mp4:"size=8,dec"`
+	DefaultCryptByteBlock  uint8    `mp4:"size=4,dec"` // always 0 on version 0
+	DefaultSkipByteBlock   uint8    `mp4:"size=4,dec"` // always 0 on version 0
+	DefaultIsProtected     uint8    `mp4:"size=8,dec"`
+	DefaultPerSampleIVSize uint8    `mp4:"size=8,dec"`
+	DefaultKID             [16]byte `mp4:"size=8,uuid"`
+	DefaultConstantIVSize  uint8    `mp4:"size=8,opt=dynamic,dec"`
+	DefaultConstantIV      []byte   `mp4:"size=8,opt=dynamic,len=dynamic"`
+}
+
+func (tenc *Tenc) IsOptFieldEnabled(name string, ctx Context) bool {
+	switch name {
+	case "DefaultConstantIVSize", "DefaultConstantIV":
+		return tenc.DefaultIsProtected == 1 && tenc.DefaultPerSampleIVSize == 0
+	}
+	return false
+}
+
+func (tenc *Tenc) GetFieldLength(name string, ctx Context) uint {
+	switch name {
+	case "DefaultConstantIV":
+		return uint(tenc.DefaultConstantIVSize)
+	}
+	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=tenc fieldName=%s", name))
+}
+
+// GetType returns the BoxType
+func (*Tenc) GetType() BoxType {
+	return BoxTypeTenc()
+}
+
 /*************************** tfdt ****************************/
 
 func BoxTypeTfdt() BoxType { return StrToBoxType("tfdt") }
@@ -2020,6 +2210,25 @@ type Trak struct {
 // GetType returns the BoxType
 func (*Trak) GetType() BoxType {
 	return BoxTypeTrak()
+}
+
+/*************************** trep ****************************/
+
+func BoxTypeTrep() BoxType { return StrToBoxType("trep") }
+
+func init() {
+	AddBoxDef(&Trep{}, 0)
+}
+
+// Trep is ISOBMFF trep box type
+type Trep struct {
+	FullBox `mp4:"extend"`
+	TrackID uint32 `mp4:"size=32"`
+}
+
+// GetType returns the BoxType
+func (*Trep) GetType() BoxType {
+	return BoxTypeTrep()
 }
 
 /*************************** trex ****************************/

@@ -19,6 +19,21 @@ func TestBoxTypes(t *testing.T) {
 		ctx  Context
 	}{
 		{
+			name: "btrt",
+			src: &Btrt{
+				BufferSizeDB: 0x12345678,
+				MaxBitrate:   0x3456789a,
+				AvgBitrate:   0x56789abc,
+			},
+			dst: &Btrt{},
+			bin: []byte{
+				0x12, 0x34, 0x56, 0x78, // bufferSizeDB
+				0x34, 0x56, 0x78, 0x9a, // maxBitrate
+				0x56, 0x78, 0x9a, 0xbc, // avgBitrate
+			},
+			str: `BufferSizeDB=305419896 MaxBitrate=878082202 AvgBitrate=1450744508`,
+		},
+		{
 			name: "co64",
 			src: &Co64{
 				FullBox: FullBox{
@@ -88,6 +103,36 @@ func TestBoxTypes(t *testing.T) {
 				0x01, 0x23, 0x45,
 			},
 			str: `ColourType="nclc" Unknown=[0x1, 0x23, 0x45]`,
+		},
+		{
+			name: "cslg: version 0",
+			src: &Cslg{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				CompositionToDTSShiftV0:        0x12345678,
+				LeastDecodeToDisplayDeltaV0:    -0x12345678,
+				GreatestDecodeToDisplayDeltaV0: 0x12345678,
+				CompositionStartTimeV0:         -0x12345678,
+				CompositionEndTimeV0:           0x12345678,
+			},
+			dst: &Cslg{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x12, 0x34, 0x56, 0x78, // CompositionToDTSShiftV0
+				0xed, 0xcb, 0xa9, 0x88, // LeastDecodeToDisplayDeltaV0
+				0x12, 0x34, 0x56, 0x78, // GreatestDecodeToDisplayDeltaV0
+				0xed, 0xcb, 0xa9, 0x88, // CompositionStartTimeV0
+				0x12, 0x34, 0x56, 0x78, // CompositionEndTimeV0
+			},
+			str: `Version=0 Flags=0x000000 ` +
+				`CompositionToDTSShiftV0=305419896 ` +
+				`LeastDecodeToDisplayDeltaV0=-305419896 ` +
+				`GreatestDecodeToDisplayDeltaV0=305419896 ` +
+				`CompositionStartTimeV0=-305419896 ` +
+				`CompositionEndTimeV0=305419896`,
 		},
 		{
 			name: "ctts: version 0",
@@ -448,6 +493,15 @@ func TestBoxTypes(t *testing.T) {
 				0x12, 0x34, 0x56,
 			},
 			str: `Data=[0x12, 0x34, 0x56]`,
+		},
+		{
+			name: "frma",
+			src: &Frma{
+				DataFormat: [4]byte{'t', 'e', 's', 't'},
+			},
+			dst: &Frma{},
+			bin: []byte{'t', 'e', 's', 't'},
+			str: `DataFormat="test"`,
 		},
 		{
 			name: "ftyp",
@@ -996,6 +1050,146 @@ func TestBoxTypes(t *testing.T) {
 				`Data=[0x21, 0x22, 0x23, 0x24, 0x25]`,
 		},
 		{
+			name: "saio: version 0: no aux info type",
+			src: &Saio{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				EntryCount: 3,
+				OffsetV0:   []uint32{0x01234567, 0x23456789, 0x456789ab},
+			},
+			dst: &Saio{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x00, 0x00, 0x00, 0x03, // entry count
+				0x01, 0x23, 0x45, 0x67, // offset[0]
+				0x23, 0x45, 0x67, 0x89, // offset[1]
+				0x45, 0x67, 0x89, 0xab, // offset[2]
+			},
+			str: `Version=0 Flags=0x000000 ` +
+				`EntryCount=3 OffsetV0=[19088743, 591751049, 1164413355]`,
+		},
+		{
+			name: "saio: version 0: with aux info type",
+			src: &Saio{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x01},
+				},
+				AuxInfoType:          [4]byte{'t', 'e', 's', 't'},
+				AuxInfoTypeParameter: 0x89abcdef,
+				EntryCount:           3,
+				OffsetV0:             []uint32{0x01234567, 0x23456789, 0x456789ab},
+			},
+			dst: &Saio{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x01, // flags
+				't', 'e', 's', 't', // aux info type
+				0x89, 0xab, 0xcd, 0xef, // aux info type parameter
+				0x00, 0x00, 0x00, 0x03, // entry count
+				0x01, 0x23, 0x45, 0x67, // offset[0]
+				0x23, 0x45, 0x67, 0x89, // offset[1]
+				0x45, 0x67, 0x89, 0xab, // offset[2]
+			},
+			str: `Version=0 Flags=0x000001 ` +
+				`AuxInfoType="test" AuxInfoTypeParameter=0x89abcdef ` +
+				`EntryCount=3 OffsetV0=[19088743, 591751049, 1164413355]`,
+		},
+		{
+			name: "saio: version 1: no aux info type",
+			src: &Saio{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				EntryCount: 2,
+				OffsetV1:   []uint64{0x0123456789abcdef, 0x0123456789abcdef},
+			},
+			dst: &Saio{},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // offset[0]
+				0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // offset[1]
+			},
+			str: `Version=1 Flags=0x000000 ` +
+				`EntryCount=2 OffsetV1=[81985529216486895, 81985529216486895]`,
+		},
+		{
+			name: "saiz: no aux info type; with default size",
+			src: &Saiz{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				DefaultSampleInfoSize: 0x01,
+				SampleCount:           0x01234567,
+			},
+			dst: &Saiz{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x01,                   // default sample info size
+				0x01, 0x23, 0x45, 0x67, // sample count
+			},
+			str: `Version=0 Flags=0x000000 ` +
+				`DefaultSampleInfoSize=1 ` +
+				`SampleCount=19088743`,
+		},
+		{
+			name: "saiz: no aux info type; no default size",
+			src: &Saiz{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				SampleCount:    3,
+				SampleInfoSize: []uint8{0x01, 0x02, 0x03},
+			},
+			dst: &Saiz{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x00,                   // default sample info size
+				0x00, 0x00, 0x00, 0x03, // sample count
+				0x01, 0x02, 0x03, // sample info size
+			},
+			str: `Version=0 Flags=0x000000 ` +
+				`DefaultSampleInfoSize=0 ` +
+				`SampleCount=3 ` +
+				`SampleInfoSize=[1, 2, 3]`,
+		},
+		{
+			name: "saiz: with aux info type; with default size",
+			src: &Saiz{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x01},
+				},
+				AuxInfoType:           [4]byte{'t', 'e', 's', 't'},
+				AuxInfoTypeParameter:  0x89abcdef,
+				DefaultSampleInfoSize: 0x01,
+				SampleCount:           0x01234567,
+			},
+			dst: &Saiz{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x01, // flags
+				't', 'e', 's', 't', // aux info type
+				0x89, 0xab, 0xcd, 0xef, // aux info type parameter
+				0x01,                   // default sample info size
+				0x01, 0x23, 0x45, 0x67, // sample count
+			},
+			str: `Version=0 Flags=0x000001 ` +
+				`AuxInfoType="test" AuxInfoTypeParameter=0x89abcdef ` +
+				`DefaultSampleInfoSize=1 ` +
+				`SampleCount=19088743`,
+		},
+		{
 			name: "VisualSampleEntry",
 			src: &VisualSampleEntry{
 				SampleEntry: SampleEntry{
@@ -1502,6 +1696,49 @@ func TestBoxTypes(t *testing.T) {
 			dst:  &Schi{},
 			bin:  nil,
 			str:  ``,
+		},
+		{
+			name: "schm: no scheme uri",
+			src: &Schm{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				SchemeType:    [4]byte{'t', 'e', 's', 't'},
+				SchemeVersion: 0x12345678,
+			},
+			dst: &Schm{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				't', 'e', 's', 't', // scheme type:
+				0x12, 0x34, 0x56, 0x78, // scheme version:
+			},
+			str: `Version=0 Flags=0x000000 ` +
+				`SchemeType="test" SchemeVersion=0x12345678`,
+		},
+		{
+			name: "schm: with scheme uri",
+			src: &Schm{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x01},
+				},
+				SchemeType:    [4]byte{'t', 'e', 's', 't'},
+				SchemeVersion: 0x12345678,
+				SchemeUri:     []byte("foo://bar/baz"),
+			},
+			dst: &Schm{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x01, // flags
+				't', 'e', 's', 't', // scheme type:
+				0x12, 0x34, 0x56, 0x78, // scheme version:
+				'f', 'o', 'o', ':', '/', '/', 'b', 'a', 'r', '/', 'b', 'a', 'z', // scheme uri
+			},
+			str: `Version=0 Flags=0x000001 ` +
+				`SchemeType="test" SchemeVersion=0x12345678 ` +
+				`SchemeUri="foo://bar/baz"`,
 		},
 		{
 			name: "sdtp",
@@ -2165,6 +2402,117 @@ func TestBoxTypes(t *testing.T) {
 			str: `MajorBrand="abem" MinorVersion=305419896 CompatibleBrands=[{CompatibleBrand="abcd"}, {CompatibleBrand="efgh"}]`,
 		},
 		{
+			name: "tenc: DefaultIsProtected=1 DefaultPerSampleIVSize=0",
+			src: &Tenc{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				Reserved:               0x00,
+				DefaultCryptByteBlock:  0x0a,
+				DefaultSkipByteBlock:   0x0b,
+				DefaultIsProtected:     1,
+				DefaultPerSampleIVSize: 0,
+				DefaultKID: [16]byte{
+					0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+					0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+				},
+				DefaultConstantIVSize: 4,
+				DefaultConstantIV:     []byte{0x01, 0x23, 0x45, 0x67},
+			},
+			dst: &Tenc{},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				0x00,       // reserved
+				0xab,       // default crypt byte block / default skip byte block
+				0x01, 0x00, // default is protected / default per sample iv size
+				0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // default kid
+				0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+				0x04,                   // default constant iv size
+				0x01, 0x23, 0x45, 0x67, // default constant iv
+			},
+			str: `Version=1 Flags=0x000000 ` +
+				`Reserved=0 ` +
+				`DefaultCryptByteBlock=10 ` +
+				`DefaultSkipByteBlock=11 ` +
+				`DefaultIsProtected=1 ` +
+				`DefaultPerSampleIVSize=0 ` +
+				`DefaultKID=01234567-89ab-cdef-0123-456789abcdef ` +
+				`DefaultConstantIVSize=4 ` +
+				`DefaultConstantIV=[0x1, 0x23, 0x45, 0x67]`,
+		},
+		{
+			name: "tenc: DefaultIsProtected=0 DefaultPerSampleIVSize=0",
+			src: &Tenc{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				Reserved:               0x00,
+				DefaultCryptByteBlock:  0x0a,
+				DefaultSkipByteBlock:   0x0b,
+				DefaultIsProtected:     0,
+				DefaultPerSampleIVSize: 0,
+				DefaultKID: [16]byte{
+					0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+					0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+				},
+			},
+			dst: &Tenc{},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				0x00,       // reserved
+				0xab,       // default crypt byte block / default skip byte block
+				0x00, 0x00, // default is protected / default per sample iv size
+				0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // default kid
+				0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+			},
+			str: `Version=1 Flags=0x000000 ` +
+				`Reserved=0 ` +
+				`DefaultCryptByteBlock=10 ` +
+				`DefaultSkipByteBlock=11 ` +
+				`DefaultIsProtected=0 ` +
+				`DefaultPerSampleIVSize=0 ` +
+				`DefaultKID=01234567-89ab-cdef-0123-456789abcdef`,
+		},
+		{
+			name: "tenc: DefaultIsProtected=1 DefaultPerSampleIVSize=1",
+			src: &Tenc{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				Reserved:               0x00,
+				DefaultCryptByteBlock:  0x0a,
+				DefaultSkipByteBlock:   0x0b,
+				DefaultIsProtected:     1,
+				DefaultPerSampleIVSize: 1,
+				DefaultKID: [16]byte{
+					0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+					0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+				},
+			},
+			dst: &Tenc{},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				0x00,       // reserved
+				0xab,       // default crypt byte block / default skip byte block
+				0x01, 0x01, // default is protected / default per sample iv size
+				0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // default kid
+				0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+			},
+			str: `Version=1 Flags=0x000000 ` +
+				`Reserved=0 ` +
+				`DefaultCryptByteBlock=10 ` +
+				`DefaultSkipByteBlock=11 ` +
+				`DefaultIsProtected=1 ` +
+				`DefaultPerSampleIVSize=1 ` +
+				`DefaultKID=01234567-89ab-cdef-0123-456789abcdef`,
+		},
+		{
 			name: "tfdt: version 0",
 			src: &Tfdt{
 				FullBox: FullBox{
@@ -2419,6 +2767,23 @@ func TestBoxTypes(t *testing.T) {
 			dst:  &Trak{},
 			bin:  nil,
 			str:  ``,
+		},
+		{
+			name: "trep",
+			src: &Trep{
+				FullBox: FullBox{
+					Version: 0,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				TrackID: 0x01234567,
+			},
+			dst: &Trep{},
+			bin: []byte{
+				0,                // version
+				0x00, 0x00, 0x00, // flags
+				0x01, 0x23, 0x45, 0x67, // track ID
+			},
+			str: `Version=0 Flags=0x000000 TrackID=19088743`,
 		},
 		{
 			name: "trex",
