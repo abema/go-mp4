@@ -686,7 +686,7 @@ func (data *Data) StringifyField(name string, indent string, depth int, ctx Cont
 	case "Data":
 		switch data.DataType {
 		case DataTypeStringUTF8:
-			return fmt.Sprintf("\"%s\"", string(data.Data)), true
+			return fmt.Sprintf("\"%s\"", util.EscapeUnprintables(string(data.Data))), true
 		}
 	}
 	return "", false
@@ -700,7 +700,7 @@ type StringData struct {
 // StringifyField returns field value as string
 func (sd *StringData) StringifyField(name string, indent string, depth int, ctx Context) (string, bool) {
 	if name == "Data" {
-		return fmt.Sprintf("\"%s\"", string(sd.Data)), true
+		return fmt.Sprintf("\"%s\"", util.EscapeUnprintables(string(sd.Data))), true
 	}
 	return "", false
 }
@@ -1120,7 +1120,7 @@ func (vse *VisualSampleEntry) StringifyField(name string, indent string, depth i
 	switch name {
 	case "Compressorname":
 		if vse.Compressorname[0] <= 31 {
-			return `"` + string(vse.Compressorname[1:vse.Compressorname[0]+1]) + `"`, true
+			return `"` + util.EscapeUnprintables(string(vse.Compressorname[1:vse.Compressorname[0]+1])) + `"`, true
 		}
 		return "", false
 	default:
