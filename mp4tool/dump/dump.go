@@ -30,6 +30,7 @@ func Main(args []string) {
 	mdat := flagSet.Bool("mdat", false, "Deprecated: use \"-full mdat\"")
 	free := flagSet.Bool("free", false, "Deprecated: use \"-full free,styp\"")
 	offset := flagSet.Bool("offset", false, "Show offset of box")
+	hex := flagSet.Bool("hex", false, "Use hex for size and offset")
 	flagSet.Parse(args)
 
 	if len(flagSet.Args()) < 1 {
@@ -55,6 +56,7 @@ func Main(args []string) {
 		full:    fmap,
 		showAll: *showAll,
 		offset:  *offset,
+		hex:     *hex,
 	}
 	err := m.dumpFile(fpath)
 	if err != nil {
@@ -67,6 +69,7 @@ type mp4dump struct {
 	full    map[string]struct{}
 	showAll bool
 	offset  bool
+	hex     bool
 }
 
 func (m *mp4dump) dumpFile(fpath string) error {
@@ -89,10 +92,14 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 		if !h.BoxInfo.IsSupportedType() {
 			fmt.Fprintf(line, " (unsupported box type)")
 		}
-		if m.offset {
-			fmt.Fprintf(line, " Offset=%d", h.BoxInfo.Offset)
+		sizeFormat := "%d"
+		if m.hex {
+			sizeFormat = "0x%x"
 		}
-		fmt.Fprintf(line, " Size=%d", h.BoxInfo.Size)
+		if m.offset {
+			fmt.Fprintf(line, " Offset="+sizeFormat, h.BoxInfo.Offset)
+		}
+		fmt.Fprintf(line, " Size="+sizeFormat, h.BoxInfo.Size)
 
 		_, full := m.full[h.BoxInfo.Type.String()]
 		if !full &&
