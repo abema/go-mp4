@@ -31,3 +31,15 @@ func TestFormatSignedFixedFloat88(t *testing.T) {
 	assert.Equal(t, "123.457", FormatSignedFixedFloat88(0x7b75))
 	assert.Equal(t, "-123.457", FormatSignedFixedFloat88(-0x7b75))
 }
+
+func TestEscapeUnprintables(t *testing.T) {
+	assert.Equal(t, ".ABC.あいう.", EscapeUnprintables(string([]byte{
+		0x00,             // NULL
+		0x41, 0x42, 0x43, // "ABC"
+		0x0a,             // LF
+		0xe3, 0x81, 0x82, // "あ"
+		0xe3, 0x81, 0x84, // "い"
+		0xe3, 0x81, 0x86, // "う"
+		0x0d, // CR
+	})))
+}

@@ -1,6 +1,10 @@
 package util
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+	"unicode"
+)
 
 func FormatSignedFixedFloat1616(val int32) string {
 	if val&0xffff == 0 {
@@ -24,4 +28,15 @@ func FormatSignedFixedFloat88(val int16) string {
 	} else {
 		return strconv.FormatFloat(float64(val)/(1<<8), 'f', 3, 32)
 	}
+}
+
+func EscapeUnprintable(r rune) rune {
+	if unicode.IsGraphic(r) {
+		return r
+	}
+	return rune('.')
+}
+
+func EscapeUnprintables(src string) string {
+	return strings.Map(EscapeUnprintable, src)
 }
