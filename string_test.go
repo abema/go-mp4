@@ -15,17 +15,18 @@ func TestEmsgStringify(t *testing.T) {
 	type testBox struct {
 		AnyTypeBox
 		FullBox  `mp4:"extend"`
-		String   string  `mp4:"string"`
-		Int32    int32   `mp4:"size=32"`
-		Int32Hex int32   `mp4:"size=32,hex"`
-		Uint32   uint32  `mp4:"size=32"`
-		Bytes    []byte  `mp4:"size=8,string"`
-		Ptr      *inner  `mp4:""`
-		PtrEx    *inner  `mp4:"extend"`
-		Struct   inner   `mp4:""`
-		StructEx inner   `mp4:"extend"`
-		Array    [7]byte `mp4:"size=8,string"`
-		Bool     bool    `mp4:"size=1"`
+		String   string   `mp4:"string"`
+		Int32    int32    `mp4:"size=32"`
+		Int32Hex int32    `mp4:"size=32,hex"`
+		Uint32   uint32   `mp4:"size=32"`
+		Bytes    []byte   `mp4:"size=8,string"`
+		Ptr      *inner   `mp4:""`
+		PtrEx    *inner   `mp4:"extend"`
+		Struct   inner    `mp4:""`
+		StructEx inner    `mp4:"extend"`
+		Array    [7]byte  `mp4:"size=8,string"`
+		Bool     bool     `mp4:"size=1"`
+		UUID     [16]byte `mp4:"size=8,uuid"`
 	}
 
 	box := testBox{
@@ -52,6 +53,7 @@ func TestEmsgStringify(t *testing.T) {
 		},
 		Array: [7]byte{'f', 'o', 'o', 0x00, 'b', 'a', 'r'},
 		Bool:  true,
+		UUID:  [16]byte{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef},
 	}
 
 	str, err := StringifyWithIndent(&box, " ", Context{})
@@ -72,9 +74,10 @@ func TestEmsgStringify(t *testing.T) {
 		` }`+"\n"+
 		` Uint64=0x1234567890`+"\n"+
 		` Array="foo.bar"`+"\n"+
-		` Bool=true`+"\n", str)
+		` Bool=true`+"\n"+
+		` UUID=01234567-89ab-cdef-0123-456789abcdef`+"\n", str)
 
 	str, err = Stringify(&box, Context{})
 	require.NoError(t, err)
-	assert.Equal(t, `Version=0 Flags=0x000000 String="abema.tv" Int32=-1234567890 Int32Hex=0x12345678 Uint32=1234567890 Bytes="ABEMA.TV" Ptr={Uint64=0x1234567890} Uint64=0x1234567890 Struct={Uint64=0x1234567890} Uint64=0x1234567890 Array="foo.bar" Bool=true`, str)
+	assert.Equal(t, `Version=0 Flags=0x000000 String="abema.tv" Int32=-1234567890 Int32Hex=0x12345678 Uint32=1234567890 Bytes="ABEMA.TV" Ptr={Uint64=0x1234567890} Uint64=0x1234567890 Struct={Uint64=0x1234567890} Uint64=0x1234567890 Array="foo.bar" Bool=true UUID=01234567-89ab-cdef-0123-456789abcdef`, str)
 }

@@ -142,7 +142,7 @@ func TestReadBoxStructureQT(t *testing.T) {
 	_, err = ReadBoxStructure(f, func(h *ReadHandle) (interface{}, error) {
 		n++
 		switch n {
-		case 5, 42, 45: // unsupported
+		case 5, 45: // unsupported
 			require.False(t, h.BoxInfo.IsSupportedType())
 			buf := bytes.NewBuffer(nil)
 			n, err := h.ReadData(buf)
@@ -188,7 +188,7 @@ func TestReadBoxStructureQT(t *testing.T) {
 //  7	  [trak] Size=115889
 //  8	    [tkhd] Size=92 ... (use "-full tkhd" to show all)
 //  9	    [mdia] Size=115789
-// 10	      [mdhd] Size=32 Version=0 Flags=0x000000 CreationTimeV0=2082844800 ModificationTimeV0=2082844800 Timescale=24 DurationV0=14315 Pad=false Language="```" PreDefined=0
+// 10	      [mdhd] Size=32 Version=0 Flags=0x000000 CreationTimeV0=2082844800 ModificationTimeV0=2082844800 Timescale=24 DurationV0=14315 Language="```" PreDefined=0
 // 11	      [hdlr] Size=45 Version=0 Flags=0x000000 PreDefined=1835560050 HandlerType="vide" Name="VideoHandler"
 // 12	      [minf] Size=115704
 // 13	        [hdlr] Size=44 Version=0 Flags=0x000000 PreDefined=1684565106 HandlerType="url " Name="DataHandler"
@@ -208,7 +208,7 @@ func TestReadBoxStructureQT(t *testing.T) {
 // 27	  [trak] Size=224196
 // 28	    [tkhd] Size=92 ... (use "-full tkhd" to show all)
 // 29	    [mdia] Size=224096
-// 30	      [mdhd] Size=32 Version=0 Flags=0x000000 CreationTimeV0=2082844800 ModificationTimeV0=2082844800 Timescale=48000 DurationV0=28628992 Pad=false Language="```" PreDefined=0
+// 30	      [mdhd] Size=32 Version=0 Flags=0x000000 CreationTimeV0=2082844800 ModificationTimeV0=2082844800 Timescale=48000 DurationV0=28628992 Language="```" PreDefined=0
 // 31	      [hdlr] Size=45 Version=0 Flags=0x000000 PreDefined=1835560050 HandlerType="soun" Name="SoundHandler"
 // 32	      [minf] Size=224011
 // 33	        [hdlr] Size=44 Version=0 Flags=0x000000 PreDefined=1684565106 HandlerType="url " Name="DataHandler"
@@ -220,7 +220,7 @@ func TestReadBoxStructureQT(t *testing.T) {
 // 39	          [stsd] Size=147 Version=0 Flags=0x000000 EntryCount=1
 // 40	            [mp4a] Size=131 DataReferenceIndex=1 EntryVersion=1 ChannelCount=2 SampleSize=16 PreDefined=65534 SampleRate=3145728000 QuickTimeData=[0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2]
 // 41	              [wave] Size=79
-// 42	                [frma] (unsupported box type) Size=12 Data=[...] (use "-full frma" to show all)
+// 42	                [frma] Size=12 DataFormat="mp4a"
 // 43	                [mp4a] Size=12 QuickTimeData=[0x0, 0x0, 0x0, 0x0]
 // 44	                [esds] Size=39 ... (use "-full esds" to show all)
 // 45	                [0x00000000] (unsupported box type) Size=8 Data=[...] (use "-full 0x00000000" to show all)

@@ -147,6 +147,8 @@ func (m *stringifier) stringifyArray(t reflect.Type, v reflect.Value, config fie
 	begin, sep, end := "[", ", ", "]"
 	if config.str || config.iso639_2 {
 		begin, sep, end = "\"", "", "\""
+	} else if config.uuid {
+		begin, sep, end = "", "", ""
 	}
 
 	m.buf.WriteString(begin)
@@ -163,6 +165,10 @@ func (m *stringifier) stringifyArray(t reflect.Type, v reflect.Value, config fie
 
 		if err := m2.stringify(t.Elem(), v.Index(i), config, depth+1); err != nil {
 			return err
+		}
+
+		if config.uuid && (i == 3 || i == 5 || i == 7 || i == 9) {
+			m.buf.WriteString("-")
 		}
 	}
 	if config.str {
@@ -227,9 +233,11 @@ func (m *stringifier) stringifyInt(t reflect.Type, v reflect.Value, config field
 func (m *stringifier) stringifyUint(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
 	if config.iso639_2 {
 		m.buf.WriteString(string([]byte{byte(v.Uint() + 0x60)}))
+	} else if config.uuid {
+		fmt.Fprintf(m.buf, "%02x", v.Uint())
 	} else if config.str {
 		m.buf.WriteString(string([]byte{byte(v.Uint())}))
-	} else if config.hex || t.Kind() == reflect.Uint8 || t.Kind() == reflect.Uintptr {
+	} else if config.hex || (!config.dec && t.Kind() == reflect.Uint8) || t.Kind() == reflect.Uintptr {
 		m.buf.WriteString("0x")
 		m.buf.WriteString(strconv.FormatUint(v.Uint(), 16))
 	} else {
