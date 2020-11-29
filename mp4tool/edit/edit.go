@@ -1,4 +1,4 @@
-package mp4edit
+package edit
 
 import (
 	"flag"

@@ -1,4 +1,4 @@
-package mp4divide
+package divide
 
 import (
 	"fmt"
