@@ -10,7 +10,7 @@ import (
 	"github.com/abema/go-mp4/util"
 )
 
-type stringfier struct {
+type stringifier struct {
 	buf    *bytes.Buffer
 	src    IImmutableBox
 	indent string
@@ -25,7 +25,7 @@ func StringifyWithIndent(src IImmutableBox, indent string, ctx Context) (string,
 	t := reflect.TypeOf(src).Elem()
 	v := reflect.ValueOf(src).Elem()
 
-	m := &stringfier{
+	m := &stringifier{
 		buf:    bytes.NewBuffer(nil),
 		src:    src,
 		indent: indent,
@@ -40,7 +40,7 @@ func StringifyWithIndent(src IImmutableBox, indent string, ctx Context) (string,
 	return m.buf.String(), nil
 }
 
-func (m *stringfier) stringify(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
+func (m *stringifier) stringify(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
 	switch t.Kind() {
 	case reflect.Ptr:
 		return m.stringifyPtr(t, v, config, depth)
@@ -63,11 +63,11 @@ func (m *stringfier) stringify(t reflect.Type, v reflect.Value, config fieldConf
 	}
 }
 
-func (m *stringfier) stringifyPtr(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
+func (m *stringifier) stringifyPtr(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
 	return m.stringify(t.Elem(), v.Elem(), config, depth)
 }
 
-func (m *stringfier) stringifyStruct(t reflect.Type, v reflect.Value, depth int, extended bool) error {
+func (m *stringifier) stringifyStruct(t reflect.Type, v reflect.Value, depth int, extended bool) error {
 	if !extended {
 		m.buf.WriteString("{")
 		if m.indent != "" {
@@ -143,7 +143,7 @@ func (m *stringfier) stringifyStruct(t reflect.Type, v reflect.Value, depth int,
 	return nil
 }
 
-func (m *stringfier) stringifyArray(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
+func (m *stringifier) stringifyArray(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
 	begin, sep, end := "[", ", ", "]"
 	if config.str || config.iso639_2 {
 		begin, sep, end = "\"", "", "\""
@@ -176,7 +176,7 @@ func (m *stringfier) stringifyArray(t reflect.Type, v reflect.Value, config fiel
 	return nil
 }
 
-func (m *stringfier) stringifySlice(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
+func (m *stringifier) stringifySlice(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
 	begin, sep, end := "[", ", ", "]"
 	if config.str || config.iso639_2 {
 		begin, sep, end = "\"", "", "\""
@@ -208,7 +208,7 @@ func (m *stringfier) stringifySlice(t reflect.Type, v reflect.Value, config fiel
 	return nil
 }
 
-func (m *stringfier) stringifyInt(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
+func (m *stringifier) stringifyInt(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
 	if config.hex {
 		val := v.Int()
 		if val >= 0 {
@@ -224,7 +224,7 @@ func (m *stringfier) stringifyInt(t reflect.Type, v reflect.Value, config fieldC
 	return nil
 }
 
-func (m *stringfier) stringifyUint(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
+func (m *stringifier) stringifyUint(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
 	if config.iso639_2 {
 		m.buf.WriteString(string([]byte{byte(v.Uint() + 0x60)}))
 	} else if config.str {
@@ -239,13 +239,13 @@ func (m *stringfier) stringifyUint(t reflect.Type, v reflect.Value, config field
 	return nil
 }
 
-func (m *stringfier) stringifyBool(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
+func (m *stringifier) stringifyBool(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
 	m.buf.WriteString(strconv.FormatBool(v.Bool()))
 
 	return nil
 }
 
-func (m *stringfier) stringifyString(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
+func (m *stringifier) stringifyString(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
 	m.buf.WriteString("\"")
 	m.buf.WriteString(util.EscapeUnprintables(v.String()))
 	m.buf.WriteString("\"")
