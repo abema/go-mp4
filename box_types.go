@@ -8,6 +8,7 @@ import (
 
 	"github.com/abema/go-mp4/bitio"
 	"github.com/abema/go-mp4/util"
+	"github.com/google/uuid"
 )
 
 /*************************** co64 ****************************/
@@ -1047,27 +1048,16 @@ func (pssh *Pssh) GetFieldLength(name string, ctx Context) uint {
 func (pssh *Pssh) StringifyField(name string, indent string, depth int, ctx Context) (string, bool) {
 	switch name {
 	case "SystemID":
-		buf := bytes.NewBuffer(nil)
-		buf.WriteString("\"")
-		for _, b := range pssh.SystemID {
-			buf.WriteString(fmt.Sprintf("%02x", b))
-		}
-		buf.WriteString("\"")
-		return buf.String(), true
+		return uuid.UUID(pssh.SystemID).String(), true
 
 	case "KIDs":
 		buf := bytes.NewBuffer(nil)
 		buf.WriteString("[")
 		for i, e := range pssh.KIDs {
 			if i != 0 {
-				buf.WriteString(" \"")
-			} else {
-				buf.WriteString("\"")
+				buf.WriteString(", ")
 			}
-			for _, b := range e.KID {
-				buf.WriteString(fmt.Sprintf("%02x", b))
-			}
-			buf.WriteString("\"")
+			buf.WriteString(uuid.UUID(e.KID).String())
 		}
 		buf.WriteString("]")
 		return buf.String(), true
