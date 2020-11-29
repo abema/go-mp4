@@ -1,4 +1,4 @@
-package mp4dump
+package dump
 
 import (
 	"bytes"
