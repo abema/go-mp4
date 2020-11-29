@@ -538,6 +538,18 @@ func TestBoxTypes(t *testing.T) {
 			ctx: Context{UnderIlstMeta: true},
 		},
 		{
+			name: "ilst data (utf8 escaped)",
+			src:  &Data{DataType: 1, DataLang: 0x12345678, Data: []byte{0x00, 'f', 'o', 'o'}},
+			dst:  &Data{},
+			bin: []byte{
+				0x00, 0x00, 0x00, 0x01, // data type
+				0x12, 0x34, 0x56, 0x78, // data lang
+				0x00, 0x66, 0x6f, 0x6f, // data
+			},
+			str: `DataType=UTF8 DataLang=305419896 Data=".foo"`,
+			ctx: Context{UnderIlstMeta: true},
+		},
+		{
 			name: "ilst data (utf16)",
 			src:  &Data{DataType: 2, DataLang: 0x12345678, Data: []byte("foo")},
 			dst:  &Data{},
@@ -613,15 +625,15 @@ func TestBoxTypes(t *testing.T) {
 			name: "ilst data (string)",
 			src: &StringData{
 				AnyTypeBox: AnyTypeBox{Type: StrToBoxType("mean")},
-				Data:       []byte("foo"),
+				Data:       []byte{0x00, 'f', 'o', 'o'},
 			},
 			dst: &StringData{
 				AnyTypeBox: AnyTypeBox{Type: StrToBoxType("mean")},
 			},
 			bin: []byte{
-				0x66, 0x6f, 0x6f, // data
+				0x00, 0x66, 0x6f, 0x6f, // data
 			},
-			str: `Data="foo"`,
+			str: `Data=".foo"`,
 			ctx: Context{UnderIlstFreeMeta: true},
 		},
 		{
@@ -998,7 +1010,7 @@ func TestBoxTypes(t *testing.T) {
 				Vertresolution:  0x01000005,
 				Reserved2:       0x01000006,
 				FrameCount:      0x0104,
-				Compressorname:  [32]byte{5, 'a', 'b', 'e', 'm', 'a'},
+				Compressorname:  [32]byte{8, 'a', 'b', 'e', 'm', 'a', 0x00, 't', 'v'},
 				Depth:           0x0105,
 				PreDefined3:     1001,
 			},
@@ -1017,8 +1029,8 @@ func TestBoxTypes(t *testing.T) {
 				0x01, 0x00, 0x00, 0x05, // Vertresolution
 				0x01, 0x00, 0x00, 0x06, // Reserved2
 				0x01, 0x04, // FrameCount
-				5, 'a', 'b', 'e', 'm', 'a', 0x00, 0x00,
-				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				8, 'a', 'b', 'e', 'm', 'a', 0x00, 't',
+				'v', 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Compressorname
 				0x01, 0x05, // Depth
@@ -1032,7 +1044,7 @@ func TestBoxTypes(t *testing.T) {
 				`Horizresolution=16777220 ` +
 				`Vertresolution=16777221 ` +
 				`FrameCount=260 ` +
-				`Compressorname="abema" ` +
+				`Compressorname="abema.tv" ` +
 				`Depth=261 ` +
 				`PreDefined3=1001`,
 		},
