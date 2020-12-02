@@ -161,9 +161,7 @@ func (m *stringifier) stringifyArray(t reflect.Type, v reflect.Value, config fie
 			m2.buf.WriteString(sep)
 		}
 
-		var err error
-		err = m2.stringify(t.Elem(), v.Index(i), config, depth+1)
-		if err != nil {
+		if err := m2.stringify(t.Elem(), v.Index(i), config, depth+1); err != nil {
 			return err
 		}
 	}
@@ -197,7 +195,9 @@ func (m *stringifier) stringifySlice(t reflect.Type, v reflect.Value, config fie
 			m2.buf.WriteString(sep)
 		}
 
-		m2.stringify(t.Elem(), v.Index(i), config, depth+1)
+		if err := m2.stringify(t.Elem(), v.Index(i), config, depth+1); err != nil {
+			return err
+		}
 	}
 	if config.str {
 		m.buf.WriteString(util.EscapeUnprintables(m2.buf.String()))
