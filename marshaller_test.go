@@ -38,61 +38,66 @@ func (m *mockBox) GetFieldLength(n string, ctx Context) uint {
 
 func TestMarshal(t *testing.T) {
 	type inner struct {
-		Array [4]byte `mp4:"size=8,string"`
+		Array [4]byte `mp4:"0,size=8,string"`
 	}
 
 	type testBox struct {
 		mockBox
-		FullBox `mp4:"extend"`
+		FullBox `mp4:"0,extend"`
 
 		// integer
-		Int32  int32  `mp4:"size=32"`
-		Uint32 uint32 `mp4:"size=32"`
-		Int64  int64  `mp4:"size=64"`
-		Uint64 uint64 `mp4:"size=64"`
+		Int32  int32  `mp4:"1,size=32"`
+		Uint32 uint32 `mp4:"2,size=32"`
+		Int64  int64  `mp4:"3,size=64"`
+		Uint64 uint64 `mp4:"4,size=64"`
 
 		// left-justified
-		Int32l   int32  `mp4:"size=29"`
-		Padding0 uint8  `mp4:"size=3,const=0"`
-		Uint32l  uint32 `mp4:"size=29"`
-		Padding1 uint8  `mp4:"size=3,const=0"`
-		Int64l   int64  `mp4:"size=59"`
-		Padding2 uint8  `mp4:"size=5,const=0"`
-		Uint64l  uint64 `mp4:"size=59"`
-		Padding3 uint8  `mp4:"size=5,const=0"`
+		Int32l   int32  `mp4:"5,size=29"`
+		Padding0 uint8  `mp4:"6,size=3,const=0"`
+		Uint32l  uint32 `mp4:"7,size=29"`
+		Padding1 uint8  `mp4:"8,size=3,const=0"`
+		Int64l   int64  `mp4:"9,size=59"`
+		Padding2 uint8  `mp4:"10,size=5,const=0"`
+		Uint64l  uint64 `mp4:"11,size=59"`
+		Padding3 uint8  `mp4:"12,size=5,const=0"`
 
 		// right-justified
-		Padding4 uint8  `mp4:"size=3,const=0"`
-		Int32r   int32  `mp4:"size=29"`
-		Padding5 uint8  `mp4:"size=3,const=0"`
-		Uint32r  uint32 `mp4:"size=29"`
-		Padding6 uint8  `mp4:"size=5,const=0"`
-		Int64r   int64  `mp4:"size=59"`
-		Padding7 uint8  `mp4:"size=5,const=0"`
-		Uint64r  uint64 `mp4:"size=59"`
+		Padding4 uint8  `mp4:"13,size=3,const=0"`
+		Int32r   int32  `mp4:"14,size=29"`
+		Padding5 uint8  `mp4:"15,size=3,const=0"`
+		Uint32r  uint32 `mp4:"16,size=29"`
+		Padding6 uint8  `mp4:"17,size=5,const=0"`
+		Int64r   int64  `mp4:"18,size=59"`
+		Padding7 uint8  `mp4:"19,size=5,const=0"`
+		Uint64r  uint64 `mp4:"20,size=59"`
 
 		// varint
-		Varint uint16 `mp4:"varint"`
+		Varint uint16 `mp4:"21,varint"`
 
 		// string, slice, pointer, array
-		String     string `mp4:"string"`
-		String_C_P string `mp4:"string=c_p"`
-		Bytes      []byte `mp4:"size=8,len=5"`
-		Uints      []uint `mp4:"size=16,len=dynamic"`
-		Ptr        *inner `mp4:"extend"`
+		String     string `mp4:"22,string"`
+		String_C_P string `mp4:"23,string=c_p"`
+		Bytes      []byte `mp4:"24,size=8,len=5"`
+		Uints      []uint `mp4:"25,size=16,len=dynamic"`
+		Ptr        *inner `mp4:"26,extend"`
 
 		// bool
-		Bool     bool  `mp4:"size=1"`
-		Padding8 uint8 `mp4:"size=7,const=0"`
+		Bool     bool  `mp4:"27,size=1"`
+		Padding8 uint8 `mp4:"28,size=7,const=0"`
 
 		// dynamic-size
-		DynUint uint `mp4:"size=dynamic"`
+		DynUint uint `mp4:"29,size=dynamic"`
 
 		// optional
-		OptUint1 uint `mp4:"size=8,opt=0x0100"`  // enabled
-		OptUint2 uint `mp4:"size=8,opt=0x0200"`  // disabled
-		OptUint3 uint `mp4:"size=8,nopt=0x0400"` // disabled
-		OptUint4 uint `mp4:"size=8,nopt=0x0800"` // enabled
+		OptUint1 uint `mp4:"30,size=8,opt=0x0100"`  // enabled
+		OptUint2 uint `mp4:"31,size=8,opt=0x0200"`  // disabled
+		OptUint3 uint `mp4:"32,size=8,nopt=0x0400"` // disabled
+		OptUint4 uint `mp4:"33,size=8,nopt=0x0800"` // enabled
+
+		// not sorted
+		NotSorted35 uint8 `mp4:"35,size=8,dec"`
+		NotSorted36 uint8 `mp4:"36,size=8,dec"`
+		NotSorted34 uint8 `mp4:"34,size=8,dec"`
 	}
 
 	boxType := StrToBoxType("test")
@@ -148,6 +153,10 @@ func TestMarshal(t *testing.T) {
 
 		OptUint1: 0x11,
 		OptUint4: 0x44,
+
+		NotSorted35: 35,
+		NotSorted36: 36,
+		NotSorted34: 34,
 	}
 
 	bin := []byte{
@@ -173,8 +182,9 @@ func TestMarshal(t *testing.T) {
 		'h', 'o', 'g', 'e', // inner.array
 		0x80,             // bool & padding
 		0x12, 0x34, 0x56, // dynUint
-		0x11, // optUint1
-		0x44, // optUint4
+		0x11,       // optUint1
+		0x44,       // optUint4
+		34, 35, 36, // not sorted
 	}
 
 	// marshal
@@ -195,7 +205,7 @@ func TestMarshal(t *testing.T) {
 func TestUnsupportedBoxVersionErr(t *testing.T) {
 	type testBox struct {
 		mockBox
-		FullBox `mp4:"extend"`
+		FullBox `mp4:"0,extend"`
 	}
 
 	boxType := StrToBoxType("test")

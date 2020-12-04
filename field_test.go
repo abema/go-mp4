@@ -8,6 +8,31 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestBuildField(t *testing.T) {
+	box := &struct {
+		mockBox
+		FullBox    `mp4:"0,extend"`
+		ByteArray  []byte `mp4:"1,size=8"`
+		Int        int32  `mp4:"2,size=32"`
+		NotSorted4 byte   `mp4:"4,size=8"`
+		NotSorted5 byte   `mp4:"5,size=8"`
+		NotSorted3 byte   `mp4:"3,size=8"`
+	}{}
+
+	fs := buildFields(box)
+	assert.Equal(t, []*field{
+		{name: "FullBox", order: 0, children: []*field{
+			{name: "Version", order: 0},
+			{name: "Flags", order: 1},
+		}},
+		{name: "ByteArray", order: 1},
+		{name: "Int", order: 2},
+		{name: "NotSorted3", order: 3},
+		{name: "NotSorted4", order: 4},
+		{name: "NotSorted5", order: 5},
+	}, fs)
+}
+
 func TestReadFieldConfig(t *testing.T) {
 	box := &struct {
 		mockBox

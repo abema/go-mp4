@@ -7,29 +7,37 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestEmsgStringify(t *testing.T) {
+func TestStringify(t *testing.T) {
 	type inner struct {
-		Uint64 uint64 `mp4:"size=64,hex"`
+		Uint64 uint64 `mp4:"0,size=64,hex"`
 	}
 
 	type testBox struct {
 		AnyTypeBox
-		FullBox  `mp4:"extend"`
-		String   string   `mp4:"string"`
-		Int32    int32    `mp4:"size=32"`
-		Int32Hex int32    `mp4:"size=32,hex"`
-		Uint32   uint32   `mp4:"size=32"`
-		Bytes    []byte   `mp4:"size=8,string"`
-		Ptr      *inner   `mp4:""`
-		PtrEx    *inner   `mp4:"extend"`
-		Struct   inner    `mp4:""`
-		StructEx inner    `mp4:"extend"`
-		Array    [7]byte  `mp4:"size=8,string"`
-		Bool     bool     `mp4:"size=1"`
-		UUID     [16]byte `mp4:"size=8,uuid"`
+		FullBox     `mp4:"0,extend"`
+		String      string   `mp4:"1,string"`
+		Int32       int32    `mp4:"2,size=32"`
+		Int32Hex    int32    `mp4:"3,size=32,hex"`
+		Uint32      uint32   `mp4:"4,size=32"`
+		Bytes       []byte   `mp4:"5,size=8,string"`
+		Ptr         *inner   `mp4:"6"`
+		PtrEx       *inner   `mp4:"7,extend"`
+		Struct      inner    `mp4:"8"`
+		StructEx    inner    `mp4:"9,extend"`
+		Array       [7]byte  `mp4:"10,size=8,string"`
+		Bool        bool     `mp4:"11,size=1"`
+		UUID        [16]byte `mp4:"12,size=8,uuid"`
+		NotSorted14 uint8    `mp4:"14,size=8,dec"`
+		NotSorted15 uint8    `mp4:"15,size=8,dec"`
+		NotSorted13 uint8    `mp4:"13,size=8,dec"`
 	}
+	boxType := StrToBoxType("test")
+	AddAnyTypeBoxDef(&testBox{}, boxType)
 
 	box := testBox{
+		AnyTypeBox: AnyTypeBox{
+			Type: boxType,
+		},
 		FullBox: FullBox{
 			Version: 0,
 			Flags:   [3]byte{0x00, 0x00, 0x00},
@@ -51,9 +59,12 @@ func TestEmsgStringify(t *testing.T) {
 		StructEx: inner{
 			Uint64: 0x1234567890,
 		},
-		Array: [7]byte{'f', 'o', 'o', 0x00, 'b', 'a', 'r'},
-		Bool:  true,
-		UUID:  [16]byte{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef},
+		Array:       [7]byte{'f', 'o', 'o', 0x00, 'b', 'a', 'r'},
+		Bool:        true,
+		UUID:        [16]byte{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef},
+		NotSorted14: 14,
+		NotSorted15: 15,
+		NotSorted13: 13,
 	}
 
 	str, err := StringifyWithIndent(&box, " ", Context{})
@@ -75,9 +86,12 @@ func TestEmsgStringify(t *testing.T) {
 		` Uint64=0x1234567890`+"\n"+
 		` Array="foo.bar"`+"\n"+
 		` Bool=true`+"\n"+
-		` UUID=01234567-89ab-cdef-0123-456789abcdef`+"\n", str)
+		` UUID=01234567-89ab-cdef-0123-456789abcdef`+"\n"+
+		` NotSorted13=13`+"\n"+
+		` NotSorted14=14`+"\n"+
+		` NotSorted15=15`+"\n", str)
 
 	str, err = Stringify(&box, Context{})
 	require.NoError(t, err)
-	assert.Equal(t, `Version=0 Flags=0x000000 String="abema.tv" Int32=-1234567890 Int32Hex=0x12345678 Uint32=1234567890 Bytes="ABEMA.TV" Ptr={Uint64=0x1234567890} Uint64=0x1234567890 Struct={Uint64=0x1234567890} Uint64=0x1234567890 Array="foo.bar" Bool=true UUID=01234567-89ab-cdef-0123-456789abcdef`, str)
+	assert.Equal(t, `Version=0 Flags=0x000000 String="abema.tv" Int32=-1234567890 Int32Hex=0x12345678 Uint32=1234567890 Bytes="ABEMA.TV" Ptr={Uint64=0x1234567890} Uint64=0x1234567890 Struct={Uint64=0x1234567890} Uint64=0x1234567890 Array="foo.bar" Bool=true UUID=01234567-89ab-cdef-0123-456789abcdef NotSorted13=13 NotSorted14=14 NotSorted15=15`, str)
 }
