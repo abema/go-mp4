@@ -25,6 +25,11 @@ type marshaller struct {
 }
 
 func Marshal(w io.Writer, src IImmutableBox, ctx Context) (n uint64, err error) {
+	boxDef := src.GetType().getBoxDef(ctx)
+	if boxDef == nil {
+		return 0, ErrBoxInfoNotFound
+	}
+
 	t := reflect.TypeOf(src).Elem()
 	v := reflect.ValueOf(src).Elem()
 
@@ -34,7 +39,7 @@ func Marshal(w io.Writer, src IImmutableBox, ctx Context) (n uint64, err error) 
 		ctx:    ctx,
 	}
 
-	if err := m.marshalStruct(t, v); err != nil {
+	if err := m.marshalStruct(boxDef.fields, t, v); err != nil {
 		return 0, err
 	}
 
@@ -45,16 +50,16 @@ func Marshal(w io.Writer, src IImmutableBox, ctx Context) (n uint64, err error) 
 	return m.wbits / 8, nil
 }
 
-func (m *marshaller) marshal(t reflect.Type, v reflect.Value, config fieldConfig) error {
+func (m *marshaller) marshal(f *field, t reflect.Type, v reflect.Value, config fieldConfig) error {
 	switch t.Kind() {
 	case reflect.Ptr:
-		return m.marshalPtr(t, v, config)
+		return m.marshalPtr(f, t, v, config)
 	case reflect.Struct:
-		return m.marshalStruct(t, v)
+		return m.marshalStruct(f.children, t, v)
 	case reflect.Array:
-		return m.marshalArray(t, v, config)
+		return m.marshalArray(f, t, v, config)
 	case reflect.Slice:
-		return m.marshalSlice(t, v, config)
+		return m.marshalSlice(f, t, v, config)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return m.marshalInt(t, v, config)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
@@ -68,21 +73,18 @@ func (m *marshaller) marshal(t reflect.Type, v reflect.Value, config fieldConfig
 	}
 }
 
-func (m *marshaller) marshalPtr(t reflect.Type, v reflect.Value, config fieldConfig) error {
-	return m.marshal(t.Elem(), v.Elem(), config)
+func (m *marshaller) marshalPtr(f *field, t reflect.Type, v reflect.Value, config fieldConfig) error {
+	return m.marshal(f, t.Elem(), v.Elem(), config)
 }
 
-func (m *marshaller) marshalStruct(t reflect.Type, v reflect.Value) error {
-	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
-		ft := f.Type
-		fv := v.Field(i)
+func (m *marshaller) marshalStruct(fs []*field, t reflect.Type, v reflect.Value) error {
+	for _, f := range fs {
+		rf, _ := t.FieldByName(f.name)
+		ft := rf.Type
+		fv := v.FieldByName(f.name)
 
-		tagStr, ok := f.Tag.Lookup("mp4")
-		if !ok {
-			continue
-		}
-		config, err := readFieldConfig(m.src, v, f.Name, parseFieldTag(tagStr), m.ctx)
+		tagStr, _ := rf.Tag.Lookup("mp4")
+		config, err := readFieldConfig(m.src, v, f.name, parseFieldTag(tagStr), m.ctx)
 		if err != nil {
 			return err
 		}
@@ -91,7 +93,7 @@ func (m *marshaller) marshalStruct(t reflect.Type, v reflect.Value) error {
 			continue
 		}
 
-		wbits, override, err := config.cfo.OnWriteField(f.Name, m.writer, m.ctx)
+		wbits, override, err := config.cfo.OnWriteField(f.name, m.writer, m.ctx)
 		if err != nil {
 			return err
 		}
@@ -100,7 +102,7 @@ func (m *marshaller) marshalStruct(t reflect.Type, v reflect.Value) error {
 			continue
 		}
 
-		err = m.marshal(ft, fv, config)
+		err = m.marshal(f, ft, fv, config)
 		if err != nil {
 			return err
 		}
@@ -109,11 +111,11 @@ func (m *marshaller) marshalStruct(t reflect.Type, v reflect.Value) error {
 	return nil
 }
 
-func (m *marshaller) marshalArray(t reflect.Type, v reflect.Value, config fieldConfig) error {
+func (m *marshaller) marshalArray(f *field, t reflect.Type, v reflect.Value, config fieldConfig) error {
 	size := t.Size()
 	for i := 0; i < int(size)/int(t.Elem().Size()); i++ {
 		var err error
-		err = m.marshal(t.Elem(), v.Index(i), config)
+		err = m.marshal(f, t.Elem(), v.Index(i), config)
 		if err != nil {
 			return err
 		}
@@ -121,7 +123,7 @@ func (m *marshaller) marshalArray(t reflect.Type, v reflect.Value, config fieldC
 	return nil
 }
 
-func (m *marshaller) marshalSlice(t reflect.Type, v reflect.Value, config fieldConfig) error {
+func (m *marshaller) marshalSlice(f *field, t reflect.Type, v reflect.Value, config fieldConfig) error {
 	length := uint64(v.Len())
 	if config.length != LengthUnlimited {
 		if length < uint64(config.length) {
@@ -140,7 +142,7 @@ func (m *marshaller) marshalSlice(t reflect.Type, v reflect.Value, config fieldC
 	}
 
 	for i := 0; i < int(length); i++ {
-		m.marshal(t.Elem(), v.Index(i), config)
+		m.marshal(f, t.Elem(), v.Index(i), config)
 	}
 	return nil
 }
@@ -277,6 +279,11 @@ func UnmarshalAny(r io.ReadSeeker, boxType BoxType, payloadSize uint64, ctx Cont
 }
 
 func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox, ctx Context) (n uint64, err error) {
+	boxDef := dst.GetType().getBoxDef(ctx)
+	if boxDef == nil {
+		return 0, ErrBoxInfoNotFound
+	}
+
 	t := reflect.TypeOf(dst).Elem()
 	v := reflect.ValueOf(dst).Elem()
 
@@ -302,7 +309,7 @@ func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox, ctx Context) (n ui
 		return 0, err
 	}
 
-	if err := u.unmarshalStruct(t, v); err != nil {
+	if err := u.unmarshalStruct(boxDef.fields, t, v); err != nil {
 		if err == ErrUnsupportedBoxVersion {
 			r.Seek(sn, io.SeekStart)
 		}
@@ -320,17 +327,17 @@ func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox, ctx Context) (n ui
 	return u.rbits / 8, nil
 }
 
-func (u *unmarshaller) unmarshal(t reflect.Type, v reflect.Value, config fieldConfig) error {
+func (u *unmarshaller) unmarshal(f *field, t reflect.Type, v reflect.Value, config fieldConfig) error {
 	var err error
 	switch t.Kind() {
 	case reflect.Ptr:
-		err = u.unmarshalPtr(t, v, config)
+		err = u.unmarshalPtr(f, t, v, config)
 	case reflect.Struct:
-		err = u.unmarshalStructWithConfig(t, v, config)
+		err = u.unmarshalStructWithConfig(f.children, t, v, config)
 	case reflect.Array:
-		err = u.unmarshalArray(t, v, config)
+		err = u.unmarshalArray(f, t, v, config)
 	case reflect.Slice:
-		err = u.unmarshalSlice(t, v, config)
+		err = u.unmarshalSlice(f, t, v, config)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		err = u.unmarshalInt(t, v, config)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
@@ -345,17 +352,17 @@ func (u *unmarshaller) unmarshal(t reflect.Type, v reflect.Value, config fieldCo
 	return err
 }
 
-func (u *unmarshaller) unmarshalPtr(t reflect.Type, v reflect.Value, config fieldConfig) error {
+func (u *unmarshaller) unmarshalPtr(f *field, t reflect.Type, v reflect.Value, config fieldConfig) error {
 	v.Set(reflect.New(t.Elem()))
-	return u.unmarshal(t.Elem(), v.Elem(), config)
+	return u.unmarshal(f, t.Elem(), v.Elem(), config)
 }
 
-func (u *unmarshaller) unmarshalStructWithConfig(t reflect.Type, v reflect.Value, config fieldConfig) error {
+func (u *unmarshaller) unmarshalStructWithConfig(fs []*field, t reflect.Type, v reflect.Value, config fieldConfig) error {
 	if config.size != 0 && config.size%8 == 0 {
 		u2 := *u
 		u2.size = uint64(config.size / 8)
 		u2.rbits = 0
-		if err := u2.unmarshalStruct(t, v); err != nil {
+		if err := u2.unmarshalStruct(fs, t, v); err != nil {
 			return err
 		}
 		u.rbits += u2.rbits
@@ -365,20 +372,17 @@ func (u *unmarshaller) unmarshalStructWithConfig(t reflect.Type, v reflect.Value
 		return nil
 	}
 
-	return u.unmarshalStruct(t, v)
+	return u.unmarshalStruct(fs, t, v)
 }
 
-func (u *unmarshaller) unmarshalStruct(t reflect.Type, v reflect.Value) error {
-	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
-		ft := f.Type
-		fv := v.Field(i)
+func (u *unmarshaller) unmarshalStruct(fs []*field, t reflect.Type, v reflect.Value) error {
+	for _, f := range fs {
+		rf, _ := t.FieldByName(f.name)
+		ft := rf.Type
+		fv := v.FieldByName(f.name)
 
-		tagStr, ok := f.Tag.Lookup("mp4")
-		if !ok {
-			continue
-		}
-		config, err := readFieldConfig(u.dst, v, f.Name, parseFieldTag(tagStr), u.ctx)
+		tagStr, _ := rf.Tag.Lookup("mp4")
+		config, err := readFieldConfig(u.dst, v, f.name, parseFieldTag(tagStr), u.ctx)
 		if err != nil {
 			return err
 		}
@@ -387,7 +391,7 @@ func (u *unmarshaller) unmarshalStruct(t reflect.Type, v reflect.Value) error {
 			continue
 		}
 
-		rbits, override, err := config.cfo.OnReadField(f.Name, u.reader, u.size*8-u.rbits, u.ctx)
+		rbits, override, err := config.cfo.OnReadField(f.name, u.reader, u.size*8-u.rbits, u.ctx)
 		if err != nil {
 			return err
 		}
@@ -396,7 +400,7 @@ func (u *unmarshaller) unmarshalStruct(t reflect.Type, v reflect.Value) error {
 			continue
 		}
 
-		err = u.unmarshal(ft, fv, config)
+		err = u.unmarshal(f, ft, fv, config)
 		if err != nil {
 			return err
 		}
@@ -409,11 +413,11 @@ func (u *unmarshaller) unmarshalStruct(t reflect.Type, v reflect.Value) error {
 	return nil
 }
 
-func (u *unmarshaller) unmarshalArray(t reflect.Type, v reflect.Value, config fieldConfig) error {
+func (u *unmarshaller) unmarshalArray(f *field, t reflect.Type, v reflect.Value, config fieldConfig) error {
 	size := t.Size()
 	for i := 0; i < int(size)/int(t.Elem().Size()); i++ {
 		var err error
-		err = u.unmarshal(t.Elem(), v.Index(i), config)
+		err = u.unmarshal(f, t.Elem(), v.Index(i), config)
 		if err != nil {
 			return err
 		}
@@ -421,7 +425,7 @@ func (u *unmarshaller) unmarshalArray(t reflect.Type, v reflect.Value, config fi
 	return nil
 }
 
-func (u *unmarshaller) unmarshalSlice(t reflect.Type, v reflect.Value, config fieldConfig) error {
+func (u *unmarshaller) unmarshalSlice(f *field, t reflect.Type, v reflect.Value, config fieldConfig) error {
 	var slice reflect.Value
 	elemType := t.Elem()
 
@@ -465,7 +469,7 @@ func (u *unmarshaller) unmarshalSlice(t reflect.Type, v reflect.Value, config fi
 			slice = reflect.Append(slice, reflect.Zero(elemType))
 
 			var err error
-			err = u.unmarshal(elemType, slice.Index(i), config)
+			err = u.unmarshal(f, elemType, slice.Index(i), config)
 			if err != nil {
 				return err
 			}

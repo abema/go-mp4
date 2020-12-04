@@ -53,6 +53,7 @@ type boxDef struct {
 	dataType reflect.Type
 	versions []uint8
 	isTarget func(Context) bool
+	fields   []*field
 }
 
 var boxMap = make(map[BoxType][]boxDef, 64)
@@ -61,6 +62,7 @@ func AddBoxDef(payload IBox, versions ...uint8) {
 	boxMap[payload.GetType()] = append(boxMap[payload.GetType()], boxDef{
 		dataType: reflect.TypeOf(payload).Elem(),
 		versions: versions,
+		fields:   buildFields(payload),
 	})
 }
 
@@ -69,6 +71,7 @@ func AddBoxDefEx(payload IBox, isTarget func(Context) bool, versions ...uint8) {
 		dataType: reflect.TypeOf(payload).Elem(),
 		versions: versions,
 		isTarget: isTarget,
+		fields:   buildFields(payload),
 	})
 }
 
@@ -76,6 +79,7 @@ func AddAnyTypeBoxDef(payload IAnyType, boxType BoxType, versions ...uint8) {
 	boxMap[boxType] = append(boxMap[boxType], boxDef{
 		dataType: reflect.TypeOf(payload).Elem(),
 		versions: versions,
+		fields:   buildFields(payload),
 	})
 }
 
@@ -84,6 +88,7 @@ func AddAnyTypeBoxDefEx(payload IAnyType, boxType BoxType, isTarget func(Context
 		dataType: reflect.TypeOf(payload).Elem(),
 		versions: versions,
 		isTarget: isTarget,
+		fields:   buildFields(payload),
 	})
 }
 

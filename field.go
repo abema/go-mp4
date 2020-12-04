@@ -2,9 +2,73 @@ package mp4
 
 import (
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 )
+
+type field struct {
+	name     string
+	order    int
+	children []*field
+}
+
+type fieldBuilder struct {
+	box IImmutableBox
+}
+
+func buildFields(box IImmutableBox) []*field {
+	t := reflect.TypeOf(box).Elem()
+	b := fieldBuilder{
+		box: box,
+	}
+	return b.buildFieldsStruct(t)
+}
+
+func (b *fieldBuilder) buildFieldsStruct(t reflect.Type) []*field {
+	fs := make([]*field, 0, 8)
+	for i := 0; i < t.NumField(); i++ {
+		ft := t.Field(i).Type
+		tagStr, ok := t.Field(i).Tag.Lookup("mp4")
+		if !ok {
+			continue
+		}
+		f := buildField(b.box, t.Field(i).Name, parseFieldTag(tagStr))
+		f.children = b.buildFieldsAny(ft)
+		fs = append(fs, f)
+	}
+	sort.SliceStable(fs, func(i, j int) bool {
+		return fs[i].order < fs[j].order
+	})
+	return fs
+}
+
+func (b *fieldBuilder) buildFieldsAny(t reflect.Type) []*field {
+	switch t.Kind() {
+	case reflect.Struct:
+		return b.buildFieldsStruct(t)
+	case reflect.Ptr, reflect.Array, reflect.Slice:
+		return b.buildFieldsAny(t.Elem())
+	default:
+		return nil
+	}
+}
+
+func buildField(box IImmutableBox, fieldName string, tag fieldTag) *field {
+	f := &field{
+		name: fieldName,
+	}
+	for key, val := range tag {
+		if val != "" {
+			continue
+		}
+		if order, err := strconv.Atoi(key); err == nil {
+			f.order = order
+			break
+		}
+	}
+	return f
+}
 
 type StringType int
 

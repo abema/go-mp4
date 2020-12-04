@@ -21,9 +21,9 @@ func init() {
 
 type Btrt struct {
 	Box
-	BufferSizeDB uint32 `mp4:"size=32"`
-	MaxBitrate   uint32 `mp4:"size=32"`
-	AvgBitrate   uint32 `mp4:"size=32"`
+	BufferSizeDB uint32 `mp4:"0,size=32"`
+	MaxBitrate   uint32 `mp4:"1,size=32"`
+	AvgBitrate   uint32 `mp4:"2,size=32"`
 }
 
 // GetType returns the BoxType
@@ -40,9 +40,9 @@ func init() {
 }
 
 type Co64 struct {
-	FullBox     `mp4:"extend"`
-	EntryCount  uint32   `mp4:"size=32"`
-	ChunkOffset []uint64 `mp4:"size=64,len=dynamic"`
+	FullBox     `mp4:"0,extend"`
+	EntryCount  uint32   `mp4:"1,size=32"`
+	ChunkOffset []uint64 `mp4:"2,size=64,len=dynamic"`
 }
 
 // GetType returns the BoxType
@@ -69,14 +69,14 @@ func init() {
 
 type Colr struct {
 	Box
-	ColourType              [4]byte `mp4:"size=8,string"`
-	ColourPrimaries         uint16  `mp4:"size=16,opt=dynamic"`
-	TransferCharacteristics uint16  `mp4:"size=16,opt=dynamic"`
-	MatrixCoefficients      uint16  `mp4:"size=16,opt=dynamic"`
-	FullRangeFlag           bool    `mp4:"size=1,opt=dynamic"`
-	Reserved                uint8   `mp4:"size=7,opt=dynamic"`
-	Profile                 []byte  `mp4:"size=8,opt=dynamic"`
-	Unknown                 []byte  `mp4:"size=8,opt=dynamic"`
+	ColourType              [4]byte `mp4:"0,size=8,string"`
+	ColourPrimaries         uint16  `mp4:"1,size=16,opt=dynamic"`
+	TransferCharacteristics uint16  `mp4:"2,size=16,opt=dynamic"`
+	MatrixCoefficients      uint16  `mp4:"3,size=16,opt=dynamic"`
+	FullRangeFlag           bool    `mp4:"4,size=1,opt=dynamic"`
+	Reserved                uint8   `mp4:"5,size=7,opt=dynamic"`
+	Profile                 []byte  `mp4:"6,size=8,opt=dynamic"`
+	Unknown                 []byte  `mp4:"7,size=8,opt=dynamic"`
 }
 
 func (colr *Colr) IsOptFieldEnabled(name string, ctx Context) bool {
@@ -114,17 +114,17 @@ func init() {
 }
 
 type Cslg struct {
-	FullBox                        `mp4:"extend"`
-	CompositionToDTSShiftV0        int32 `mp4:"size=32,ver=0"`
-	LeastDecodeToDisplayDeltaV0    int32 `mp4:"size=32,ver=0"`
-	GreatestDecodeToDisplayDeltaV0 int32 `mp4:"size=32,ver=0"`
-	CompositionStartTimeV0         int32 `mp4:"size=32,ver=0"`
-	CompositionEndTimeV0           int32 `mp4:"size=32,ver=0"`
-	CompositionToDTSShiftV1        int64 `mp4:"size=64,nver=0"`
-	LeastDecodeToDisplayDeltaV1    int64 `mp4:"size=64,nver=0"`
-	GreatestDecodeToDisplayDeltaV1 int64 `mp4:"size=64,nver=0"`
-	CompositionStartTimeV1         int64 `mp4:"size=64,nver=0"`
-	CompositionEndTimeV1           int64 `mp4:"size=64,nver=0"`
+	FullBox                        `mp4:"0,extend"`
+	CompositionToDTSShiftV0        int32 `mp4:"1,size=32,ver=0"`
+	LeastDecodeToDisplayDeltaV0    int32 `mp4:"2,size=32,ver=0"`
+	GreatestDecodeToDisplayDeltaV0 int32 `mp4:"3,size=32,ver=0"`
+	CompositionStartTimeV0         int32 `mp4:"4,size=32,ver=0"`
+	CompositionEndTimeV0           int32 `mp4:"5,size=32,ver=0"`
+	CompositionToDTSShiftV1        int64 `mp4:"6,size=64,nver=0"`
+	LeastDecodeToDisplayDeltaV1    int64 `mp4:"7,size=64,nver=0"`
+	GreatestDecodeToDisplayDeltaV1 int64 `mp4:"8,size=64,nver=0"`
+	CompositionStartTimeV1         int64 `mp4:"9,size=64,nver=0"`
+	CompositionEndTimeV1           int64 `mp4:"10,size=64,nver=0"`
 }
 
 // GetType returns the BoxType
@@ -141,15 +141,15 @@ func init() {
 }
 
 type Ctts struct {
-	FullBox    `mp4:"extend"`
-	EntryCount uint32      `mp4:"size=32"`
-	Entries    []CttsEntry `mp4:"len=dynamic,size=64"`
+	FullBox    `mp4:"0,extend"`
+	EntryCount uint32      `mp4:"1,size=32"`
+	Entries    []CttsEntry `mp4:"2,len=dynamic,size=64"`
 }
 
 type CttsEntry struct {
-	SampleCount    uint32 `mp4:"size=32"`
-	SampleOffsetV0 uint32 `mp4:"size=32,ver=0"`
-	SampleOffsetV1 int32  `mp4:"size=32,ver=1"`
+	SampleCount    uint32 `mp4:"0,size=32"`
+	SampleOffsetV0 uint32 `mp4:"1,size=32,ver=0"`
+	SampleOffsetV1 int32  `mp4:"2,size=32,ver=1"`
 }
 
 // GetType returns the BoxType
@@ -198,8 +198,8 @@ func init() {
 
 // Dref is ISOBMFF dref box type
 type Dref struct {
-	FullBox    `mp4:"extend"`
-	EntryCount uint32 `mp4:"size=32"`
+	FullBox    `mp4:"0,extend"`
+	EntryCount uint32 `mp4:"1,size=32"`
 }
 
 // GetType returns the BoxType
@@ -208,8 +208,8 @@ func (*Dref) GetType() BoxType {
 }
 
 type Url struct {
-	FullBox  `mp4:"extend"`
-	Location string `mp4:"string,nopt=0x000001"`
+	FullBox  `mp4:"0,extend"`
+	Location string `mp4:"1,string,nopt=0x000001"`
 }
 
 func (*Url) GetType() BoxType {
@@ -219,9 +219,9 @@ func (*Url) GetType() BoxType {
 const UrlSelfContained = 0x000001
 
 type Urn struct {
-	FullBox  `mp4:"extend"`
-	Name     string `mp4:"string,nopt=0x000001"`
-	Location string `mp4:"string,nopt=0x000001"`
+	FullBox  `mp4:"0,extend"`
+	Name     string `mp4:"1,string,nopt=0x000001"`
+	Location string `mp4:"2,string,nopt=0x000001"`
 }
 
 func (*Urn) GetType() BoxType {
@@ -258,18 +258,18 @@ func init() {
 
 // Elst is ISOBMFF elst box type
 type Elst struct {
-	FullBox    `mp4:"extend"`
-	EntryCount uint32      `mp4:"size=32"`
-	Entries    []ElstEntry `mp4:"len=dynamic,size=dynamic"`
+	FullBox    `mp4:"0,extend"`
+	EntryCount uint32      `mp4:"1,size=32"`
+	Entries    []ElstEntry `mp4:"2,len=dynamic,size=dynamic"`
 }
 
 type ElstEntry struct {
-	SegmentDurationV0 uint32 `mp4:"size=32,ver=0"`
-	MediaTimeV0       int32  `mp4:"size=32,ver=0"`
-	SegmentDurationV1 uint64 `mp4:"size=64,ver=1"`
-	MediaTimeV1       int64  `mp4:"size=64,ver=1"`
-	MediaRateInteger  int16  `mp4:"size=16"`
-	MediaRateFraction int16  `mp4:"size=16,const=0"`
+	SegmentDurationV0 uint32 `mp4:"0,size=32,ver=0"`
+	MediaTimeV0       int32  `mp4:"1,size=32,ver=0"`
+	SegmentDurationV1 uint64 `mp4:"2,size=64,ver=1"`
+	MediaTimeV1       int64  `mp4:"3,size=64,ver=1"`
+	MediaRateInteger  int16  `mp4:"4,size=16"`
+	MediaRateFraction int16  `mp4:"5,size=16,const=0"`
 }
 
 // GetType returns the BoxType
@@ -318,15 +318,15 @@ func init() {
 
 // Emsg is ISOBMFF emsg box type
 type Emsg struct {
-	FullBox               `mp4:"extend"`
-	SchemeIdUri           string `mp4:"string"`
-	Value                 string `mp4:"string"`
-	Timescale             uint32 `mp4:"size=32"`
-	PresentationTimeDelta uint32 `mp4:"size=32,ver=0"`
-	PresentationTime      uint64 `mp4:"size=64,ver=1"`
-	EventDuration         uint32 `mp4:"size=32"`
-	Id                    uint32 `mp4:"size=32"`
-	MessageData           []byte `mp4:"size=8,string"`
+	FullBox               `mp4:"0,extend"`
+	SchemeIdUri           string `mp4:"1,string"`
+	Value                 string `mp4:"2,string"`
+	Timescale             uint32 `mp4:"3,size=32"`
+	PresentationTimeDelta uint32 `mp4:"4,size=32,ver=0"`
+	PresentationTime      uint64 `mp4:"5,size=64,ver=1"`
+	EventDuration         uint32 `mp4:"6,size=32"`
+	Id                    uint32 `mp4:"7,size=32"`
+	MessageData           []byte `mp4:"8,size=8,string"`
 }
 
 func (emsg *Emsg) OnReadField(name string, r bitio.ReadSeeker, leftBits uint64, ctx Context) (rbits uint64, override bool, err error) {
@@ -399,8 +399,8 @@ const (
 
 // Esds is ES descripter box
 type Esds struct {
-	FullBox     `mp4:"extend"`
-	Descriptors []Descriptor `mp4:"array"`
+	FullBox     `mp4:"0,extend"`
+	Descriptors []Descriptor `mp4:"1,array"`
 }
 
 // GetType returns the BoxType
@@ -410,11 +410,11 @@ func (*Esds) GetType() BoxType {
 
 type Descriptor struct {
 	BaseCustomFieldObject
-	Tag                     int8                     `mp4:"size=8"` // must be 0x03
-	Size                    uint32                   `mp4:"varint"`
-	ESDescriptor            *ESDescriptor            `mp4:"extend,opt=dynamic"`
-	DecoderConfigDescriptor *DecoderConfigDescriptor `mp4:"extend,opt=dynamic"`
-	Data                    []byte                   `mp4:"size=8,opt=dynamic,len=dynamic"`
+	Tag                     int8                     `mp4:"0,size=8"` // must be 0x03
+	Size                    uint32                   `mp4:"1,varint"`
+	ESDescriptor            *ESDescriptor            `mp4:"2,extend,opt=dynamic"`
+	DecoderConfigDescriptor *DecoderConfigDescriptor `mp4:"3,extend,opt=dynamic"`
+	Data                    []byte                   `mp4:"4,size=8,opt=dynamic,len=dynamic"`
 }
 
 // GetFieldLength returns length of dynamic field
@@ -460,15 +460,15 @@ func (ds *Descriptor) StringifyField(name string, indent string, depth int, ctx 
 
 type ESDescriptor struct {
 	BaseCustomFieldObject
-	ESID                 uint16 `mp4:"size=16"`
-	StreamDependenceFlag bool   `mp4:"size=1"`
-	UrlFlag              bool   `mp4:"size=1"`
-	OcrStreamFlag        bool   `mp4:"size=1"`
-	StreamPriority       int8   `mp4:"size=5"`
-	DependsOnESID        uint16 `mp4:"size=16,opt=dynamic"`
-	URLLength            uint8  `mp4:"size=8,opt=dynamic"`
-	URLString            []byte `mp4:"size=8,len=dynamic,opt=dynamic,string"`
-	OCRESID              uint16 `mp4:"size=16,opt=dynamic"`
+	ESID                 uint16 `mp4:"0,size=16"`
+	StreamDependenceFlag bool   `mp4:"1,size=1"`
+	UrlFlag              bool   `mp4:"2,size=1"`
+	OcrStreamFlag        bool   `mp4:"3,size=1"`
+	StreamPriority       int8   `mp4:"4,size=5"`
+	DependsOnESID        uint16 `mp4:"5,size=16,opt=dynamic"`
+	URLLength            uint8  `mp4:"6,size=8,opt=dynamic"`
+	URLString            []byte `mp4:"7,size=8,len=dynamic,opt=dynamic,string"`
+	OCRESID              uint16 `mp4:"8,size=16,opt=dynamic"`
 }
 
 func (esds *ESDescriptor) GetFieldLength(name string, ctx Context) uint {
@@ -494,13 +494,13 @@ func (esds *ESDescriptor) IsOptFieldEnabled(name string, ctx Context) bool {
 
 type DecoderConfigDescriptor struct {
 	BaseCustomFieldObject
-	ObjectTypeIndication byte   `mp4:"size=8"`
-	StreamType           int8   `mp4:"size=6"`
-	UpStream             bool   `mp4:"size=1"`
-	Reserved             bool   `mp4:"size=1"`
-	BufferSizeDB         uint32 `mp4:"size=24"`
-	MaxBitrate           uint32 `mp4:"size=32"`
-	AvgBitrate           uint32 `mp4:"size=32"`
+	ObjectTypeIndication byte   `mp4:"0,size=8"`
+	StreamType           int8   `mp4:"1,size=6"`
+	UpStream             bool   `mp4:"2,size=1"`
+	Reserved             bool   `mp4:"3,size=1"`
+	BufferSizeDB         uint32 `mp4:"4,size=24"`
+	MaxBitrate           uint32 `mp4:"5,size=32"`
+	AvgBitrate           uint32 `mp4:"6,size=32"`
 }
 
 /************************ free, skip *************************/
@@ -515,7 +515,7 @@ func init() {
 
 type FreeSpace struct {
 	Box
-	Data []uint8 `mp4:"size=8"`
+	Data []uint8 `mp4:"0,size=8"`
 }
 
 type Free FreeSpace
@@ -541,7 +541,7 @@ func init() {
 // Frma is ISOBMFF frma box type
 type Frma struct {
 	Box
-	DataFormat [4]byte `mp4:"size=8,string"`
+	DataFormat [4]byte `mp4:"0,size=8,string"`
 }
 
 // GetType returns the BoxType
@@ -562,13 +562,13 @@ func CompatibleBrandQT() [4]byte { return [4]byte{'q', 't', ' ', ' '} }
 // Ftyp is ISOBMFF ftyp box type
 type Ftyp struct {
 	Box
-	MajorBrand       [4]byte               `mp4:"size=8,string"`
-	MinorVersion     uint32                `mp4:"size=32"`
-	CompatibleBrands []CompatibleBrandElem `mp4:"size=32"` // reach to end of the box
+	MajorBrand       [4]byte               `mp4:"0,size=8,string"`
+	MinorVersion     uint32                `mp4:"1,size=32"`
+	CompatibleBrands []CompatibleBrandElem `mp4:"2,size=32"` // reach to end of the box
 }
 
 type CompatibleBrandElem struct {
-	CompatibleBrand [4]byte `mp4:"size=8,string"`
+	CompatibleBrand [4]byte `mp4:"0,size=8,string"`
 }
 
 // GetType returns the BoxType
@@ -586,15 +586,15 @@ func init() {
 
 // Hdlr is ISOBMFF hdlr box type
 type Hdlr struct {
-	FullBox `mp4:"extend"`
+	FullBox `mp4:"0,extend"`
 	// Predefined corresponds to component_type of QuickTime.
 	// pre_defined of ISO-14496 has always zero,
 	// however component_type has "mhlr" or "dhlr".
-	PreDefined  uint32    `mp4:"size=32"`
-	HandlerType [4]byte   `mp4:"size=8,string"`
-	Reserved    [3]uint32 `mp4:"size=32,const=0"`
-	Name        string    `mp4:"string=c_p"`
-	Padding     []byte    `mp4:"size=8,const=0"`
+	PreDefined  uint32    `mp4:"1,size=32"`
+	HandlerType [4]byte   `mp4:"2,size=8,string"`
+	Reserved    [3]uint32 `mp4:"3,size=32,const=0"`
+	Name        string    `mp4:"4,string=c_p"`
+	Padding     []byte    `mp4:"5,size=8,const=0"`
 }
 
 // GetType returns the BoxType
@@ -714,9 +714,9 @@ const (
 
 type Data struct {
 	Box
-	DataType uint32 `mp4:"size=32"`
-	DataLang uint32 `mp4:"size=32"`
-	Data     []byte `mp4:"size=8"`
+	DataType uint32 `mp4:"0,size=32"`
+	DataLang uint32 `mp4:"1,size=32"`
+	Data     []byte `mp4:"2,size=8"`
 }
 
 // GetType returns the BoxType
@@ -761,7 +761,7 @@ func (data *Data) StringifyField(name string, indent string, depth int, ctx Cont
 
 type StringData struct {
 	AnyTypeBox
-	Data []byte `mp4:"size=8"`
+	Data []byte `mp4:"0,size=8"`
 }
 
 // StringifyField returns field value as string
@@ -787,7 +787,7 @@ func init() {
 // Mdat is ISOBMFF mdat box type
 type Mdat struct {
 	Box
-	Data []byte `mp4:"size=8"`
+	Data []byte `mp4:"0,size=8"`
 }
 
 // GetType returns the BoxType
@@ -805,18 +805,18 @@ func init() {
 
 // Mdhd is ISOBMFF mdhd box type
 type Mdhd struct {
-	FullBox            `mp4:"extend"`
-	CreationTimeV0     uint32 `mp4:"size=32,ver=0"`
-	ModificationTimeV0 uint32 `mp4:"size=32,ver=0"`
-	CreationTimeV1     uint64 `mp4:"size=64,ver=1"`
-	ModificationTimeV1 uint64 `mp4:"size=64,ver=1"`
-	Timescale          uint32 `mp4:"size=32"`
-	DurationV0         uint32 `mp4:"size=32,ver=0"`
-	DurationV1         uint64 `mp4:"size=64,ver=1"`
+	FullBox            `mp4:"0,extend"`
+	CreationTimeV0     uint32 `mp4:"1,size=32,ver=0"`
+	ModificationTimeV0 uint32 `mp4:"2,size=32,ver=0"`
+	CreationTimeV1     uint64 `mp4:"3,size=64,ver=1"`
+	ModificationTimeV1 uint64 `mp4:"4,size=64,ver=1"`
+	Timescale          uint32 `mp4:"5,size=32"`
+	DurationV0         uint32 `mp4:"6,size=32,ver=0"`
+	DurationV1         uint64 `mp4:"7,size=64,ver=1"`
 	//
-	Pad        bool    `mp4:"size=1,hidden"`
-	Language   [3]byte `mp4:"size=5,iso639-2"` // ISO-639-2/T language code
-	PreDefined uint16  `mp4:"size=16"`
+	Pad        bool    `mp4:"8,size=1,hidden"`
+	Language   [3]byte `mp4:"9,size=5,iso639-2"` // ISO-639-2/T language code
+	PreDefined uint16  `mp4:"10,size=16"`
 }
 
 // GetType returns the BoxType
@@ -852,9 +852,9 @@ func init() {
 
 // Mehd is ISOBMFF mehd box type
 type Mehd struct {
-	FullBox            `mp4:"extend"`
-	FragmentDurationV0 uint32 `mp4:"size=32,ver=0"`
-	FragmentDurationV1 uint64 `mp4:"size=64,ver=1"`
+	FullBox            `mp4:"0,extend"`
+	FragmentDurationV0 uint32 `mp4:"1,size=32,ver=0"`
+	FragmentDurationV1 uint64 `mp4:"2,size=64,ver=1"`
 }
 
 // GetType returns the BoxType
@@ -872,7 +872,7 @@ func init() {
 
 // Meta is ISOBMFF meta box type
 type Meta struct {
-	FullBox `mp4:"extend"`
+	FullBox `mp4:"0,extend"`
 }
 
 // GetType returns the BoxType
@@ -907,8 +907,8 @@ func init() {
 
 // Mfhd is ISOBMFF mfhd box type
 type Mfhd struct {
-	FullBox        `mp4:"extend"`
-	SequenceNumber uint32 `mp4:"size=32"`
+	FullBox        `mp4:"0,extend"`
+	SequenceNumber uint32 `mp4:"1,size=32"`
 }
 
 // GetType returns the BoxType
@@ -944,8 +944,8 @@ func init() {
 
 // Mfro is ISOBMFF mfro box type
 type Mfro struct {
-	FullBox `mp4:"extend"`
-	Size    uint32 `mp4:"size=32"`
+	FullBox `mp4:"0,extend"`
+	Size    uint32 `mp4:"1,size=32"`
 }
 
 // GetType returns the BoxType
@@ -1035,21 +1035,21 @@ func init() {
 
 // Mvhd is ISOBMFF mvhd box type
 type Mvhd struct {
-	FullBox            `mp4:"extend"`
-	CreationTimeV0     uint32    `mp4:"size=32,ver=0"`
-	ModificationTimeV0 uint32    `mp4:"size=32,ver=0"`
-	CreationTimeV1     uint64    `mp4:"size=64,ver=1"`
-	ModificationTimeV1 uint64    `mp4:"size=64,ver=1"`
-	Timescale          uint32    `mp4:"size=32"`
-	DurationV0         uint32    `mp4:"size=32,ver=0"`
-	DurationV1         uint64    `mp4:"size=64,ver=1"`
-	Rate               int32     `mp4:"size=32"` // fixed-point 16.16 - template=0x00010000
-	Volume             int16     `mp4:"size=16"` // template=0x0100
-	Reserved           int16     `mp4:"size=16,const=0"`
-	Reserved2          [2]uint32 `mp4:"size=32,const=0"`
-	Matrix             [9]int32  `mp4:"size=32,hex"` // template={ 0x00010000,0,0,0,0x00010000,0,0,0,0x40000000 }
-	PreDefined         [6]int32  `mp4:"size=32"`
-	NextTrackID        uint32    `mp4:"size=32"`
+	FullBox            `mp4:"0,extend"`
+	CreationTimeV0     uint32    `mp4:"1,size=32,ver=0"`
+	ModificationTimeV0 uint32    `mp4:"2,size=32,ver=0"`
+	CreationTimeV1     uint64    `mp4:"3,size=64,ver=1"`
+	ModificationTimeV1 uint64    `mp4:"4,size=64,ver=1"`
+	Timescale          uint32    `mp4:"5,size=32"`
+	DurationV0         uint32    `mp4:"6,size=32,ver=0"`
+	DurationV1         uint64    `mp4:"7,size=64,ver=1"`
+	Rate               int32     `mp4:"8,size=32"` // fixed-point 16.16 - template=0x00010000
+	Volume             int16     `mp4:"9,size=16"` // template=0x0100
+	Reserved           int16     `mp4:"10,size=16,const=0"`
+	Reserved2          [2]uint32 `mp4:"11,size=32,const=0"`
+	Matrix             [9]int32  `mp4:"12,size=32,hex"` // template={ 0x00010000,0,0,0,0x00010000,0,0,0,0x40000000 }
+	PreDefined         [6]int32  `mp4:"13,size=32"`
+	NextTrackID        uint32    `mp4:"14,size=32"`
 }
 
 // GetType returns the BoxType
@@ -1087,16 +1087,16 @@ func init() {
 
 // Pssh is ISOBMFF pssh box type
 type Pssh struct {
-	FullBox  `mp4:"extend"`
-	SystemID [16]byte  `mp4:"size=8,uuid"`
-	KIDCount uint32    `mp4:"size=32,nver=0"`
-	KIDs     []PsshKID `mp4:"nver=0,len=dynamic,size=128"`
-	DataSize int32     `mp4:"size=32"`
-	Data     []byte    `mp4:"size=8,len=dynamic"`
+	FullBox  `mp4:"0,extend"`
+	SystemID [16]byte  `mp4:"1,size=8,uuid"`
+	KIDCount uint32    `mp4:"2,size=32,nver=0"`
+	KIDs     []PsshKID `mp4:"3,nver=0,len=dynamic,size=128"`
+	DataSize int32     `mp4:"4,size=32"`
+	Data     []byte    `mp4:"5,size=8,len=dynamic"`
 }
 
 type PsshKID struct {
-	KID [16]byte `mp4:"size=8,uuid"`
+	KID [16]byte `mp4:"0,size=8,uuid"`
 }
 
 // GetFieldLength returns length of dynamic field
@@ -1144,12 +1144,12 @@ func init() {
 }
 
 type Saio struct {
-	FullBox              `mp4:"extend"`
-	AuxInfoType          [4]byte  `mp4:"size=8,opt=0x000001,string"`
-	AuxInfoTypeParameter uint32   `mp4:"size=32,opt=0x000001,hex"`
-	EntryCount           uint32   `mp4:"size=32"`
-	OffsetV0             []uint32 `mp4:"size=32,ver=0,len=dynamic"`
-	OffsetV1             []uint64 `mp4:"size=64,nver=0,len=dynamic"`
+	FullBox              `mp4:"0,extend"`
+	AuxInfoType          [4]byte  `mp4:"1,size=8,opt=0x000001,string"`
+	AuxInfoTypeParameter uint32   `mp4:"2,size=32,opt=0x000001,hex"`
+	EntryCount           uint32   `mp4:"3,size=32"`
+	OffsetV0             []uint32 `mp4:"4,size=32,ver=0,len=dynamic"`
+	OffsetV1             []uint64 `mp4:"5,size=64,nver=0,len=dynamic"`
 }
 
 func (saio *Saio) GetFieldLength(name string, ctx Context) uint {
@@ -1173,12 +1173,12 @@ func init() {
 }
 
 type Saiz struct {
-	FullBox               `mp4:"extend"`
-	AuxInfoType           [4]byte `mp4:"size=8,opt=0x000001,string"`
-	AuxInfoTypeParameter  uint32  `mp4:"size=32,opt=0x000001,hex"`
-	DefaultSampleInfoSize uint8   `mp4:"size=8,dec"`
-	SampleCount           uint32  `mp4:"size=32"`
-	SampleInfoSize        []uint8 `mp4:"size=8,opt=dynamic,len=dynamic,dec"`
+	FullBox               `mp4:"0,extend"`
+	AuxInfoType           [4]byte `mp4:"1,size=8,opt=0x000001,string"`
+	AuxInfoTypeParameter  uint32  `mp4:"2,size=32,opt=0x000001,hex"`
+	DefaultSampleInfoSize uint8   `mp4:"3,size=8,dec"`
+	SampleCount           uint32  `mp4:"4,size=32"`
+	SampleInfoSize        []uint8 `mp4:"5,size=8,opt=dynamic,len=dynamic,dec"`
 }
 
 func (saiz *Saiz) IsOptFieldEnabled(name string, ctx Context) bool {
@@ -1214,24 +1214,24 @@ func init() {
 
 type SampleEntry struct {
 	AnyTypeBox
-	Reserved           [6]uint8 `mp4:"size=8,const=0"`
-	DataReferenceIndex uint16   `mp4:"size=16"`
+	Reserved           [6]uint8 `mp4:"0,size=8,const=0"`
+	DataReferenceIndex uint16   `mp4:"1,size=16"`
 }
 
 type VisualSampleEntry struct {
-	SampleEntry     `mp4:"extend"`
-	PreDefined      uint16    `mp4:"size=16"`
-	Reserved        uint16    `mp4:"size=16,const=0"`
-	PreDefined2     [3]uint32 `mp4:"size=32"`
-	Width           uint16    `mp4:"size=16"`
-	Height          uint16    `mp4:"size=16"`
-	Horizresolution uint32    `mp4:"size=32"`
-	Vertresolution  uint32    `mp4:"size=32"`
-	Reserved2       uint32    `mp4:"size=32,const=0"`
-	FrameCount      uint16    `mp4:"size=16"`
-	Compressorname  [32]byte  `mp4:"size=8"`
-	Depth           uint16    `mp4:"size=16"`
-	PreDefined3     int16     `mp4:"size=16"`
+	SampleEntry     `mp4:"0,extend"`
+	PreDefined      uint16    `mp4:"1,size=16"`
+	Reserved        uint16    `mp4:"2,size=16,const=0"`
+	PreDefined2     [3]uint32 `mp4:"3,size=32"`
+	Width           uint16    `mp4:"4,size=16"`
+	Height          uint16    `mp4:"5,size=16"`
+	Horizresolution uint32    `mp4:"6,size=32"`
+	Vertresolution  uint32    `mp4:"7,size=32"`
+	Reserved2       uint32    `mp4:"8,size=32,const=0"`
+	FrameCount      uint16    `mp4:"9,size=16"`
+	Compressorname  [32]byte  `mp4:"10,size=8"`
+	Depth           uint16    `mp4:"11,size=16"`
+	PreDefined3     int16     `mp4:"12,size=16"`
 }
 
 // StringifyField returns field value as string
@@ -1248,15 +1248,15 @@ func (vse *VisualSampleEntry) StringifyField(name string, indent string, depth i
 }
 
 type AudioSampleEntry struct {
-	SampleEntry   `mp4:"extend,opt=dynamic"`
-	EntryVersion  uint16    `mp4:"size=16,opt=dynamic"`
-	Reserved      [3]uint16 `mp4:"size=16,opt=dynamic,const=0"`
-	ChannelCount  uint16    `mp4:"size=16,opt=dynamic"`
-	SampleSize    uint16    `mp4:"size=16,opt=dynamic"`
-	PreDefined    uint16    `mp4:"size=16,opt=dynamic"`
-	Reserved2     uint16    `mp4:"size=16,opt=dynamic,const=0"`
-	SampleRate    uint32    `mp4:"size=32,opt=dynamic"`
-	QuickTimeData []byte    `mp4:"size=8,opt=dynamic,len=dynamic"`
+	SampleEntry   `mp4:"0,extend,opt=dynamic"`
+	EntryVersion  uint16    `mp4:"1,size=16,opt=dynamic"`
+	Reserved      [3]uint16 `mp4:"2,size=16,opt=dynamic,const=0"`
+	ChannelCount  uint16    `mp4:"3,size=16,opt=dynamic"`
+	SampleSize    uint16    `mp4:"4,size=16,opt=dynamic"`
+	PreDefined    uint16    `mp4:"5,size=16,opt=dynamic"`
+	Reserved2     uint16    `mp4:"6,size=16,opt=dynamic,const=0"`
+	SampleRate    uint32    `mp4:"7,size=32,opt=dynamic"`
+	QuickTimeData []byte    `mp4:"8,size=8,opt=dynamic,len=dynamic"`
 }
 
 func (ase *AudioSampleEntry) IsOptFieldEnabled(name string, ctx Context) bool {
@@ -1293,26 +1293,26 @@ const (
 
 type AVCDecoderConfiguration struct {
 	AnyTypeBox
-	ConfigurationVersion         uint8             `mp4:"size=8"`
-	Profile                      uint8             `mp4:"size=8"`
-	ProfileCompatibility         uint8             `mp4:"size=8"`
-	Level                        uint8             `mp4:"size=8"`
-	Reserved                     uint8             `mp4:"size=6,const=63"`
-	LengthSizeMinusOne           uint8             `mp4:"size=2"`
-	Reserved2                    uint8             `mp4:"size=3,const=7"`
-	NumOfSequenceParameterSets   uint8             `mp4:"size=5"`
-	SequenceParameterSets        []AVCParameterSet `mp4:"len=dynamic"`
-	NumOfPictureParameterSets    uint8             `mp4:"size=8"`
-	PictureParameterSets         []AVCParameterSet `mp4:"len=dynamic"`
-	HighProfileFieldsEnabled     bool              `mp4:"hidden"`
-	Reserved3                    uint8             `mp4:"size=6,opt=dynamic,const=63"`
-	ChromaFormat                 uint8             `mp4:"size=2,opt=dynamic"`
-	Reserved4                    uint8             `mp4:"size=5,opt=dynamic,const=31"`
-	BitDepthLumaMinus8           uint8             `mp4:"size=3,opt=dynamic"`
-	Reserved5                    uint8             `mp4:"size=5,opt=dynamic,const=31"`
-	BitDepthChromaMinus8         uint8             `mp4:"size=3,opt=dynamic"`
-	NumOfSequenceParameterSetExt uint8             `mp4:"size=8,opt=dynamic"`
-	SequenceParameterSetsExt     []AVCParameterSet `mp4:"len=dynamic,opt=dynamic"`
+	ConfigurationVersion         uint8             `mp4:"0,size=8"`
+	Profile                      uint8             `mp4:"1,size=8"`
+	ProfileCompatibility         uint8             `mp4:"2,size=8"`
+	Level                        uint8             `mp4:"3,size=8"`
+	Reserved                     uint8             `mp4:"4,size=6,const=63"`
+	LengthSizeMinusOne           uint8             `mp4:"5,size=2"`
+	Reserved2                    uint8             `mp4:"6,size=3,const=7"`
+	NumOfSequenceParameterSets   uint8             `mp4:"7,size=5"`
+	SequenceParameterSets        []AVCParameterSet `mp4:"8,len=dynamic"`
+	NumOfPictureParameterSets    uint8             `mp4:"9,size=8"`
+	PictureParameterSets         []AVCParameterSet `mp4:"10,len=dynamic"`
+	HighProfileFieldsEnabled     bool              `mp4:"11,hidden"`
+	Reserved3                    uint8             `mp4:"12,size=6,opt=dynamic,const=63"`
+	ChromaFormat                 uint8             `mp4:"13,size=2,opt=dynamic"`
+	Reserved4                    uint8             `mp4:"14,size=5,opt=dynamic,const=31"`
+	BitDepthLumaMinus8           uint8             `mp4:"15,size=3,opt=dynamic"`
+	Reserved5                    uint8             `mp4:"16,size=5,opt=dynamic,const=31"`
+	BitDepthChromaMinus8         uint8             `mp4:"17,size=3,opt=dynamic"`
+	NumOfSequenceParameterSetExt uint8             `mp4:"18,size=8,opt=dynamic"`
+	SequenceParameterSetsExt     []AVCParameterSet `mp4:"19,len=dynamic,opt=dynamic"`
 }
 
 func (avcc *AVCDecoderConfiguration) GetFieldLength(name string, ctx Context) uint {
@@ -1370,8 +1370,8 @@ func (avcc *AVCDecoderConfiguration) OnWriteField(name string, w bitio.Writer, c
 
 type AVCParameterSet struct {
 	BaseCustomFieldObject
-	Length  uint16 `mp4:"size=16"`
-	NALUnit []byte `mp4:"size=8,len=dynamic"`
+	Length  uint16 `mp4:"0,size=16"`
+	NALUnit []byte `mp4:"1,size=8,len=dynamic"`
 }
 
 func (s *AVCParameterSet) GetFieldLength(name string, ctx Context) uint {
@@ -1384,8 +1384,8 @@ func (s *AVCParameterSet) GetFieldLength(name string, ctx Context) uint {
 
 type PixelAspectRatioBox struct {
 	AnyTypeBox
-	HSpacing uint32 `mp4:"size=32"`
-	VSpacing uint32 `mp4:"size=32"`
+	HSpacing uint32 `mp4:"0,size=32"`
+	VSpacing uint32 `mp4:"1,size=32"`
 }
 
 /*************************** sbgp ****************************/
@@ -1397,16 +1397,16 @@ func init() {
 }
 
 type Sbgp struct {
-	FullBox               `mp4:"extend"`
-	GroupingType          uint32      `mp4:"size=32"`
-	GroupingTypeParameter uint32      `mp4:"size=32,ver=1"`
-	EntryCount            uint32      `mp4:"size=32"`
-	Entries               []SbgpEntry `mp4:"len=dynamic,size=64"`
+	FullBox               `mp4:"0,extend"`
+	GroupingType          uint32      `mp4:"1,size=32"`
+	GroupingTypeParameter uint32      `mp4:"2,size=32,ver=1"`
+	EntryCount            uint32      `mp4:"3,size=32"`
+	Entries               []SbgpEntry `mp4:"4,len=dynamic,size=64"`
 }
 
 type SbgpEntry struct {
-	SampleCount           uint32 `mp4:"size=32"`
-	GroupDescriptionIndex uint32 `mp4:"size=32"`
+	SampleCount           uint32 `mp4:"0,size=32"`
+	GroupDescriptionIndex uint32 `mp4:"1,size=32"`
 }
 
 func (sbgp *Sbgp) GetFieldLength(name string, ctx Context) uint {
@@ -1446,10 +1446,10 @@ func init() {
 }
 
 type Schm struct {
-	FullBox       `mp4:"extend"`
-	SchemeType    [4]byte `mp4:"size=8,string"`
-	SchemeVersion uint32  `mp4:"size=32,hex"`
-	SchemeUri     []byte  `mp4:"size=8,opt=0x000001,string"`
+	FullBox       `mp4:"0,extend"`
+	SchemeType    [4]byte `mp4:"1,size=8,string"`
+	SchemeVersion uint32  `mp4:"2,size=32,hex"`
+	SchemeUri     []byte  `mp4:"3,size=8,opt=0x000001,string"`
 }
 
 func (*Schm) GetType() BoxType {
@@ -1465,15 +1465,15 @@ func init() {
 }
 
 type Sdtp struct {
-	FullBox `mp4:"extend"`
-	Samples []SdtpSampleElem `mp4:"size=8"`
+	FullBox `mp4:"0,extend"`
+	Samples []SdtpSampleElem `mp4:"1,size=8"`
 }
 
 type SdtpSampleElem struct {
-	IsLeading           uint8 `mp4:"size=2"`
-	SampleDependsOn     uint8 `mp4:"size=2"`
-	SampleIsDependedOn  uint8 `mp4:"size=2"`
-	SampleHasRedundancy uint8 `mp4:"size=2"`
+	IsLeading           uint8 `mp4:"0,size=2"`
+	SampleDependsOn     uint8 `mp4:"1,size=2"`
+	SampleIsDependedOn  uint8 `mp4:"2,size=2"`
+	SampleHasRedundancy uint8 `mp4:"3,size=2"`
 }
 
 func (*Sdtp) GetType() BoxType {
@@ -1489,63 +1489,63 @@ func init() {
 }
 
 type Sgpd struct {
-	FullBox                       `mp4:"extend"`
-	GroupingType                  [4]byte                    `mp4:"size=8,string"`
-	DefaultLength                 uint32                     `mp4:"size=32,ver=1"`
-	DefaultSampleDescriptionIndex uint32                     `mp4:"size=32,ver=2"`
-	EntryCount                    uint32                     `mp4:"size=32"`
-	RollDistances                 []int16                    `mp4:"size=16,opt=dynamic"`
-	RollDistancesL                []RollDistanceWithLength   `mp4:"size=16,opt=dynamic"`
-	AlternativeStartupEntries     []AlternativeStartupEntry  `mp4:"size=dynamic,len=dynamic,opt=dynamic"`
-	AlternativeStartupEntriesL    []AlternativeStartupEntryL `mp4:"len=dynamic,opt=dynamic"`
-	VisualRandomAccessEntries     []VisualRandomAccessEntry  `mp4:"len=dynamic,opt=dynamic"`
-	VisualRandomAccessEntriesL    []VisualRandomAccessEntryL `mp4:"len=dynamic,opt=dynamic"`
-	TemporalLevelEntries          []TemporalLevelEntry       `mp4:"len=dynamic,opt=dynamic"`
-	TemporalLevelEntriesL         []TemporalLevelEntryL      `mp4:"len=dynamic,opt=dynamic"`
-	Unsupported                   []byte                     `mp4:"size=8,opt=dynamic"`
+	FullBox                       `mp4:"0,extend"`
+	GroupingType                  [4]byte                    `mp4:"1,size=8,string"`
+	DefaultLength                 uint32                     `mp4:"2,size=32,ver=1"`
+	DefaultSampleDescriptionIndex uint32                     `mp4:"3,size=32,ver=2"`
+	EntryCount                    uint32                     `mp4:"4,size=32"`
+	RollDistances                 []int16                    `mp4:"5,size=16,opt=dynamic"`
+	RollDistancesL                []RollDistanceWithLength   `mp4:"6,size=16,opt=dynamic"`
+	AlternativeStartupEntries     []AlternativeStartupEntry  `mp4:"7,size=dynamic,len=dynamic,opt=dynamic"`
+	AlternativeStartupEntriesL    []AlternativeStartupEntryL `mp4:"8,len=dynamic,opt=dynamic"`
+	VisualRandomAccessEntries     []VisualRandomAccessEntry  `mp4:"9,len=dynamic,opt=dynamic"`
+	VisualRandomAccessEntriesL    []VisualRandomAccessEntryL `mp4:"10,len=dynamic,opt=dynamic"`
+	TemporalLevelEntries          []TemporalLevelEntry       `mp4:"11,len=dynamic,opt=dynamic"`
+	TemporalLevelEntriesL         []TemporalLevelEntryL      `mp4:"12,len=dynamic,opt=dynamic"`
+	Unsupported                   []byte                     `mp4:"13,size=8,opt=dynamic"`
 }
 
 type RollDistanceWithLength struct {
-	DescriptionLength uint32 `mp4:"size=32"`
-	RollDistance      int16  `mp4:"size=16"`
+	DescriptionLength uint32 `mp4:"0,size=32"`
+	RollDistance      int16  `mp4:"1,size=16"`
 }
 
 type AlternativeStartupEntry struct {
 	BaseCustomFieldObject
-	RollCount         uint16                       `mp4:"size=16"`
-	FirstOutputSample uint16                       `mp4:"size=16"`
-	SampleOffset      []uint32                     `mp4:"size=32,len=dynamic"`
-	Opts              []AlternativeStartupEntryOpt `mp4:"size=32"`
+	RollCount         uint16                       `mp4:"0,size=16"`
+	FirstOutputSample uint16                       `mp4:"1,size=16"`
+	SampleOffset      []uint32                     `mp4:"2,size=32,len=dynamic"`
+	Opts              []AlternativeStartupEntryOpt `mp4:"3,size=32"`
 }
 
 type AlternativeStartupEntryL struct {
-	DescriptionLength       uint32 `mp4:"size=32"`
-	AlternativeStartupEntry `mp4:"extend,size=dynamic"`
+	DescriptionLength       uint32 `mp4:"0,size=32"`
+	AlternativeStartupEntry `mp4:"1,extend,size=dynamic"`
 }
 
 type AlternativeStartupEntryOpt struct {
-	NumOutputSamples uint16 `mp4:"size=16"`
-	NumTotalSamples  uint16 `mp4:"size=16"`
+	NumOutputSamples uint16 `mp4:"0,size=16"`
+	NumTotalSamples  uint16 `mp4:"1,size=16"`
 }
 
 type VisualRandomAccessEntry struct {
-	NumLeadingSamplesKnown bool  `mp4:"size=1"`
-	NumLeadingSamples      uint8 `mp4:"size=7"`
+	NumLeadingSamplesKnown bool  `mp4:"0,size=1"`
+	NumLeadingSamples      uint8 `mp4:"1,size=7"`
 }
 
 type VisualRandomAccessEntryL struct {
-	DescriptionLength       uint32 `mp4:"size=32"`
-	VisualRandomAccessEntry `mp4:"extend"`
+	DescriptionLength       uint32 `mp4:"0,size=32"`
+	VisualRandomAccessEntry `mp4:"1,extend"`
 }
 
 type TemporalLevelEntry struct {
-	LevelIndependentlyDecodable bool  `mp4:"size=1"`
-	Reserved                    uint8 `mp4:"size=7,const=0"`
+	LevelIndependentlyDecodable bool  `mp4:"0,size=1"`
+	Reserved                    uint8 `mp4:"1,size=7,const=0"`
 }
 
 type TemporalLevelEntryL struct {
-	DescriptionLength  uint32 `mp4:"size=32"`
-	TemporalLevelEntry `mp4:"extend"`
+	DescriptionLength  uint32 `mp4:"0,size=32"`
+	TemporalLevelEntry `mp4:"1,extend"`
 }
 
 func (sgpd *Sgpd) GetFieldSize(name string, ctx Context) uint {
@@ -1630,25 +1630,25 @@ func init() {
 }
 
 type Sidx struct {
-	FullBox                    `mp4:"extend"`
-	ReferenceID                uint32          `mp4:"size=32"`
-	Timescale                  uint32          `mp4:"size=32"`
-	EarliestPresentationTimeV0 uint32          `mp4:"size=32,ver=0"`
-	FirstOffsetV0              uint32          `mp4:"size=32,ver=0"`
-	EarliestPresentationTimeV1 uint64          `mp4:"size=64,nver=0"`
-	FirstOffsetV1              uint64          `mp4:"size=64,nver=0"`
-	Reserved                   uint16          `mp4:"size=16,const=0"`
-	ReferenceCount             uint16          `mp4:"size=16"`
-	References                 []SidxReference `mp4:"size=96,len=dynamic"`
+	FullBox                    `mp4:"0,extend"`
+	ReferenceID                uint32          `mp4:"1,size=32"`
+	Timescale                  uint32          `mp4:"2,size=32"`
+	EarliestPresentationTimeV0 uint32          `mp4:"3,size=32,ver=0"`
+	FirstOffsetV0              uint32          `mp4:"4,size=32,ver=0"`
+	EarliestPresentationTimeV1 uint64          `mp4:"5,size=64,nver=0"`
+	FirstOffsetV1              uint64          `mp4:"6,size=64,nver=0"`
+	Reserved                   uint16          `mp4:"7,size=16,const=0"`
+	ReferenceCount             uint16          `mp4:"8,size=16"`
+	References                 []SidxReference `mp4:"9,size=96,len=dynamic"`
 }
 
 type SidxReference struct {
-	ReferenceType      bool   `mp4:"size=1"`
-	ReferencedSize     uint32 `mp4:"size=31"`
-	SubsegmentDuration uint32 `mp4:"size=32"`
-	StartsWithSAP      bool   `mp4:"size=1"`
-	SAPType            uint32 `mp4:"size=3"`
-	SAPDeltaTime       uint32 `mp4:"size=28"`
+	ReferenceType      bool   `mp4:"0,size=1"`
+	ReferencedSize     uint32 `mp4:"1,size=31"`
+	SubsegmentDuration uint32 `mp4:"2,size=32"`
+	StartsWithSAP      bool   `mp4:"3,size=1"`
+	SAPType            uint32 `mp4:"4,size=3"`
+	SAPDeltaTime       uint32 `mp4:"5,size=28"`
 }
 
 func (*Sidx) GetType() BoxType {
@@ -1688,9 +1688,9 @@ func init() {
 }
 
 type Smhd struct {
-	FullBox  `mp4:"extend"`
-	Balance  int16  `mp4:"size=16"` // fixed-point 8.8 template=0
-	Reserved uint16 `mp4:"size=16,const=0"`
+	FullBox  `mp4:"0,extend"`
+	Balance  int16  `mp4:"1,size=16"` // fixed-point 8.8 template=0
+	Reserved uint16 `mp4:"2,size=16,const=0"`
 }
 
 func (*Smhd) GetType() BoxType {
@@ -1745,9 +1745,9 @@ func init() {
 
 // Stco is ISOBMFF stco box type
 type Stco struct {
-	FullBox     `mp4:"extend"`
-	EntryCount  uint32   `mp4:"size=32"`
-	ChunkOffset []uint32 `mp4:"size=32,len=dynamic"`
+	FullBox     `mp4:"0,extend"`
+	EntryCount  uint32   `mp4:"1,size=32"`
+	ChunkOffset []uint32 `mp4:"2,size=32,len=dynamic"`
 }
 
 // GetType returns the BoxType
@@ -1774,15 +1774,15 @@ func init() {
 
 // Stsc is ISOBMFF stsc box type
 type Stsc struct {
-	FullBox    `mp4:"extend"`
-	EntryCount uint32      `mp4:"size=32"`
-	Entries    []StscEntry `mp4:"len=dynamic,size=96"`
+	FullBox    `mp4:"0,extend"`
+	EntryCount uint32      `mp4:"1,size=32"`
+	Entries    []StscEntry `mp4:"2,len=dynamic,size=96"`
 }
 
 type StscEntry struct {
-	FirstChunk             uint32 `mp4:"size=32"`
-	SamplesPerChunk        uint32 `mp4:"size=32"`
-	SampleDescriptionIndex uint32 `mp4:"size=32"`
+	FirstChunk             uint32 `mp4:"0,size=32"`
+	SamplesPerChunk        uint32 `mp4:"1,size=32"`
+	SampleDescriptionIndex uint32 `mp4:"2,size=32"`
 }
 
 // GetType returns the BoxType
@@ -1809,8 +1809,8 @@ func init() {
 
 // Stsd is ISOBMFF stsd box type
 type Stsd struct {
-	FullBox    `mp4:"extend"`
-	EntryCount uint32 `mp4:"size=32"`
+	FullBox    `mp4:"0,extend"`
+	EntryCount uint32 `mp4:"1,size=32"`
 }
 
 // GetType returns the BoxType
@@ -1827,9 +1827,9 @@ func init() {
 }
 
 type Stss struct {
-	FullBox      `mp4:"extend"`
-	EntryCount   uint32   `mp4:"size=32"`
-	SampleNumber []uint32 `mp4:"len=dynamic,size=32"`
+	FullBox      `mp4:"0,extend"`
+	EntryCount   uint32   `mp4:"1,size=32"`
+	SampleNumber []uint32 `mp4:"2,len=dynamic,size=32"`
 }
 
 // GetType returns the BoxType
@@ -1856,10 +1856,10 @@ func init() {
 
 // Stsz is ISOBMFF stsz box type
 type Stsz struct {
-	FullBox     `mp4:"extend"`
-	SampleSize  uint32   `mp4:"size=32"`
-	SampleCount uint32   `mp4:"size=32"`
-	EntrySize   []uint32 `mp4:"size=32,len=dynamic"`
+	FullBox     `mp4:"0,extend"`
+	SampleSize  uint32   `mp4:"1,size=32"`
+	SampleCount uint32   `mp4:"2,size=32"`
+	EntrySize   []uint32 `mp4:"3,size=32,len=dynamic"`
 }
 
 // GetType returns the BoxType
@@ -1890,14 +1890,14 @@ func init() {
 
 // Stts is ISOBMFF stts box type
 type Stts struct {
-	FullBox    `mp4:"extend"`
-	EntryCount uint32      `mp4:"size=32"`
-	Entries    []SttsEntry `mp4:"len=dynamic,size=64"`
+	FullBox    `mp4:"0,extend"`
+	EntryCount uint32      `mp4:"1,size=32"`
+	Entries    []SttsEntry `mp4:"2,len=dynamic,size=64"`
 }
 
 type SttsEntry struct {
-	SampleCount uint32 `mp4:"size=32"`
-	SampleDelta uint32 `mp4:"size=32"`
+	SampleCount uint32 `mp4:"0,size=32"`
+	SampleDelta uint32 `mp4:"1,size=32"`
 }
 
 // GetType returns the BoxType
@@ -1924,9 +1924,9 @@ func init() {
 
 type Styp struct {
 	Box
-	MajorBrand       [4]byte               `mp4:"size=8,string"`
-	MinorVersion     uint32                `mp4:"size=32"`
-	CompatibleBrands []CompatibleBrandElem `mp4:"size=32"` // reach to end of the box
+	MajorBrand       [4]byte               `mp4:"0,size=8,string"`
+	MinorVersion     uint32                `mp4:"1,size=32"`
+	CompatibleBrands []CompatibleBrandElem `mp4:"2,size=32"` // reach to end of the box
 }
 
 func (*Styp) GetType() BoxType {
@@ -1943,15 +1943,15 @@ func init() {
 
 // Tenc is ISOBMFF tenc box type
 type Tenc struct {
-	FullBox                `mp4:"extend"`
-	Reserved               uint8    `mp4:"size=8,dec"`
-	DefaultCryptByteBlock  uint8    `mp4:"size=4,dec"` // always 0 on version 0
-	DefaultSkipByteBlock   uint8    `mp4:"size=4,dec"` // always 0 on version 0
-	DefaultIsProtected     uint8    `mp4:"size=8,dec"`
-	DefaultPerSampleIVSize uint8    `mp4:"size=8,dec"`
-	DefaultKID             [16]byte `mp4:"size=8,uuid"`
-	DefaultConstantIVSize  uint8    `mp4:"size=8,opt=dynamic,dec"`
-	DefaultConstantIV      []byte   `mp4:"size=8,opt=dynamic,len=dynamic"`
+	FullBox                `mp4:"0,extend"`
+	Reserved               uint8    `mp4:"1,size=8,dec"`
+	DefaultCryptByteBlock  uint8    `mp4:"2,size=4,dec"` // always 0 on version 0
+	DefaultSkipByteBlock   uint8    `mp4:"3,size=4,dec"` // always 0 on version 0
+	DefaultIsProtected     uint8    `mp4:"4,size=8,dec"`
+	DefaultPerSampleIVSize uint8    `mp4:"5,size=8,dec"`
+	DefaultKID             [16]byte `mp4:"6,size=8,uuid"`
+	DefaultConstantIVSize  uint8    `mp4:"7,size=8,opt=dynamic,dec"`
+	DefaultConstantIV      []byte   `mp4:"8,size=8,opt=dynamic,len=dynamic"`
 }
 
 func (tenc *Tenc) IsOptFieldEnabled(name string, ctx Context) bool {
@@ -1985,9 +1985,9 @@ func init() {
 
 // Tfdt is ISOBMFF tfdt box type
 type Tfdt struct {
-	FullBox               `mp4:"extend"`
-	BaseMediaDecodeTimeV0 uint32 `mp4:"size=32,ver=0"`
-	BaseMediaDecodeTimeV1 uint64 `mp4:"size=64,ver=1"`
+	FullBox               `mp4:"0,extend"`
+	BaseMediaDecodeTimeV0 uint32 `mp4:"1,size=32,ver=0"`
+	BaseMediaDecodeTimeV1 uint64 `mp4:"2,size=64,ver=1"`
 }
 
 // GetType returns the BoxType
@@ -2005,15 +2005,15 @@ func init() {
 
 // Tfhd is ISOBMFF tfhd box type
 type Tfhd struct {
-	FullBox `mp4:"extend"`
-	TrackID uint32 `mp4:"size=32"`
+	FullBox `mp4:"0,extend"`
+	TrackID uint32 `mp4:"1,size=32"`
 
 	// optional
-	BaseDataOffset         uint64 `mp4:"size=64,opt=0x000001"`
-	SampleDescriptionIndex uint32 `mp4:"size=32,opt=0x000002"`
-	DefaultSampleDuration  uint32 `mp4:"size=32,opt=0x000008"`
-	DefaultSampleSize      uint32 `mp4:"size=32,opt=0x000010"`
-	DefaultSampleFlags     uint32 `mp4:"size=32,opt=0x000020,hex"`
+	BaseDataOffset         uint64 `mp4:"2,size=64,opt=0x000001"`
+	SampleDescriptionIndex uint32 `mp4:"3,size=32,opt=0x000002"`
+	DefaultSampleDuration  uint32 `mp4:"4,size=32,opt=0x000008"`
+	DefaultSampleSize      uint32 `mp4:"5,size=32,opt=0x000010"`
+	DefaultSampleFlags     uint32 `mp4:"6,size=32,opt=0x000020,hex"`
 }
 
 const (
@@ -2041,24 +2041,24 @@ func init() {
 
 // Tfra is ISOBMFF tfra box type
 type Tfra struct {
-	FullBox               `mp4:"extend"`
-	TrackID               uint32      `mp4:"size=32"`
-	Reserved              uint32      `mp4:"size=26,const=0"`
-	LengthSizeOfTrafNum   byte        `mp4:"size=2"`
-	LengthSizeOfTrunNum   byte        `mp4:"size=2"`
-	LengthSizeOfSampleNum byte        `mp4:"size=2"`
-	NumberOfEntry         uint32      `mp4:"size=32"`
-	Entries               []TfraEntry `mp4:"len=dynamic,size=dynamic"`
+	FullBox               `mp4:"0,extend"`
+	TrackID               uint32      `mp4:"1,size=32"`
+	Reserved              uint32      `mp4:"2,size=26,const=0"`
+	LengthSizeOfTrafNum   byte        `mp4:"3,size=2"`
+	LengthSizeOfTrunNum   byte        `mp4:"4,size=2"`
+	LengthSizeOfSampleNum byte        `mp4:"5,size=2"`
+	NumberOfEntry         uint32      `mp4:"6,size=32"`
+	Entries               []TfraEntry `mp4:"7,len=dynamic,size=dynamic"`
 }
 
 type TfraEntry struct {
-	TimeV0       uint32 `mp4:"size=32,ver=0"`
-	MoofOffsetV0 uint32 `mp4:"size=32,ver=0"`
-	TimeV1       uint64 `mp4:"size=64,ver=1"`
-	MoofOffsetV1 uint64 `mp4:"size=64,ver=1"`
-	TrafNumber   uint32 `mp4:"size=dynamic"`
-	TrunNumber   uint32 `mp4:"size=dynamic"`
-	SampleNumber uint32 `mp4:"size=dynamic"`
+	TimeV0       uint32 `mp4:"0,size=32,ver=0"`
+	MoofOffsetV0 uint32 `mp4:"1,size=32,ver=0"`
+	TimeV1       uint64 `mp4:"2,size=64,ver=1"`
+	MoofOffsetV1 uint64 `mp4:"3,size=64,ver=1"`
+	TrafNumber   uint32 `mp4:"4,size=dynamic"`
+	TrunNumber   uint32 `mp4:"5,size=dynamic"`
+	SampleNumber uint32 `mp4:"6,size=dynamic"`
 }
 
 // GetType returns the BoxType
@@ -2115,28 +2115,28 @@ func init() {
 
 // Tkhd is ISOBMFF tkhd box type
 type Tkhd struct {
-	FullBox `mp4:"extend"`
+	FullBox `mp4:"0,extend"`
 	// Version 0
-	CreationTimeV0     uint32 `mp4:"size=32,ver=0"`
-	ModificationTimeV0 uint32 `mp4:"size=32,ver=0"`
-	TrackIDV0          uint32 `mp4:"size=32,ver=0"`
-	ReservedV0         uint32 `mp4:"size=32,ver=0,const=0"`
-	DurationV0         uint32 `mp4:"size=32,ver=0"`
+	CreationTimeV0     uint32 `mp4:"1,size=32,ver=0"`
+	ModificationTimeV0 uint32 `mp4:"2,size=32,ver=0"`
+	TrackIDV0          uint32 `mp4:"3,size=32,ver=0"`
+	ReservedV0         uint32 `mp4:"4,size=32,ver=0,const=0"`
+	DurationV0         uint32 `mp4:"5,size=32,ver=0"`
 	// Version 1
-	CreationTimeV1     uint64 `mp4:"size=64,ver=1"`
-	ModificationTimeV1 uint64 `mp4:"size=64,ver=1"`
-	TrackIDV1          uint32 `mp4:"size=32,ver=1"`
-	ReservedV1         uint32 `mp4:"size=32,ver=1,const=0"`
-	DurationV1         uint64 `mp4:"size=64,ver=1"`
+	CreationTimeV1     uint64 `mp4:"6,size=64,ver=1"`
+	ModificationTimeV1 uint64 `mp4:"7,size=64,ver=1"`
+	TrackIDV1          uint32 `mp4:"8,size=32,ver=1"`
+	ReservedV1         uint32 `mp4:"9,size=32,ver=1,const=0"`
+	DurationV1         uint64 `mp4:"10,size=64,ver=1"`
 	//
-	Reserved       [2]uint32 `mp4:"size=32,const=0"`
-	Layer          int16     `mp4:"size=16"` // template=0
-	AlternateGroup int16     `mp4:"size=16"` // template=0
-	Volume         int16     `mp4:"size=16"` // template={if track_is_audio 0x0100 else 0}
-	Reserved2      uint16    `mp4:"size=16,const=0"`
-	Matrix         [9]int32  `mp4:"size=32,hex"` // template={ 0x00010000,0,0,0,0x00010000,0,0,0,0x40000000 };
-	Width          uint32    `mp4:"size=32"`     // fixed-point 16.16
-	Height         uint32    `mp4:"size=32"`     // fixed-point 16.16
+	Reserved       [2]uint32 `mp4:"11,size=32,const=0"`
+	Layer          int16     `mp4:"12,size=16"` // template=0
+	AlternateGroup int16     `mp4:"13,size=16"` // template=0
+	Volume         int16     `mp4:"14,size=16"` // template={if track_is_audio 0x0100 else 0}
+	Reserved2      uint16    `mp4:"15,size=16,const=0"`
+	Matrix         [9]int32  `mp4:"16,size=32,hex"` // template={ 0x00010000,0,0,0,0x00010000,0,0,0,0x40000000 };
+	Width          uint32    `mp4:"17,size=32"`     // fixed-point 16.16
+	Height         uint32    `mp4:"18,size=32"`     // fixed-point 16.16
 }
 
 // GetType returns the BoxType
@@ -2222,8 +2222,8 @@ func init() {
 
 // Trep is ISOBMFF trep box type
 type Trep struct {
-	FullBox `mp4:"extend"`
-	TrackID uint32 `mp4:"size=32"`
+	FullBox `mp4:"0,extend"`
+	TrackID uint32 `mp4:"1,size=32"`
 }
 
 // GetType returns the BoxType
@@ -2241,12 +2241,12 @@ func init() {
 
 // Trex is ISOBMFF trex box type
 type Trex struct {
-	FullBox                       `mp4:"extend"`
-	TrackID                       uint32 `mp4:"size=32"`
-	DefaultSampleDescriptionIndex uint32 `mp4:"size=32"`
-	DefaultSampleDuration         uint32 `mp4:"size=32"`
-	DefaultSampleSize             uint32 `mp4:"size=32"`
-	DefaultSampleFlags            uint32 `mp4:"size=32,hex"`
+	FullBox                       `mp4:"0,extend"`
+	TrackID                       uint32 `mp4:"1,size=32"`
+	DefaultSampleDescriptionIndex uint32 `mp4:"2,size=32"`
+	DefaultSampleDuration         uint32 `mp4:"3,size=32"`
+	DefaultSampleSize             uint32 `mp4:"4,size=32"`
+	DefaultSampleFlags            uint32 `mp4:"5,size=32,hex"`
 }
 
 // GetType returns the BoxType
@@ -2264,21 +2264,21 @@ func init() {
 
 // Trun is ISOBMFF trun box type
 type Trun struct {
-	FullBox     `mp4:"extend"`
-	SampleCount uint32 `mp4:"size=32"`
+	FullBox     `mp4:"0,extend"`
+	SampleCount uint32 `mp4:"1,size=32"`
 
 	// optional fields
-	DataOffset       int32       `mp4:"size=32,opt=0x000001"`
-	FirstSampleFlags uint32      `mp4:"size=32,opt=0x000004,hex"`
-	Entries          []TrunEntry `mp4:"len=dynamic,size=dynamic"`
+	DataOffset       int32       `mp4:"2,size=32,opt=0x000001"`
+	FirstSampleFlags uint32      `mp4:"3,size=32,opt=0x000004,hex"`
+	Entries          []TrunEntry `mp4:"4,len=dynamic,size=dynamic"`
 }
 
 type TrunEntry struct {
-	SampleDuration                uint32 `mp4:"size=32,opt=0x000100"`
-	SampleSize                    uint32 `mp4:"size=32,opt=0x000200"`
-	SampleFlags                   uint32 `mp4:"size=32,opt=0x000400,hex"`
-	SampleCompositionTimeOffsetV0 uint32 `mp4:"size=32,opt=0x000800,ver=0"`
-	SampleCompositionTimeOffsetV1 int32  `mp4:"size=32,opt=0x000800,nver=0"`
+	SampleDuration                uint32 `mp4:"0,size=32,opt=0x000100"`
+	SampleSize                    uint32 `mp4:"1,size=32,opt=0x000200"`
+	SampleFlags                   uint32 `mp4:"2,size=32,opt=0x000400,hex"`
+	SampleCompositionTimeOffsetV0 uint32 `mp4:"3,size=32,opt=0x000800,ver=0"`
+	SampleCompositionTimeOffsetV1 int32  `mp4:"4,size=32,opt=0x000800,nver=0"`
 }
 
 // GetType returns the BoxType
@@ -2350,10 +2350,10 @@ func (*Udta) GetType() BoxType {
 
 type Udta3GppString struct {
 	AnyTypeBox
-	FullBox  `mp4:"extend"`
-	Pad      bool    `mp4:"size=1,hidden"`
-	Language [3]byte `mp4:"size=5,iso639-2"` // ISO-639-2/T language code
-	Data     []byte  `mp4:"size=8,string"`
+	FullBox  `mp4:"0,extend"`
+	Pad      bool    `mp4:"1,size=1,hidden"`
+	Language [3]byte `mp4:"2,size=5,iso639-2"` // ISO-639-2/T language code
+	Data     []byte  `mp4:"3,size=8,string"`
 }
 
 func isUnderUdta(ctx Context) bool {
@@ -2370,9 +2370,9 @@ func init() {
 
 // Vmhd is ISOBMFF vmhd box type
 type Vmhd struct {
-	FullBox      `mp4:"extend"`
-	Graphicsmode uint16    `mp4:"size=16"` // template=0
-	Opcolor      [3]uint16 `mp4:"size=16"` // template={0, 0, 0}
+	FullBox      `mp4:"0,extend"`
+	Graphicsmode uint16    `mp4:"1,size=16"` // template=0
+	Opcolor      [3]uint16 `mp4:"2,size=16"` // template={0, 0, 0}
 }
 
 // GetType returns the BoxType

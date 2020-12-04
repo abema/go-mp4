@@ -57,9 +57,9 @@ func init() {
 }
 
 type Xxxx struct {
-	FullBox  `mp4:"extend"`
-	UI32      uint32 `mp4:"size=32"`
-	ByteArray []byte `mp4:"size=8,len=dynamic"`
+	FullBox  `mp4:"0,extend"`
+	UI32      uint32 `mp4:"1,size=32"`
+	ByteArray []byte `mp4:"2,size=8,len=dynamic"`
 }
 
 func (*Xxxx) GetType() BoxType {

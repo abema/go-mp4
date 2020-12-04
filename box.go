@@ -143,8 +143,8 @@ func (box *Box) RemoveFlag(flag uint32) {
 // FullBox is ISOBMFF FullBox
 type FullBox struct {
 	BaseCustomFieldObject
-	Version uint8   `mp4:"size=8"`
-	Flags   [3]byte `mp4:"size=8"`
+	Version uint8   `mp4:"0,size=8"`
+	Flags   [3]byte `mp4:"1,size=8"`
 }
 
 // GetVersion returns the box version
