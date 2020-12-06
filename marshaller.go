@@ -38,7 +38,7 @@ func Marshal(w io.Writer, src IImmutableBox, ctx Context) (n uint64, err error) 
 		ctx:    ctx,
 	}
 
-	if err := m.marshalStruct(boxDef.fields, v); err != nil {
+	if err := m.marshalStruct(v, boxDef.fields); err != nil {
 		return 0, err
 	}
 
@@ -49,47 +49,42 @@ func Marshal(w io.Writer, src IImmutableBox, ctx Context) (n uint64, err error) 
 	return m.wbits / 8, nil
 }
 
-func (m *marshaller) marshal(f *field, v reflect.Value, config fieldConfig) error {
+func (m *marshaller) marshal(v reflect.Value, fi *fieldInstance) error {
 	switch v.Type().Kind() {
 	case reflect.Ptr:
-		return m.marshalPtr(f, v, config)
+		return m.marshalPtr(v, fi)
 	case reflect.Struct:
-		return m.marshalStruct(f.children, v)
+		return m.marshalStruct(v, fi.children)
 	case reflect.Array:
-		return m.marshalArray(f, v, config)
+		return m.marshalArray(v, fi)
 	case reflect.Slice:
-		return m.marshalSlice(f, v, config)
+		return m.marshalSlice(v, fi)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return m.marshalInt(v, config)
+		return m.marshalInt(v, fi)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return m.marshalUint(v, config)
+		return m.marshalUint(v, fi)
 	case reflect.Bool:
-		return m.marshalBool(v, config)
+		return m.marshalBool(v, fi)
 	case reflect.String:
-		return m.marshalString(v, config)
+		return m.marshalString(v)
 	default:
 		return fmt.Errorf("unsupported type: %s", v.Type().Kind())
 	}
 }
 
-func (m *marshaller) marshalPtr(f *field, v reflect.Value, config fieldConfig) error {
-	return m.marshal(f, v.Elem(), config)
+func (m *marshaller) marshalPtr(v reflect.Value, fi *fieldInstance) error {
+	return m.marshal(v.Elem(), fi)
 }
 
-func (m *marshaller) marshalStruct(fs []*field, v reflect.Value) error {
+func (m *marshaller) marshalStruct(v reflect.Value, fs []*field) error {
 	for _, f := range fs {
-		sf, _ := v.Type().FieldByName(f.name)
-		tagStr, _ := sf.Tag.Lookup("mp4")
-		config, err := readFieldConfig(m.src, v, f.name, parseFieldTag(tagStr), m.ctx)
-		if err != nil {
-			return err
-		}
+		fi := resolveFieldInstance(f, m.src, v, m.ctx)
 
-		if !isTargetField(m.src, config, m.ctx) {
+		if !isTargetField(m.src, fi, m.ctx) {
 			continue
 		}
 
-		wbits, override, err := config.cfo.OnWriteField(f.name, m.writer, m.ctx)
+		wbits, override, err := fi.cfo.OnWriteField(f.name, m.writer, m.ctx)
 		if err != nil {
 			return err
 		}
@@ -98,7 +93,7 @@ func (m *marshaller) marshalStruct(fs []*field, v reflect.Value) error {
 			continue
 		}
 
-		err = m.marshal(f, v.FieldByName(f.name), config)
+		err = m.marshal(v.FieldByName(f.name), fi)
 		if err != nil {
 			return err
 		}
@@ -107,11 +102,11 @@ func (m *marshaller) marshalStruct(fs []*field, v reflect.Value) error {
 	return nil
 }
 
-func (m *marshaller) marshalArray(f *field, v reflect.Value, config fieldConfig) error {
+func (m *marshaller) marshalArray(v reflect.Value, fi *fieldInstance) error {
 	size := v.Type().Size()
 	for i := 0; i < int(size)/int(v.Type().Elem().Size()); i++ {
 		var err error
-		err = m.marshal(f, v.Index(i), config)
+		err = m.marshal(v.Index(i), fi)
 		if err != nil {
 			return err
 		}
@@ -119,17 +114,17 @@ func (m *marshaller) marshalArray(f *field, v reflect.Value, config fieldConfig)
 	return nil
 }
 
-func (m *marshaller) marshalSlice(f *field, v reflect.Value, config fieldConfig) error {
+func (m *marshaller) marshalSlice(v reflect.Value, fi *fieldInstance) error {
 	length := uint64(v.Len())
-	if config.length != LengthUnlimited {
-		if length < uint64(config.length) {
-			return fmt.Errorf("the slice has too few elements: required=%d actual=%d", config.length, length)
+	if fi.length != LengthUnlimited {
+		if length < uint64(fi.length) {
+			return fmt.Errorf("the slice has too few elements: required=%d actual=%d", fi.length, length)
 		}
-		length = uint64(config.length)
+		length = uint64(fi.length)
 	}
 
 	elemType := v.Type().Elem()
-	if elemType.Kind() == reflect.Uint8 && config.size == 8 && m.wbits%8 == 0 {
+	if elemType.Kind() == reflect.Uint8 && fi.size == 8 && m.wbits%8 == 0 {
 		if _, err := io.CopyN(m.writer, bytes.NewBuffer(v.Bytes()), int64(length)); err != nil {
 			return err
 		}
@@ -138,27 +133,27 @@ func (m *marshaller) marshalSlice(f *field, v reflect.Value, config fieldConfig)
 	}
 
 	for i := 0; i < int(length); i++ {
-		m.marshal(f, v.Index(i), config)
+		m.marshal(v.Index(i), fi)
 	}
 	return nil
 }
 
-func (m *marshaller) marshalInt(v reflect.Value, config fieldConfig) error {
+func (m *marshaller) marshalInt(v reflect.Value, fi *fieldInstance) error {
 	signed := v.Int()
 
-	if config.varint {
+	if fi.is(fieldVarint) {
 		return errors.New("signed varint is unsupported")
 	}
 
 	signBit := signed < 0
 	val := uint64(signed)
-	for i := uint(0); i < config.size; i += 8 {
+	for i := uint(0); i < fi.size; i += 8 {
 		v := val
 		size := uint(8)
-		if config.size > i+8 {
-			v = v >> (config.size - (i + 8))
-		} else if config.size < i+8 {
-			size = config.size - i
+		if fi.size > i+8 {
+			v = v >> (fi.size - (i + 8))
+		} else if fi.size < i+8 {
+			size = fi.size - i
 		}
 
 		// set sign bit
@@ -179,21 +174,21 @@ func (m *marshaller) marshalInt(v reflect.Value, config fieldConfig) error {
 	return nil
 }
 
-func (m *marshaller) marshalUint(v reflect.Value, config fieldConfig) error {
+func (m *marshaller) marshalUint(v reflect.Value, fi *fieldInstance) error {
 	val := v.Uint()
 
-	if config.varint {
+	if fi.is(fieldVarint) {
 		m.writeUvarint(val)
 		return nil
 	}
 
-	for i := uint(0); i < config.size; i += 8 {
+	for i := uint(0); i < fi.size; i += 8 {
 		v := val
 		size := uint(8)
-		if config.size > i+8 {
-			v = v >> (config.size - (i + 8))
-		} else if config.size < i+8 {
-			size = config.size - i
+		if fi.size > i+8 {
+			v = v >> (fi.size - (i + 8))
+		} else if fi.size < i+8 {
+			size = fi.size - i
 		}
 		if err := m.writer.WriteBits([]byte{byte(v)}, size); err != nil {
 			return err
@@ -204,21 +199,21 @@ func (m *marshaller) marshalUint(v reflect.Value, config fieldConfig) error {
 	return nil
 }
 
-func (m *marshaller) marshalBool(v reflect.Value, config fieldConfig) error {
+func (m *marshaller) marshalBool(v reflect.Value, fi *fieldInstance) error {
 	var val byte
 	if v.Bool() {
 		val = 0xff
 	} else {
 		val = 0x00
 	}
-	if err := m.writer.WriteBits([]byte{val}, config.size); err != nil {
+	if err := m.writer.WriteBits([]byte{val}, fi.size); err != nil {
 		return err
 	}
-	m.wbits += uint64(config.size)
+	m.wbits += uint64(fi.size)
 	return nil
 }
 
-func (m *marshaller) marshalString(v reflect.Value, config fieldConfig) error {
+func (m *marshaller) marshalString(v reflect.Value) error {
 	data := []byte(v.String())
 	for _, b := range data {
 		if err := m.writer.WriteBits([]byte{b}, 8); err != nil {
@@ -304,7 +299,7 @@ func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox, ctx Context) (n ui
 		return 0, err
 	}
 
-	if err := u.unmarshalStruct(boxDef.fields, v); err != nil {
+	if err := u.unmarshalStruct(v, boxDef.fields); err != nil {
 		if err == ErrUnsupportedBoxVersion {
 			r.Seek(sn, io.SeekStart)
 		}
@@ -322,68 +317,63 @@ func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox, ctx Context) (n ui
 	return u.rbits / 8, nil
 }
 
-func (u *unmarshaller) unmarshal(f *field, v reflect.Value, config fieldConfig) error {
+func (u *unmarshaller) unmarshal(v reflect.Value, fi *fieldInstance) error {
 	var err error
 	switch v.Type().Kind() {
 	case reflect.Ptr:
-		err = u.unmarshalPtr(f, v, config)
+		err = u.unmarshalPtr(v, fi)
 	case reflect.Struct:
-		err = u.unmarshalStructWithConfig(f.children, v, config)
+		err = u.unmarshalStructInternal(v, fi)
 	case reflect.Array:
-		err = u.unmarshalArray(f, v, config)
+		err = u.unmarshalArray(v, fi)
 	case reflect.Slice:
-		err = u.unmarshalSlice(f, v, config)
+		err = u.unmarshalSlice(v, fi)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		err = u.unmarshalInt(v, config)
+		err = u.unmarshalInt(v, fi)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		err = u.unmarshalUint(v, config)
+		err = u.unmarshalUint(v, fi)
 	case reflect.Bool:
-		err = u.unmarshalBool(v, config)
+		err = u.unmarshalBool(v, fi)
 	case reflect.String:
-		err = u.unmarshalString(v, config)
+		err = u.unmarshalString(v, fi)
 	default:
 		return fmt.Errorf("unsupported type: %s", v.Type().Kind())
 	}
 	return err
 }
 
-func (u *unmarshaller) unmarshalPtr(f *field, v reflect.Value, config fieldConfig) error {
+func (u *unmarshaller) unmarshalPtr(v reflect.Value, fi *fieldInstance) error {
 	v.Set(reflect.New(v.Type().Elem()))
-	return u.unmarshal(f, v.Elem(), config)
+	return u.unmarshal(v.Elem(), fi)
 }
 
-func (u *unmarshaller) unmarshalStructWithConfig(fs []*field, v reflect.Value, config fieldConfig) error {
-	if config.size != 0 && config.size%8 == 0 {
+func (u *unmarshaller) unmarshalStructInternal(v reflect.Value, fi *fieldInstance) error {
+	if fi.size != 0 && fi.size%8 == 0 {
 		u2 := *u
-		u2.size = uint64(config.size / 8)
+		u2.size = uint64(fi.size / 8)
 		u2.rbits = 0
-		if err := u2.unmarshalStruct(fs, v); err != nil {
+		if err := u2.unmarshalStruct(v, fi.children); err != nil {
 			return err
 		}
 		u.rbits += u2.rbits
-		if u2.rbits != uint64(config.size) {
+		if u2.rbits != uint64(fi.size) {
 			return errors.New("invalid alignment")
 		}
 		return nil
 	}
 
-	return u.unmarshalStruct(fs, v)
+	return u.unmarshalStruct(v, fi.children)
 }
 
-func (u *unmarshaller) unmarshalStruct(fs []*field, v reflect.Value) error {
+func (u *unmarshaller) unmarshalStruct(v reflect.Value, fs []*field) error {
 	for _, f := range fs {
-		sf, _ := v.Type().FieldByName(f.name)
-		tagStr, _ := sf.Tag.Lookup("mp4")
-		config, err := readFieldConfig(u.dst, v, f.name, parseFieldTag(tagStr), u.ctx)
-		if err != nil {
-			return err
-		}
+		fi := resolveFieldInstance(f, u.dst, v, u.ctx)
 
-		if !isTargetField(u.dst, config, u.ctx) {
+		if !isTargetField(u.dst, fi, u.ctx) {
 			continue
 		}
 
-		rbits, override, err := config.cfo.OnReadField(f.name, u.reader, u.size*8-u.rbits, u.ctx)
+		rbits, override, err := fi.cfo.OnReadField(f.name, u.reader, u.size*8-u.rbits, u.ctx)
 		if err != nil {
 			return err
 		}
@@ -392,7 +382,7 @@ func (u *unmarshaller) unmarshalStruct(fs []*field, v reflect.Value) error {
 			continue
 		}
 
-		err = u.unmarshal(f, v.FieldByName(f.name), config)
+		err = u.unmarshal(v.FieldByName(f.name), fi)
 		if err != nil {
 			return err
 		}
@@ -405,11 +395,11 @@ func (u *unmarshaller) unmarshalStruct(fs []*field, v reflect.Value) error {
 	return nil
 }
 
-func (u *unmarshaller) unmarshalArray(f *field, v reflect.Value, config fieldConfig) error {
+func (u *unmarshaller) unmarshalArray(v reflect.Value, fi *fieldInstance) error {
 	size := v.Type().Size()
 	for i := 0; i < int(size)/int(v.Type().Elem().Size()); i++ {
 		var err error
-		err = u.unmarshal(f, v.Index(i), config)
+		err = u.unmarshal(v.Index(i), fi)
 		if err != nil {
 			return err
 		}
@@ -417,18 +407,18 @@ func (u *unmarshaller) unmarshalArray(f *field, v reflect.Value, config fieldCon
 	return nil
 }
 
-func (u *unmarshaller) unmarshalSlice(f *field, v reflect.Value, config fieldConfig) error {
+func (u *unmarshaller) unmarshalSlice(v reflect.Value, fi *fieldInstance) error {
 	var slice reflect.Value
 	elemType := v.Type().Elem()
 
-	length := uint64(config.length)
-	if config.length == LengthUnlimited {
-		if config.size != 0 {
+	length := uint64(fi.length)
+	if fi.length == LengthUnlimited {
+		if fi.size != 0 {
 			left := (u.size)*8 - u.rbits
-			if left%uint64(config.size) != 0 {
+			if left%uint64(fi.size) != 0 {
 				return errors.New("invalid alignment")
 			}
-			length = left / uint64(config.size)
+			length = left / uint64(fi.size)
 		} else {
 			length = 0
 		}
@@ -438,8 +428,8 @@ func (u *unmarshaller) unmarshalSlice(f *field, v reflect.Value, config fieldCon
 		return fmt.Errorf("out of memory: requestedSize=%d", length)
 	}
 
-	if config.size != 0 && config.size%8 == 0 && u.rbits%8 == 0 && elemType.Kind() == reflect.Uint8 && config.size == 8 {
-		totalSize := length * uint64(config.size) / 8
+	if fi.size != 0 && fi.size%8 == 0 && u.rbits%8 == 0 && elemType.Kind() == reflect.Uint8 && fi.size == 8 {
+		totalSize := length * uint64(fi.size) / 8
 		buf := bytes.NewBuffer(make([]byte, 0, totalSize))
 		if _, err := io.CopyN(buf, u.reader, int64(totalSize)); err != nil {
 			return err
@@ -450,24 +440,24 @@ func (u *unmarshaller) unmarshalSlice(f *field, v reflect.Value, config fieldCon
 	} else {
 		slice = reflect.MakeSlice(v.Type(), 0, int(length))
 		for i := 0; ; i++ {
-			if config.length != LengthUnlimited && uint(i) >= config.length {
+			if fi.length != LengthUnlimited && uint(i) >= fi.length {
 				break
 			}
 
-			if config.length == LengthUnlimited && u.rbits >= u.size*8 {
+			if fi.length == LengthUnlimited && u.rbits >= u.size*8 {
 				break
 			}
 
 			slice = reflect.Append(slice, reflect.Zero(elemType))
 
 			var err error
-			err = u.unmarshal(f, slice.Index(i), config)
+			err = u.unmarshal(slice.Index(i), fi)
 			if err != nil {
 				return err
 			}
 
 			if u.rbits > u.size*8 {
-				return fmt.Errorf("failed to read array completely: fieldName=\"%s\"", config.name)
+				return fmt.Errorf("failed to read array completely: fieldName=\"%s\"", fi.name)
 			}
 		}
 	}
@@ -476,24 +466,24 @@ func (u *unmarshaller) unmarshalSlice(f *field, v reflect.Value, config fieldCon
 	return nil
 }
 
-func (u *unmarshaller) unmarshalInt(v reflect.Value, config fieldConfig) error {
-	if config.varint {
+func (u *unmarshaller) unmarshalInt(v reflect.Value, fi *fieldInstance) error {
+	if fi.is(fieldVarint) {
 		return errors.New("signed varint is unsupported")
 	}
 
-	if config.size == 0 {
-		return fmt.Errorf("size must not be zero: %s", config.name)
+	if fi.size == 0 {
+		return fmt.Errorf("size must not be zero: %s", fi.name)
 	}
 
-	data, err := u.reader.ReadBits(config.size)
+	data, err := u.reader.ReadBits(fi.size)
 	if err != nil {
 		return err
 	}
-	u.rbits += uint64(config.size)
+	u.rbits += uint64(fi.size)
 
 	signBit := false
 	if len(data) > 0 {
-		signMask := byte(0x01) << ((config.size - 1) % 8)
+		signMask := byte(0x01) << ((fi.size - 1) % 8)
 		signBit = data[0]&signMask != 0
 		if signBit {
 			data[0] |= ^(signMask - 1)
@@ -512,8 +502,8 @@ func (u *unmarshaller) unmarshalInt(v reflect.Value, config fieldConfig) error {
 	return nil
 }
 
-func (u *unmarshaller) unmarshalUint(v reflect.Value, config fieldConfig) error {
-	if config.varint {
+func (u *unmarshaller) unmarshalUint(v reflect.Value, fi *fieldInstance) error {
+	if fi.is(fieldVarint) {
 		val, err := u.readUvarint()
 		if err != nil {
 			return err
@@ -522,15 +512,15 @@ func (u *unmarshaller) unmarshalUint(v reflect.Value, config fieldConfig) error 
 		return nil
 	}
 
-	if config.size == 0 {
-		return fmt.Errorf("size must not be zero: %s", config.name)
+	if fi.size == 0 {
+		return fmt.Errorf("size must not be zero: %s", fi.name)
 	}
 
-	data, err := u.reader.ReadBits(config.size)
+	data, err := u.reader.ReadBits(fi.size)
 	if err != nil {
 		return err
 	}
-	u.rbits += uint64(config.size)
+	u.rbits += uint64(fi.size)
 
 	val := uint64(0)
 	for i := range data {
@@ -542,16 +532,16 @@ func (u *unmarshaller) unmarshalUint(v reflect.Value, config fieldConfig) error 
 	return nil
 }
 
-func (u *unmarshaller) unmarshalBool(v reflect.Value, config fieldConfig) error {
-	if config.size == 0 {
-		return fmt.Errorf("size must not be zero: %s", config.name)
+func (u *unmarshaller) unmarshalBool(v reflect.Value, fi *fieldInstance) error {
+	if fi.size == 0 {
+		return fmt.Errorf("size must not be zero: %s", fi.name)
 	}
 
-	data, err := u.reader.ReadBits(config.size)
+	data, err := u.reader.ReadBits(fi.size)
 	if err != nil {
 		return err
 	}
-	u.rbits += uint64(config.size)
+	u.rbits += uint64(fi.size)
 
 	val := false
 	for _, b := range data {
@@ -562,18 +552,18 @@ func (u *unmarshaller) unmarshalBool(v reflect.Value, config fieldConfig) error 
 	return nil
 }
 
-func (u *unmarshaller) unmarshalString(v reflect.Value, config fieldConfig) error {
-	switch config.strType {
-	case StringType_C:
-		return u.unmarshalString_C(v, config)
-	case StringType_C_P:
-		return u.unmarshalString_C_P(v, config)
+func (u *unmarshaller) unmarshalString(v reflect.Value, fi *fieldInstance) error {
+	switch fi.strType {
+	case stringType_C:
+		return u.unmarshalString_C(v)
+	case stringType_C_P:
+		return u.unmarshalString_C_P(v, fi)
 	default:
-		return fmt.Errorf("unknown string type: %d", config.strType)
+		return fmt.Errorf("unknown string type: %d", fi.strType)
 	}
 }
 
-func (u *unmarshaller) unmarshalString_C(v reflect.Value, config fieldConfig) error {
+func (u *unmarshaller) unmarshalString_C(v reflect.Value) error {
 	data := make([]byte, 0, 16)
 	for {
 		if u.rbits >= u.size*8 {
@@ -597,16 +587,16 @@ func (u *unmarshaller) unmarshalString_C(v reflect.Value, config fieldConfig) er
 	return nil
 }
 
-func (u *unmarshaller) unmarshalString_C_P(v reflect.Value, config fieldConfig) error {
-	if ok, err := u.tryReadPString(v, config); err != nil {
+func (u *unmarshaller) unmarshalString_C_P(v reflect.Value, fi *fieldInstance) error {
+	if ok, err := u.tryReadPString(v, fi); err != nil {
 		return err
 	} else if ok {
 		return nil
 	}
-	return u.unmarshalString_C(v, config)
+	return u.unmarshalString_C(v)
 }
 
-func (u *unmarshaller) tryReadPString(v reflect.Value, config fieldConfig) (ok bool, err error) {
+func (u *unmarshaller) tryReadPString(v reflect.Value, fi *fieldInstance) (ok bool, err error) {
 	remainingSize := (u.size*8 - u.rbits) / 8
 	if remainingSize < 2 {
 		return false, nil
@@ -636,7 +626,7 @@ func (u *unmarshaller) tryReadPString(v reflect.Value, config fieldConfig) (ok b
 		return false, err
 	}
 	remainingSize -= uint64(plen)
-	if config.cfo.IsPString(config.name, buf, remainingSize, u.ctx) {
+	if fi.cfo.IsPString(fi.name, buf, remainingSize, u.ctx) {
 		u.rbits += uint64(len(buf)+1) * 8
 		v.SetString(string(buf))
 		return true, nil

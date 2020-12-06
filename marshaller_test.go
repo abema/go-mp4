@@ -2,39 +2,12 @@ package mp4
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 
 	"github.com/abema/go-mp4/bitio"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-type mockBox struct {
-	Type       BoxType
-	DynSizeMap map[string]uint
-	DynLenMap  map[string]uint
-}
-
-func (m *mockBox) GetType() BoxType {
-	return m.Type
-}
-
-func (m *mockBox) GetFieldSize(n string, ctx Context) uint {
-	if s, ok := m.DynSizeMap[n]; !ok {
-		panic(fmt.Errorf("invalid name of dynamic-size field: %s", n))
-	} else {
-		return s
-	}
-}
-
-func (m *mockBox) GetFieldLength(n string, ctx Context) uint {
-	if l, ok := m.DynLenMap[n]; !ok {
-		panic(fmt.Errorf("invalid name of dynamic-length field: %s", n))
-	} else {
-		return l
-	}
-}
 
 func TestMarshal(t *testing.T) {
 	type inner struct {
