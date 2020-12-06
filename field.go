@@ -7,34 +7,66 @@ import (
 	"strings"
 )
 
+type (
+	stringType uint8
+	fieldFlag  uint16
+)
+
+const (
+	stringType_C stringType = iota
+	stringType_C_P
+
+	fieldString        fieldFlag = 1 << iota // 0
+	fieldExtend                              // 1
+	fieldDec                                 // 2
+	fieldHex                                 // 3
+	fieldISO639_2                            // 4
+	fieldUUID                                // 5
+	fieldHidden                              // 6
+	fieldOptDynamic                          // 7
+	fieldVarint                              // 8
+	fieldSizeDynamic                         // 9
+	fieldLengthDynamic                       // 10
+)
+
 type field struct {
-	name     string
-	order    int
 	children []*field
+	name     string
+	cnst     string
+	order    int
+	optFlag  uint32
+	nOptFlag uint32
+	size     uint
+	length   uint
+	flags    fieldFlag
+	strType  stringType
+	version  uint8
+	nVersion uint8
 }
 
-type fieldBuilder struct {
-	box IImmutableBox
+func (f *field) set(flag fieldFlag) {
+	f.flags |= flag
+}
+
+func (f *field) is(flag fieldFlag) bool {
+	return f.flags&flag != 0
 }
 
 func buildFields(box IImmutableBox) []*field {
 	t := reflect.TypeOf(box).Elem()
-	b := fieldBuilder{
-		box: box,
-	}
-	return b.buildFieldsStruct(t)
+	return buildFieldsStruct(t)
 }
 
-func (b *fieldBuilder) buildFieldsStruct(t reflect.Type) []*field {
+func buildFieldsStruct(t reflect.Type) []*field {
 	fs := make([]*field, 0, 8)
 	for i := 0; i < t.NumField(); i++ {
 		ft := t.Field(i).Type
-		tagStr, ok := t.Field(i).Tag.Lookup("mp4")
+		tag, ok := t.Field(i).Tag.Lookup("mp4")
 		if !ok {
 			continue
 		}
-		f := buildField(b.box, t.Field(i).Name, parseFieldTag(tagStr))
-		f.children = b.buildFieldsAny(ft)
+		f := buildField(t.Field(i).Name, tag)
+		f.children = buildFieldsAny(ft)
 		fs = append(fs, f)
 	}
 	sort.SliceStable(fs, func(i, j int) bool {
@@ -43,22 +75,23 @@ func (b *fieldBuilder) buildFieldsStruct(t reflect.Type) []*field {
 	return fs
 }
 
-func (b *fieldBuilder) buildFieldsAny(t reflect.Type) []*field {
+func buildFieldsAny(t reflect.Type) []*field {
 	switch t.Kind() {
 	case reflect.Struct:
-		return b.buildFieldsStruct(t)
+		return buildFieldsStruct(t)
 	case reflect.Ptr, reflect.Array, reflect.Slice:
-		return b.buildFieldsAny(t.Elem())
+		return buildFieldsAny(t.Elem())
 	default:
 		return nil
 	}
 }
 
-func buildField(box IImmutableBox, fieldName string, tag fieldTag) *field {
+func buildField(fieldName string, tag string) *field {
 	f := &field{
 		name: fieldName,
 	}
-	for key, val := range tag {
+	tagMap := parseFieldTag(tag)
+	for key, val := range tagMap {
 		if val != "" {
 			continue
 		}
@@ -67,195 +100,123 @@ func buildField(box IImmutableBox, fieldName string, tag fieldTag) *field {
 			break
 		}
 	}
+
+	if val, contained := tagMap["string"]; contained {
+		f.set(fieldString)
+		if val == "c_p" {
+			f.strType = stringType_C_P
+		}
+	}
+
+	if _, contained := tagMap["varint"]; contained {
+		f.set(fieldVarint)
+	}
+
+	if val, contained := tagMap["opt"]; contained {
+		if val == "dynamic" {
+			f.set(fieldOptDynamic)
+		} else {
+			base := 10
+			if strings.HasPrefix(val, "0x") {
+				val = val[2:]
+				base = 16
+			}
+			opt, err := strconv.ParseUint(val, base, 32)
+			if err != nil {
+				panic(err)
+			}
+			f.optFlag = uint32(opt)
+		}
+	}
+
+	if val, contained := tagMap["nopt"]; contained {
+		base := 10
+		if strings.HasPrefix(val, "0x") {
+			val = val[2:]
+			base = 16
+		}
+		nopt, err := strconv.ParseUint(val, base, 32)
+		if err != nil {
+			panic(err)
+		}
+		f.nOptFlag = uint32(nopt)
+	}
+
+	if _, contained := tagMap["extend"]; contained {
+		f.set(fieldExtend)
+	}
+
+	if _, contained := tagMap["dec"]; contained {
+		f.set(fieldDec)
+	}
+
+	if _, contained := tagMap["hex"]; contained {
+		f.set(fieldHex)
+	}
+
+	if _, contained := tagMap["iso639-2"]; contained {
+		f.set(fieldISO639_2)
+	}
+
+	if _, contained := tagMap["uuid"]; contained {
+		f.set(fieldUUID)
+	}
+
+	if _, contained := tagMap["hidden"]; contained {
+		f.set(fieldHidden)
+	}
+
+	if val, contained := tagMap["const"]; contained {
+		f.cnst = val
+	}
+
+	f.version = anyVersion
+	if val, contained := tagMap["ver"]; contained {
+		ver, err := strconv.Atoi(val)
+		if err != nil {
+			panic(err)
+		}
+		f.version = uint8(ver)
+	}
+
+	f.nVersion = anyVersion
+	if val, contained := tagMap["nver"]; contained {
+		ver, err := strconv.Atoi(val)
+		if err != nil {
+			panic(err)
+		}
+		f.nVersion = uint8(ver)
+	}
+
+	if val, contained := tagMap["size"]; contained {
+		if val == "dynamic" {
+			f.set(fieldSizeDynamic)
+		} else {
+			size, err := strconv.ParseUint(val, 10, 32)
+			if err != nil {
+				panic(err)
+			}
+			f.size = uint(size)
+		}
+	}
+
+	f.length = LengthUnlimited
+	if val, contained := tagMap["len"]; contained {
+		if val == "dynamic" {
+			f.set(fieldLengthDynamic)
+		} else {
+			l, err := strconv.ParseUint(val, 10, 32)
+			if err != nil {
+				panic(err)
+			}
+			f.length = uint(l)
+		}
+	}
+
 	return f
 }
 
-type StringType int
-
-const (
-	StringType_C StringType = iota
-	StringType_C_P
-)
-
-type fieldConfig struct {
-	name       string
-	cfo        ICustomFieldObject
-	size       uint
-	length     uint
-	cnst       string
-	strType    StringType
-	varint     bool
-	version    uint8
-	nVersion   uint8
-	optDynamic bool
-	optFlag    uint32
-	nOptFlag   uint32
-	extend     bool
-	dec        bool
-	hex        bool
-	str        bool
-	iso639_2   bool
-	uuid       bool
-	hidden     bool
-}
-
-func readFieldConfig(box IImmutableBox, parent reflect.Value, fieldName string, tag fieldTag, ctx Context) (config fieldConfig, err error) {
-	config.name = fieldName
-	cfo, ok := parent.Addr().Interface().(ICustomFieldObject)
-	if ok {
-		config.cfo = cfo
-	} else {
-		config.cfo = box
-	}
-
-	if val, contained := tag["size"]; contained {
-		if val == "dynamic" {
-			config.size = config.cfo.GetFieldSize(fieldName, ctx)
-		} else {
-			var size uint64
-			size, err = strconv.ParseUint(val, 10, 32)
-			if err != nil {
-				return
-			}
-			config.size = uint(size)
-		}
-	}
-
-	config.length = LengthUnlimited
-	if val, contained := tag["len"]; contained {
-		if val == "dynamic" {
-			config.length = config.cfo.GetFieldLength(fieldName, ctx)
-		} else {
-			var l uint64
-			l, err = strconv.ParseUint(val, 10, 32)
-			if err != nil {
-				return
-			}
-			config.length = uint(l)
-		}
-	}
-
-	if _, contained := tag["varint"]; contained {
-		config.varint = true
-	}
-
-	config.version = anyVersion
-	if val, contained := tag["ver"]; contained {
-		var ver int
-		ver, err = strconv.Atoi(val)
-		if err != nil {
-			return
-		}
-		config.version = uint8(ver)
-	}
-
-	config.nVersion = anyVersion
-	if val, contained := tag["nver"]; contained {
-		var ver int
-		ver, err = strconv.Atoi(val)
-		if err != nil {
-			return
-		}
-		config.nVersion = uint8(ver)
-	}
-
-	if val, contained := tag["opt"]; contained {
-		if val == "dynamic" {
-			config.optDynamic = true
-		} else {
-			var opt uint64
-			if strings.HasPrefix(val, "0x") {
-				opt, err = strconv.ParseUint(val[2:], 16, 32)
-			} else {
-				opt, err = strconv.ParseUint(val, 10, 32)
-			}
-			if err != nil {
-				return
-			}
-			config.optFlag = uint32(opt)
-		}
-	}
-
-	if val, contained := tag["nopt"]; contained {
-		var nopt uint64
-		if strings.HasPrefix(val, "0x") {
-			nopt, err = strconv.ParseUint(val[2:], 16, 32)
-		} else {
-			nopt, err = strconv.ParseUint(val, 10, 32)
-		}
-		if err != nil {
-			return
-		}
-		config.nOptFlag = uint32(nopt)
-	}
-
-	if val, contained := tag["const"]; contained {
-		config.cnst = val
-	}
-
-	if _, contained := tag["extend"]; contained {
-		config.extend = true
-	}
-
-	if _, contained := tag["dec"]; contained {
-		config.dec = true
-	}
-
-	if _, contained := tag["hex"]; contained {
-		config.hex = true
-	}
-
-	if val, contained := tag["string"]; contained {
-		config.str = true
-		if val == "c_p" {
-			config.strType = StringType_C_P
-		}
-	}
-
-	if _, contained := tag["iso639-2"]; contained {
-		config.iso639_2 = true
-	}
-
-	if _, contained := tag["uuid"]; contained {
-		config.uuid = true
-	}
-
-	if _, contained := tag["hidden"]; contained {
-		config.hidden = true
-	}
-
-	return
-}
-
-func isTargetField(box IImmutableBox, config fieldConfig, ctx Context) bool {
-	if box.GetVersion() != anyVersion {
-		if config.version != anyVersion && box.GetVersion() != config.version {
-			return false
-		}
-
-		if config.nVersion != anyVersion && box.GetVersion() == config.nVersion {
-			return false
-		}
-	}
-
-	if config.optFlag != 0 && box.GetFlags()&config.optFlag == 0 {
-		return false
-	}
-
-	if config.nOptFlag != 0 && box.GetFlags()&config.nOptFlag != 0 {
-		return false
-	}
-
-	if config.optDynamic && !config.cfo.IsOptFieldEnabled(config.name, ctx) {
-		return false
-	}
-
-	return true
-}
-
-type fieldTag map[string]string
-
-func parseFieldTag(str string) fieldTag {
+func parseFieldTag(str string) map[string]string {
 	tag := make(map[string]string, 8)
 
 	list := strings.Split(str, ",")
@@ -269,4 +230,58 @@ func parseFieldTag(str string) fieldTag {
 	}
 
 	return tag
+}
+
+type fieldInstance struct {
+	field
+	cfo ICustomFieldObject
+}
+
+func resolveFieldInstance(f *field, box IImmutableBox, parent reflect.Value, ctx Context) *fieldInstance {
+	fi := fieldInstance{
+		field: *f,
+	}
+
+	cfo, ok := parent.Addr().Interface().(ICustomFieldObject)
+	if ok {
+		fi.cfo = cfo
+	} else {
+		fi.cfo = box
+	}
+
+	if fi.is(fieldSizeDynamic) {
+		fi.size = fi.cfo.GetFieldSize(f.name, ctx)
+	}
+
+	if fi.is(fieldLengthDynamic) {
+		fi.length = fi.cfo.GetFieldLength(f.name, ctx)
+	}
+
+	return &fi
+}
+
+func isTargetField(box IImmutableBox, fi *fieldInstance, ctx Context) bool {
+	if box.GetVersion() != anyVersion {
+		if fi.version != anyVersion && box.GetVersion() != fi.version {
+			return false
+		}
+
+		if fi.nVersion != anyVersion && box.GetVersion() == fi.nVersion {
+			return false
+		}
+	}
+
+	if fi.optFlag != 0 && box.GetFlags()&fi.optFlag == 0 {
+		return false
+	}
+
+	if fi.nOptFlag != 0 && box.GetFlags()&fi.nOptFlag != 0 {
+		return false
+	}
+
+	if fi.is(fieldOptDynamic) && !fi.cfo.IsOptFieldEnabled(fi.name, ctx) {
+		return false
+	}
+
+	return true
 }

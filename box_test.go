@@ -1,10 +1,46 @@
 package mp4
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+type mockBox struct {
+	Type       BoxType
+	DynSizeMap map[string]uint
+	DynLenMap  map[string]uint
+	DynOptMap  map[string]bool
+}
+
+func (m *mockBox) GetType() BoxType {
+	return m.Type
+}
+
+func (m *mockBox) GetFieldSize(n string, ctx Context) uint {
+	if s, ok := m.DynSizeMap[n]; !ok {
+		panic(fmt.Errorf("invalid name of dynamic-size field: %s", n))
+	} else {
+		return s
+	}
+}
+
+func (m *mockBox) GetFieldLength(n string, ctx Context) uint {
+	if l, ok := m.DynLenMap[n]; !ok {
+		panic(fmt.Errorf("invalid name of dynamic-length field: %s", n))
+	} else {
+		return l
+	}
+}
+
+func (m *mockBox) IsOptFieldEnabled(n string, ctx Context) bool {
+	if enabled, ok := m.DynOptMap[n]; !ok {
+		panic(fmt.Errorf("invalid name of dynamic-opt field: %s", n))
+	} else {
+		return enabled
+	}
+}
 
 func TestFullBoxFlags(t *testing.T) {
 	box := FullBox{}
