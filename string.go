@@ -27,7 +27,6 @@ func StringifyWithIndent(src IImmutableBox, indent string, ctx Context) (string,
 		return "", ErrBoxInfoNotFound
 	}
 
-	t := reflect.TypeOf(src).Elem()
 	v := reflect.ValueOf(src).Elem()
 
 	m := &stringifier{
@@ -37,7 +36,7 @@ func StringifyWithIndent(src IImmutableBox, indent string, ctx Context) (string,
 		ctx:    ctx,
 	}
 
-	err := m.stringifyStruct(boxDef.fields, t, v, 0, true)
+	err := m.stringifyStruct(boxDef.fields, v, 0, true)
 	if err != nil {
 		return "", err
 	}
@@ -45,34 +44,34 @@ func StringifyWithIndent(src IImmutableBox, indent string, ctx Context) (string,
 	return m.buf.String(), nil
 }
 
-func (m *stringifier) stringify(f *field, t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
-	switch t.Kind() {
+func (m *stringifier) stringify(f *field, v reflect.Value, config fieldConfig, depth int) error {
+	switch v.Type().Kind() {
 	case reflect.Ptr:
-		return m.stringifyPtr(f, t, v, config, depth)
+		return m.stringifyPtr(f, v, config, depth)
 	case reflect.Struct:
-		return m.stringifyStruct(f.children, t, v, depth, config.extend)
+		return m.stringifyStruct(f.children, v, depth, config.extend)
 	case reflect.Array:
-		return m.stringifyArray(f, t, v, config, depth)
+		return m.stringifyArray(f, v, config, depth)
 	case reflect.Slice:
-		return m.stringifySlice(f, t, v, config, depth)
+		return m.stringifySlice(f, v, config, depth)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return m.stringifyInt(t, v, config, depth)
+		return m.stringifyInt(v, config, depth)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return m.stringifyUint(t, v, config, depth)
+		return m.stringifyUint(v, config, depth)
 	case reflect.Bool:
-		return m.stringifyBool(t, v, config, depth)
+		return m.stringifyBool(v, config, depth)
 	case reflect.String:
-		return m.stringifyString(t, v, config, depth)
+		return m.stringifyString(v, config, depth)
 	default:
-		return fmt.Errorf("unsupported type: %s", t.Kind())
+		return fmt.Errorf("unsupported type: %s", v.Type().Kind())
 	}
 }
 
-func (m *stringifier) stringifyPtr(f *field, t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
-	return m.stringify(f, t.Elem(), v.Elem(), config, depth)
+func (m *stringifier) stringifyPtr(f *field, v reflect.Value, config fieldConfig, depth int) error {
+	return m.stringify(f, v.Elem(), config, depth)
 }
 
-func (m *stringifier) stringifyStruct(fs []*field, t reflect.Type, v reflect.Value, depth int, extended bool) error {
+func (m *stringifier) stringifyStruct(fs []*field, v reflect.Value, depth int, extended bool) error {
 	if !extended {
 		m.buf.WriteString("{")
 		if m.indent != "" {
@@ -82,11 +81,8 @@ func (m *stringifier) stringifyStruct(fs []*field, t reflect.Type, v reflect.Val
 	}
 
 	for _, f := range fs {
-		rf, _ := t.FieldByName(f.name)
-		ft := rf.Type
-		fv := v.FieldByName(f.name)
-
-		tagStr, _ := rf.Tag.Lookup("mp4")
+		sf, _ := v.Type().FieldByName(f.name)
+		tagStr, _ := sf.Tag.Lookup("mp4")
 		config, err := readFieldConfig(m.src, v, f.name, parseFieldTag(tagStr), m.ctx)
 		if err != nil {
 			return err
@@ -124,7 +120,7 @@ func (m *stringifier) stringifyStruct(fs []*field, t reflect.Type, v reflect.Val
 		} else if f.name == "Flags" {
 			fmt.Fprintf(m.buf, "0x%06x", m.src.GetFlags())
 		} else {
-			err = m.stringify(f, ft, fv, config, depth)
+			err = m.stringify(f, v.FieldByName(f.name), config, depth)
 			if err != nil {
 				return err
 			}
@@ -145,7 +141,7 @@ func (m *stringifier) stringifyStruct(fs []*field, t reflect.Type, v reflect.Val
 	return nil
 }
 
-func (m *stringifier) stringifyArray(f *field, t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
+func (m *stringifier) stringifyArray(f *field, v reflect.Value, config fieldConfig, depth int) error {
 	begin, sep, end := "[", ", ", "]"
 	if config.str || config.iso639_2 {
 		begin, sep, end = "\"", "", "\""
@@ -159,13 +155,13 @@ func (m *stringifier) stringifyArray(f *field, t reflect.Type, v reflect.Value, 
 	if config.str {
 		m2.buf = bytes.NewBuffer(nil)
 	}
-	size := t.Size()
-	for i := 0; i < int(size)/int(t.Elem().Size()); i++ {
+	size := v.Type().Size()
+	for i := 0; i < int(size)/int(v.Type().Elem().Size()); i++ {
 		if i != 0 {
 			m2.buf.WriteString(sep)
 		}
 
-		if err := m2.stringify(f, t.Elem(), v.Index(i), config, depth+1); err != nil {
+		if err := m2.stringify(f, v.Index(i), config, depth+1); err != nil {
 			return err
 		}
 
@@ -182,7 +178,7 @@ func (m *stringifier) stringifyArray(f *field, t reflect.Type, v reflect.Value, 
 	return nil
 }
 
-func (m *stringifier) stringifySlice(f *field, t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
+func (m *stringifier) stringifySlice(f *field, v reflect.Value, config fieldConfig, depth int) error {
 	begin, sep, end := "[", ", ", "]"
 	if config.str || config.iso639_2 {
 		begin, sep, end = "\"", "", "\""
@@ -203,7 +199,7 @@ func (m *stringifier) stringifySlice(f *field, t reflect.Type, v reflect.Value, 
 			m2.buf.WriteString(sep)
 		}
 
-		if err := m2.stringify(f, t.Elem(), v.Index(i), config, depth+1); err != nil {
+		if err := m2.stringify(f, v.Index(i), config, depth+1); err != nil {
 			return err
 		}
 	}
@@ -216,7 +212,7 @@ func (m *stringifier) stringifySlice(f *field, t reflect.Type, v reflect.Value, 
 	return nil
 }
 
-func (m *stringifier) stringifyInt(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
+func (m *stringifier) stringifyInt(v reflect.Value, config fieldConfig, depth int) error {
 	if config.hex {
 		val := v.Int()
 		if val >= 0 {
@@ -232,14 +228,14 @@ func (m *stringifier) stringifyInt(t reflect.Type, v reflect.Value, config field
 	return nil
 }
 
-func (m *stringifier) stringifyUint(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
+func (m *stringifier) stringifyUint(v reflect.Value, config fieldConfig, depth int) error {
 	if config.iso639_2 {
 		m.buf.WriteString(string([]byte{byte(v.Uint() + 0x60)}))
 	} else if config.uuid {
 		fmt.Fprintf(m.buf, "%02x", v.Uint())
 	} else if config.str {
 		m.buf.WriteString(string([]byte{byte(v.Uint())}))
-	} else if config.hex || (!config.dec && t.Kind() == reflect.Uint8) || t.Kind() == reflect.Uintptr {
+	} else if config.hex || (!config.dec && v.Type().Kind() == reflect.Uint8) || v.Type().Kind() == reflect.Uintptr {
 		m.buf.WriteString("0x")
 		m.buf.WriteString(strconv.FormatUint(v.Uint(), 16))
 	} else {
@@ -249,13 +245,13 @@ func (m *stringifier) stringifyUint(t reflect.Type, v reflect.Value, config fiel
 	return nil
 }
 
-func (m *stringifier) stringifyBool(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
+func (m *stringifier) stringifyBool(v reflect.Value, config fieldConfig, depth int) error {
 	m.buf.WriteString(strconv.FormatBool(v.Bool()))
 
 	return nil
 }
 
-func (m *stringifier) stringifyString(t reflect.Type, v reflect.Value, config fieldConfig, depth int) error {
+func (m *stringifier) stringifyString(v reflect.Value, config fieldConfig, depth int) error {
 	m.buf.WriteString("\"")
 	m.buf.WriteString(util.EscapeUnprintables(v.String()))
 	m.buf.WriteString("\"")
