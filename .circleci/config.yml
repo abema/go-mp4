@@ -6,8 +6,6 @@ jobs:
     - image: circleci/golang:1.14
     steps:
     - checkout
-    - run: go get golang.org/x/tools/cmd/cover
-    - run: go get github.com/pierrre/gotestcover
-    - run: go vet . ./mp4tool/...
+    - run: go vet ./...
     - run: go test -coverprofile=coverage.txt -covermode=count ./...
     - run: bash <(curl -s https://codecov.io/bash)
