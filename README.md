@@ -47,6 +47,9 @@ _, err := mp4.ReadBoxStructure(file, func(h *mp4.ReadHandle) (interface{}, error
 boxes, err := mp4.ExtractBox(file, nil, mp4.BoxPath{mp4.BoxTypeMoov(), mp4.BoxTypeTrak(), mp4.BoxTypeTkhd()})
 ```
 
+go-mp4 has no buffering feature for I/O.
+If you should reduce Read function calls, you can wrap the io.ReadSeeker by [bufseekio](https://github.com/sunfish-shogi/bufseekio).
+
 You can create additional box definition as follows:
 
 ```go
