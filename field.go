@@ -1,6 +1,8 @@
 package mp4
 
 import (
+	"fmt"
+	"os"
 	"reflect"
 	"sort"
 	"strconv"
@@ -105,6 +107,7 @@ func buildField(fieldName string, tag string) *field {
 		f.set(fieldString)
 		if val == "c_p" {
 			f.strType = stringType_C_P
+			fmt.Fprint(os.Stderr, "go-mp4: string=c_p tag is deprecated!! See https://github.com/abema/go-mp4/issues/76\n")
 		}
 	}
 
