@@ -593,8 +593,7 @@ type Hdlr struct {
 	PreDefined  uint32    `mp4:"1,size=32"`
 	HandlerType [4]byte   `mp4:"2,size=8,string"`
 	Reserved    [3]uint32 `mp4:"3,size=32,const=0"`
-	Name        string    `mp4:"4,string=c_p"`
-	Padding     []byte    `mp4:"5,size=8,const=0"`
+	Name        string    `mp4:"4,string"`
 }
 
 // GetType returns the BoxType
@@ -602,13 +601,43 @@ func (*Hdlr) GetType() BoxType {
 	return BoxTypeHdlr()
 }
 
-func (hdlr *Hdlr) IsPString(name string, bytes []byte, remainingSize uint64, ctx Context) bool {
+func (hdlr *Hdlr) OnReadField(name string, r bitio.ReadSeeker, leftBits uint64, ctx Context) (rbits uint64, override bool, err error) {
 	switch name {
 	case "Name":
-		return remainingSize == 0 && hdlr.PreDefined != 0
+		return hdlr.OnReadName(r, leftBits, ctx)
 	default:
-		panic(fmt.Errorf("invalid field name: name=%s", name))
+		return 0, false, nil
 	}
+}
+
+func (hdlr *Hdlr) OnReadName(r bitio.ReadSeeker, leftBits uint64, ctx Context) (rbits uint64, override bool, err error) {
+	size := leftBits / 8
+	if size == 0 {
+		hdlr.Name = ""
+		return 0, true, nil
+	}
+
+	buf := make([]byte, size)
+	if _, err := io.ReadFull(r, buf); err != nil {
+		return 0, false, err
+	}
+
+	plen := buf[0]
+	if hdlr.PreDefined != 0 && size >= 2 && size == uint64(plen+1) {
+		// Pascal-style String
+		hdlr.Name = string(buf[1 : plen+1])
+	} else {
+		// C-style String
+		clen := 0
+		for _, c := range buf {
+			if c == 0x00 {
+				break
+			}
+			clen++
+		}
+		hdlr.Name = string(buf[:clen])
+	}
+	return leftBits, true, nil
 }
 
 /*************************** ilst ****************************/
