@@ -7,6 +7,7 @@ import (
 	"os"
 
 	mp4 "github.com/abema/go-mp4"
+	"github.com/abema/go-mp4/bufio"
 )
 
 func Main(args []string) {
@@ -28,7 +29,9 @@ func dump(inputFilePath string) error {
 	}
 	defer inputFile.Close()
 
-	bs, err := mp4.ExtractBoxWithPayload(inputFile, nil, mp4.BoxPath{mp4.BoxTypeMoov(), mp4.BoxTypePssh()})
+	r := bufio.NewReadSeeker(inputFile, 1024, 4)
+
+	bs, err := mp4.ExtractBoxWithPayload(r, nil, mp4.BoxPath{mp4.BoxTypeMoov(), mp4.BoxTypePssh()})
 	if err != nil {
 		return err
 	}
@@ -38,11 +41,11 @@ func dump(inputFilePath string) error {
 
 		sysid, _ := pssh.StringifyField("SystemID", "", 0, bs[i].Info.Context)
 
-		if _, err := bs[i].Info.SeekToStart(inputFile); err != nil {
+		if _, err := bs[i].Info.SeekToStart(r); err != nil {
 			return err
 		}
 		rawData := make([]byte, bs[i].Info.Size)
-		if _, err := io.ReadFull(inputFile, rawData); err != nil {
+		if _, err := io.ReadFull(r, rawData); err != nil {
 			return err
 		}
 

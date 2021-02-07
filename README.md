@@ -67,6 +67,16 @@ func (*Xxxx) GetType() BoxType {
 }
 ```
 
+If you should reduce Read function call, you can wrap the io.ReadSeeker by bufio.ReadSeeker.
+
+```
+import "github.com/abema/go-mp4/bufio"
+
+:
+
+r := bufio.NewReadSeeker(file, 128 * 1024, 4)
+```
+
 ## Command Line Tool
 
 Install mp4tool as follows:

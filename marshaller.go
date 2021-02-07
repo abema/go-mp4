@@ -428,27 +428,14 @@ func (u *unmarshaller) unmarshalSlice(v reflect.Value, fi *fieldInstance) error 
 		return fmt.Errorf("out of memory: requestedSize=%d", length)
 	}
 
-	if fi.size != 0 && fi.size%8 == 0 && u.rbits%8 == 0 {
+	if fi.size != 0 && fi.size%8 == 0 && u.rbits%8 == 0 && elemType.Kind() == reflect.Uint8 && fi.size == 8 {
 		totalSize := length * uint64(fi.size) / 8
 		buf := bytes.NewBuffer(make([]byte, 0, totalSize))
 		if _, err := io.CopyN(buf, u.reader, int64(totalSize)); err != nil {
 			return err
 		}
-		if elemType.Kind() == reflect.Uint8 && fi.size == 8 {
-			slice = reflect.ValueOf(buf.Bytes())
-			u.rbits += uint64(totalSize) * 8
-		} else {
-			u2 := *u
-			u2.reader = bitio.NewReadSeeker(bytes.NewReader(buf.Bytes()))
-			slice = reflect.MakeSlice(v.Type(), 0, int(length))
-			for i := 0; i < int(length); i++ {
-				slice = reflect.Append(slice, reflect.Zero(elemType))
-				if err := u2.unmarshal(slice.Index(i), fi); err != nil {
-					return err
-				}
-			}
-			u.rbits = u2.rbits
-		}
+		slice = reflect.ValueOf(buf.Bytes())
+		u.rbits += uint64(totalSize) * 8
 
 	} else {
 		slice = reflect.MakeSlice(v.Type(), 0, int(length))

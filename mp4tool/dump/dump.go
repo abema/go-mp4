@@ -10,10 +10,15 @@ import (
 	"syscall"
 
 	"github.com/abema/go-mp4"
+	"github.com/abema/go-mp4/bufio"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-const indentSize = 2
+const (
+	indentSize       = 2
+	blockSize        = 128 * 1024
+	blockHistorySize = 4
+)
 
 var terminalWidth = 180
 
@@ -79,7 +84,7 @@ func (m *mp4dump) dumpFile(fpath string) error {
 	}
 	defer file.Close()
 
-	return m.dump(file)
+	return m.dump(bufio.NewReadSeeker(file, blockSize, blockHistorySize))
 }
 
 func (m *mp4dump) dump(r io.ReadSeeker) error {
