@@ -24,7 +24,7 @@ type reader struct {
 	width  uint
 }
 
-func NewReader(r io.ReadSeeker) Reader {
+func NewReader(r io.Reader) Reader {
 	return &reader{reader: r}
 }
 
