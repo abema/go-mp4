@@ -3,12 +3,12 @@ package edit
 import (
 	"flag"
 	"fmt"
-	"io"
 	"math"
 	"os"
 	"strings"
 
 	"github.com/abema/go-mp4"
+	"github.com/sunfish-shogi/bufseekio"
 )
 
 const UNoValue = math.MaxUint64
@@ -71,81 +71,52 @@ func editFile(inputPath, outputPath string) error {
 	}
 	defer outputFile.Close()
 
-	_, err = mp4.ReadBoxStructure(inputFile, func(h *mp4.ReadHandle) (interface{}, error) {
-		// drop
+	r := bufseekio.NewReadSeeker(inputFile, 128*1024, 4)
+	w := mp4.NewWriter(outputFile)
+	_, err = mp4.ReadBoxStructure(r, func(h *mp4.ReadHandle) (interface{}, error) {
 		if config.dropBoxes.Exists(h.BoxInfo.Type.String()) {
+			// drop
 			return uint64(0), nil
 		}
 
-		offset, err := outputFile.Seek(0, io.SeekEnd)
-		if err != nil {
-			return nil, err
+		if !h.BoxInfo.IsSupportedType() || h.BoxInfo.Type == mp4.BoxTypeMdat() {
+			// copy all data
+			return nil, w.CopyBox(r, &h.BoxInfo)
 		}
 
 		// write header
-		bi, err := mp4.WriteBoxInfo(outputFile, &h.BoxInfo)
+		_, err := w.StartBox(&h.BoxInfo)
 		if err != nil {
 			return nil, err
 		}
-
-		bi.Size = bi.HeaderSize
-
-		if bi.IsSupportedType() && bi.Type != mp4.BoxTypeMdat() {
-			box, _, err := h.ReadPayload()
-			if err != nil {
-				return nil, err
-			}
-
-			switch bi.Type {
-			case mp4.BoxTypeTfdt():
-				tfdt := box.(*mp4.Tfdt)
-				if config.values.BaseMediaDecodeTime != UNoValue {
-					if tfdt.GetVersion() == 0 {
-						tfdt.BaseMediaDecodeTimeV0 = uint32(config.values.BaseMediaDecodeTime)
-					} else {
-						tfdt.BaseMediaDecodeTimeV1 = config.values.BaseMediaDecodeTime
-					}
+		// read payload
+		box, _, err := h.ReadPayload()
+		if err != nil {
+			return nil, err
+		}
+		// edit some fields
+		switch h.BoxInfo.Type {
+		case mp4.BoxTypeTfdt():
+			tfdt := box.(*mp4.Tfdt)
+			if config.values.BaseMediaDecodeTime != UNoValue {
+				if tfdt.GetVersion() == 0 {
+					tfdt.BaseMediaDecodeTimeV0 = uint32(config.values.BaseMediaDecodeTime)
+				} else {
+					tfdt.BaseMediaDecodeTimeV1 = config.values.BaseMediaDecodeTime
 				}
 			}
-
-			n, err := mp4.Marshal(outputFile, box, bi.Context)
-			if err != nil {
-				return nil, err
-			}
-			bi.Size += n
-
-			// expand all of offsprings
-			vals, err := h.Expand()
-			if err != nil {
-				return nil, err
-			}
-			for i := range vals {
-				n := vals[i].(uint64)
-				bi.Size += n
-			}
-
-		} else {
-			// write all data
-			n, err := h.ReadData(outputFile)
-			if err != nil {
-				return nil, err
-			}
-			bi.Size += n
 		}
-
-		// rewrite header to fix box size
-		_, err = outputFile.Seek(offset, io.SeekStart)
-		if err != nil {
+		// write payload
+		if _, err := mp4.Marshal(w, box, h.BoxInfo.Context); err != nil {
 			return nil, err
 		}
-		bi2, err := mp4.WriteBoxInfo(outputFile, bi)
-		if err != nil {
+		// expand all of offsprings
+		if _, err := h.Expand(); err != nil {
 			return nil, err
-		} else if bi2.HeaderSize != bi.HeaderSize {
-			return nil, fmt.Errorf("header size has changed: type=%s, before=%d, after=%d", bi.Type.String(), bi.HeaderSize, bi2.HeaderSize)
 		}
-
-		return bi.Size, nil
+		// rewrite box size
+		_, err = w.EndBox()
+		return nil, err
 	})
 	return err
 }

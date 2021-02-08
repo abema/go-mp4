@@ -70,6 +70,42 @@ func (*Xxxx) GetType() BoxType {
 }
 ```
 
+Writer helps you to write box tree.
+The following sample code edits emsg box and writes to another file.
+
+```go
+r := bufseekio.NewReadSeeker(inputFile, 128*1024, 4)
+w := mp4.NewWriter(outputFile)
+_, err = mp4.ReadBoxStructure(r, func(h *mp4.ReadHandle) (interface{}, error) {
+	switch h.BoxInfo.Type {
+	case mp4.BoxTypeEmsg():
+		// write box size and box type
+		_, err := w.StartBox(&h.BoxInfo)
+		if err != nil {
+			return nil, err
+		}
+		// read payload
+		box, _, err := h.ReadPayload()
+		if err != nil {
+			return nil, err
+		}
+		// update MessageData
+		emsg := box.(*mp4.Emsg)
+		emsg.MessageData = []byte("hello world")
+		// write box playload
+		if _, err := mp4.Marshal(w, emsg, h.BoxInfo.Context); err != nil {
+			return nil, err
+		}
+		// rewrite box size
+		_, err = w.EndBox()
+		return nil, err
+	default:
+		// copy all
+		return nil, w.CopyBox(r, &h.BoxInfo)
+	}
+})
+```
+
 ## Command Line Tool
 
 Install mp4tool as follows:
