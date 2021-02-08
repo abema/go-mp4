@@ -110,13 +110,7 @@ func probeTkhd(r io.ReadSeeker, bi *BoxInfo, info *TrackInfo) error {
 	if err != nil {
 		return err
 	}
-
-	if tkhd.Version == 0 {
-		info.TrackID = tkhd.TrackIDV0
-	} else {
-		info.TrackID = tkhd.TrackIDV1
-	}
-
+	info.TrackID = tkhd.TrackID
 	return nil
 }
 

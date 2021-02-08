@@ -87,11 +87,7 @@ func divide(inputFilePath, outputDir string) error {
 			return fmt.Errorf("trak box must have one tkhd box: tkhd=%d", len(bs))
 		}
 		tkhd := bs[0].Payload.(*mp4.Tkhd)
-		if tkhd.Version == 0 {
-			t.id = tkhd.TrackIDV0
-		} else {
-			t.id = tkhd.TrackIDV1
-		}
+		t.id = tkhd.TrackID
 
 		// get timescale from Mdhd box
 		bs, err = mp4.ExtractBoxWithPayload(inputFile, bi, mp4.BoxPath{mp4.BoxTypeMdia(), mp4.BoxTypeMdhd()})
@@ -192,11 +188,7 @@ func divide(inputFilePath, outputDir string) error {
 					return nil, fmt.Errorf("trak box must have one tkhd box: tkhd=%d", len(bs))
 				}
 				tkhd := bs[0].Payload.(*mp4.Tkhd)
-				if tkhd.Version == 0 {
-					trackID = tkhd.TrackIDV0
-				} else {
-					trackID = tkhd.TrackIDV1
-				}
+				trackID = tkhd.TrackID
 
 			} else {
 				writeAll = true
