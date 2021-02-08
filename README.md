@@ -53,10 +53,10 @@ If you should reduce Read function calls, you can wrap the io.ReadSeeker by [buf
 You can create additional box definition as follows:
 
 ```go
-func BoxTypeXxxx() BoxType { return StrToBoxType("xxxx") }
+func BoxTypeXxxx() BoxType { return mp4.StrToBoxType("xxxx") }
 
 func init() {
-	AddBoxDef(&Xxxx{}, 0)
+	mp4.AddBoxDef(&Xxxx{}, 0)
 }
 
 type Xxxx struct {
