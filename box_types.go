@@ -2144,28 +2144,24 @@ func init() {
 
 // Tkhd is ISOBMFF tkhd box type
 type Tkhd struct {
-	FullBox `mp4:"0,extend"`
-	// Version 0
+	FullBox            `mp4:"0,extend"`
 	CreationTimeV0     uint32 `mp4:"1,size=32,ver=0"`
 	ModificationTimeV0 uint32 `mp4:"2,size=32,ver=0"`
-	TrackIDV0          uint32 `mp4:"3,size=32,ver=0"`
-	ReservedV0         uint32 `mp4:"4,size=32,ver=0,const=0"`
-	DurationV0         uint32 `mp4:"5,size=32,ver=0"`
-	// Version 1
-	CreationTimeV1     uint64 `mp4:"6,size=64,ver=1"`
-	ModificationTimeV1 uint64 `mp4:"7,size=64,ver=1"`
-	TrackIDV1          uint32 `mp4:"8,size=32,ver=1"`
-	ReservedV1         uint32 `mp4:"9,size=32,ver=1,const=0"`
-	DurationV1         uint64 `mp4:"10,size=64,ver=1"`
+	CreationTimeV1     uint64 `mp4:"3,size=64,ver=1"`
+	ModificationTimeV1 uint64 `mp4:"4,size=64,ver=1"`
+	TrackID            uint32 `mp4:"5,size=32"`
+	Reserved0          uint32 `mp4:"6,size=32,const=0"`
+	DurationV0         uint32 `mp4:"7,size=32,ver=0"`
+	DurationV1         uint64 `mp4:"8,size=64,ver=1"`
 	//
-	Reserved       [2]uint32 `mp4:"11,size=32,const=0"`
-	Layer          int16     `mp4:"12,size=16"` // template=0
-	AlternateGroup int16     `mp4:"13,size=16"` // template=0
-	Volume         int16     `mp4:"14,size=16"` // template={if track_is_audio 0x0100 else 0}
-	Reserved2      uint16    `mp4:"15,size=16,const=0"`
-	Matrix         [9]int32  `mp4:"16,size=32,hex"` // template={ 0x00010000,0,0,0,0x00010000,0,0,0,0x40000000 };
-	Width          uint32    `mp4:"17,size=32"`     // fixed-point 16.16
-	Height         uint32    `mp4:"18,size=32"`     // fixed-point 16.16
+	Reserved1      [2]uint32 `mp4:"9,size=32,const=0"`
+	Layer          int16     `mp4:"10,size=16"` // template=0
+	AlternateGroup int16     `mp4:"11,size=16"` // template=0
+	Volume         int16     `mp4:"12,size=16"` // template={if track_is_audio 0x0100 else 0}
+	Reserved2      uint16    `mp4:"13,size=16,const=0"`
+	Matrix         [9]int32  `mp4:"14,size=32,hex"` // template={ 0x00010000,0,0,0,0x00010000,0,0,0,0x40000000 };
+	Width          uint32    `mp4:"15,size=32"`     // fixed-point 16.16
+	Height         uint32    `mp4:"16,size=32"`     // fixed-point 16.16
 }
 
 // GetType returns the BoxType

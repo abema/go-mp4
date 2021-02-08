@@ -2698,7 +2698,7 @@ func TestBoxTypes(t *testing.T) {
 				`{TimeV1=8608480567731124087 MoofOffsetV1=9838263505978427528 TrafNumber=39321 TrunNumber=11184810 SampleNumber=3149642683}]`,
 		},
 		{
-			name: "tkhd",
+			name: "tkhd version 0",
 			src: &Tkhd{
 				FullBox: FullBox{
 					Version: 0,
@@ -2706,10 +2706,10 @@ func TestBoxTypes(t *testing.T) {
 				},
 				CreationTimeV0:     0x01234567,
 				ModificationTimeV0: 0x12345678,
-				TrackIDV0:          0x23456789,
-				ReservedV0:         0x3456789a,
+				TrackID:            0x23456789,
+				Reserved0:          0x3456789a,
 				DurationV0:         0x456789ab,
-				Reserved:           [2]uint32{0, 0},
+				Reserved1:          [2]uint32{0, 0},
 				Layer:              23456,  // 0x5ba0
 				AlternateGroup:     -23456, // 0xdba0
 				Volume:             0x0100,
@@ -2745,8 +2745,64 @@ func TestBoxTypes(t *testing.T) {
 			str: `Version=0 Flags=0x000000 ` +
 				`CreationTimeV0=19088743 ` +
 				`ModificationTimeV0=305419896 ` +
-				`TrackIDV0=591751049 ` +
+				`TrackID=591751049 ` +
 				`DurationV0=1164413355 ` +
+				`Layer=23456 ` +
+				`AlternateGroup=-23456 ` +
+				`Volume=256 ` +
+				`Matrix=[0x10000, 0x0, 0x0, 0x0, 0x10000, 0x0, 0x0, 0x0, 0x40000000] ` +
+				`Width=1920 Height=1080`,
+		},
+		{
+			name: "tkhd version 1",
+			src: &Tkhd{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				CreationTimeV1:     0x0123456789abcdef,
+				ModificationTimeV1: 0x123456789abcdef0,
+				TrackID:            0x23456789,
+				Reserved0:          0x3456789a,
+				DurationV1:         0x456789abcdef0123,
+				Reserved1:          [2]uint32{0, 0},
+				Layer:              23456,  // 0x5ba0
+				AlternateGroup:     -23456, // 0xdba0
+				Volume:             0x0100,
+				Reserved2:          0,
+				Matrix: [9]int32{
+					0x00010000, 0, 0,
+					0, 0x00010000, 0,
+					0, 0, 0x40000000,
+				},
+				Width:  125829120,
+				Height: 70778880,
+			},
+			dst: &Tkhd{},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // creation time
+				0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, // modification time
+				0x23, 0x45, 0x67, 0x89, // track ID
+				0x34, 0x56, 0x78, 0x9a, // reserved
+				0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, // duration
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // reserved
+				0x5b, 0xa0, // layer
+				0xa4, 0x60, // alternate group
+				0x01, 0x00, // volume
+				0x00, 0x00, // reserved
+				0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, // matrix
+				0x07, 0x80, 0x00, 0x00, // width
+				0x04, 0x38, 0x00, 0x00, // height
+			},
+			str: `Version=1 Flags=0x000000 ` +
+				`CreationTimeV1=81985529216486895 ` +
+				`ModificationTimeV1=1311768467463790320 ` +
+				`TrackID=591751049 ` +
+				`DurationV1=5001117282205630755 ` +
 				`Layer=23456 ` +
 				`AlternateGroup=-23456 ` +
 				`Volume=256 ` +
