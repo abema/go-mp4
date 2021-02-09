@@ -1,6 +1,7 @@
 package mp4
 
 import (
+	"bytes"
 	"io"
 	"io/ioutil"
 	"testing"
@@ -45,16 +46,26 @@ func TestWriter(t *testing.T) {
 	assert.Equal(t, uint64(24), bi.Offset)
 	assert.Equal(t, uint64(8), bi.Size)
 
+	// copy
+	err = w.CopyBox(bytes.NewReader([]byte{
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x0a,
+		'u', 'd', 't', 'a',
+		0x01, 0x02, 0x03, 0x04,
+		0x05, 0x06, 0x07, 0x08,
+	}), &BoxInfo{Offset: 6, Size: 15})
+	require.NoError(t, err)
+
 	// start trak
 	bi, err = w.StartBox(&BoxInfo{Type: BoxTypeTrak()})
 	require.NoError(t, err)
-	assert.Equal(t, uint64(32), bi.Offset)
+	assert.Equal(t, uint64(47), bi.Offset)
 	assert.Equal(t, uint64(8), bi.Size)
 
 	// start tkhd
 	bi, err = w.StartBox(&BoxInfo{Type: BoxTypeTkhd()})
 	require.NoError(t, err)
-	assert.Equal(t, uint64(40), bi.Offset)
+	assert.Equal(t, uint64(55), bi.Offset)
 	assert.Equal(t, uint64(8), bi.Size)
 
 	_, err = Marshal(w, &Tkhd{
@@ -73,20 +84,20 @@ func TestWriter(t *testing.T) {
 	// end tkhd
 	bi, err = w.EndBox()
 	require.NoError(t, err)
-	assert.Equal(t, uint64(40), bi.Offset)
+	assert.Equal(t, uint64(55), bi.Offset)
 	assert.Equal(t, uint64(92), bi.Size)
 
 	// end trak
 	bi, err = w.EndBox()
 	require.NoError(t, err)
-	assert.Equal(t, uint64(32), bi.Offset)
+	assert.Equal(t, uint64(47), bi.Offset)
 	assert.Equal(t, uint64(100), bi.Size)
 
 	// end moov
 	bi, err = w.EndBox()
 	require.NoError(t, err)
 	assert.Equal(t, uint64(24), bi.Offset)
-	assert.Equal(t, uint64(108), bi.Size)
+	assert.Equal(t, uint64(123), bi.Size)
 
 	_, err = output.Seek(0, io.SeekStart)
 	require.NoError(t, err)
@@ -101,8 +112,13 @@ func TestWriter(t *testing.T) {
 		'a', 'b', 'c', 'd', // compatible brand
 		'e', 'f', 'g', 'h', // compatible brand
 		// moov
-		0x00, 0x00, 0x00, 0x6c, // size
+		0x00, 0x00, 0x00, 0x7b, // size
 		'm', 'o', 'o', 'v', // type
+		// udta (copy)
+		0x00, 0x00, 0x00, 0x0a,
+		'u', 'd', 't', 'a',
+		0x01, 0x02, 0x03, 0x04,
+		0x05, 0x06, 0x07,
 		// trak
 		0x00, 0x00, 0x00, 0x64, // size
 		't', 'r', 'a', 'k', // type
