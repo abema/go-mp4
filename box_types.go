@@ -557,7 +557,19 @@ func init() {
 	AddBoxDef(&Ftyp{})
 }
 
-func CompatibleBrandQT() [4]byte { return [4]byte{'q', 't', ' ', ' '} }
+func BrandQT() [4]byte   { return [4]byte{'q', 't', ' ', ' '} }
+func BrandISOM() [4]byte { return [4]byte{'i', 's', 'o', 'm'} }
+func BrandISO2() [4]byte { return [4]byte{'i', 's', 'o', '2'} }
+func BrandISO3() [4]byte { return [4]byte{'i', 's', 'o', '3'} }
+func BrandISO4() [4]byte { return [4]byte{'i', 's', 'o', '4'} }
+func BrandISO5() [4]byte { return [4]byte{'i', 's', 'o', '5'} }
+func BrandISO6() [4]byte { return [4]byte{'i', 's', 'o', '6'} }
+func BrandISO7() [4]byte { return [4]byte{'i', 's', 'o', '7'} }
+func BrandISO8() [4]byte { return [4]byte{'i', 's', 'o', '8'} }
+func BrandISO9() [4]byte { return [4]byte{'i', 's', 'o', '9'} }
+func BrandAVC1() [4]byte { return [4]byte{'a', 'v', 'c', '1'} }
+func BrandMP41() [4]byte { return [4]byte{'m', 'p', '4', '1'} }
+func BrandMP71() [4]byte { return [4]byte{'m', 'p', '7', '1'} }
 
 // Ftyp is ISOBMFF ftyp box type
 type Ftyp struct {
@@ -569,6 +581,34 @@ type Ftyp struct {
 
 type CompatibleBrandElem struct {
 	CompatibleBrand [4]byte `mp4:"0,size=8,string"`
+}
+
+func (ftyp *Ftyp) AddCompatibleBrand(cb [4]byte) {
+	if !ftyp.HasCompatibleBrand(cb) {
+		ftyp.CompatibleBrands = append(ftyp.CompatibleBrands, CompatibleBrandElem{
+			CompatibleBrand: cb,
+		})
+	}
+}
+
+func (ftyp *Ftyp) RemoveCompatibleBrand(cb [4]byte) {
+	for i := 0; i < len(ftyp.CompatibleBrands); {
+		if ftyp.CompatibleBrands[i].CompatibleBrand != cb {
+			i++
+			continue
+		}
+		ftyp.CompatibleBrands[i] = ftyp.CompatibleBrands[len(ftyp.CompatibleBrands)-1]
+		ftyp.CompatibleBrands = ftyp.CompatibleBrands[:len(ftyp.CompatibleBrands)-1]
+	}
+}
+
+func (ftyp *Ftyp) HasCompatibleBrand(cb [4]byte) bool {
+	for i := range ftyp.CompatibleBrands {
+		if ftyp.CompatibleBrands[i].CompatibleBrand == cb {
+			return true
+		}
+	}
+	return false
 }
 
 // GetType returns the BoxType

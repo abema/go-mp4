@@ -3067,6 +3067,38 @@ func TestBoxTypes(t *testing.T) {
 	}
 }
 
+func TestFtypCompatibleBrands(t *testing.T) {
+	ftyp := &Ftyp{}
+
+	ftyp.AddCompatibleBrand(BrandMP41())
+	ftyp.AddCompatibleBrand(BrandAVC1())
+	ftyp.AddCompatibleBrand(BrandISO5())
+	ftyp.AddCompatibleBrand(BrandISO6())
+	require.Len(t, ftyp.CompatibleBrands, 4)
+	require.True(t, ftyp.HasCompatibleBrand(BrandMP41()))
+	require.False(t, ftyp.HasCompatibleBrand(BrandMP71()))
+	require.True(t, ftyp.HasCompatibleBrand(BrandAVC1()))
+	require.False(t, ftyp.HasCompatibleBrand(BrandISO4()))
+	require.True(t, ftyp.HasCompatibleBrand(BrandISO5()))
+	require.True(t, ftyp.HasCompatibleBrand(BrandISO6()))
+	require.False(t, ftyp.HasCompatibleBrand(BrandISO7()))
+
+	ftyp.AddCompatibleBrand(BrandISO5())
+	require.Len(t, ftyp.CompatibleBrands, 4)
+
+	ftyp.RemoveCompatibleBrand(BrandMP41())
+	ftyp.RemoveCompatibleBrand(BrandISO4())
+	ftyp.RemoveCompatibleBrand(BrandISO5())
+	require.Len(t, ftyp.CompatibleBrands, 2)
+	require.False(t, ftyp.HasCompatibleBrand(BrandMP41()))
+	require.False(t, ftyp.HasCompatibleBrand(BrandMP71()))
+	require.True(t, ftyp.HasCompatibleBrand(BrandAVC1()))
+	require.False(t, ftyp.HasCompatibleBrand(BrandISO4()))
+	require.False(t, ftyp.HasCompatibleBrand(BrandISO5()))
+	require.True(t, ftyp.HasCompatibleBrand(BrandISO6()))
+	require.False(t, ftyp.HasCompatibleBrand(BrandISO7()))
+}
+
 func TestHdlrUnmarshalHandlerName(t *testing.T) {
 	testCases := []struct {
 		name          string
