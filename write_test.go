@@ -24,14 +24,15 @@ func TestWriter(t *testing.T) {
 	assert.Equal(t, uint64(0), bi.Offset)
 	assert.Equal(t, uint64(8), bi.Size)
 
-	_, err = Marshal(w, &Ftyp{
+	ftyp := &Ftyp{
 		MajorBrand:   [4]byte{'a', 'b', 'e', 'm'},
 		MinorVersion: 0x12345678,
 		CompatibleBrands: []CompatibleBrandElem{
 			{CompatibleBrand: [4]byte{'a', 'b', 'c', 'd'}},
 			{CompatibleBrand: [4]byte{'e', 'f', 'g', 'h'}},
 		},
-	}, Context{})
+	}
+	_, err = Marshal(w, ftyp, Context{})
 	require.NoError(t, err)
 
 	// end ftyp
@@ -99,6 +100,14 @@ func TestWriter(t *testing.T) {
 	assert.Equal(t, uint64(24), bi.Offset)
 	assert.Equal(t, uint64(123), bi.Size)
 
+	// update ftyp
+	n, err := w.Seek(8, io.SeekStart)
+	require.NoError(t, err)
+	assert.Equal(t, int64(8), n)
+	ftyp.CompatibleBrands[1].CompatibleBrand = [4]byte{'E', 'F', 'G', 'H'}
+	_, err = Marshal(w, ftyp, Context{})
+	require.NoError(t, err)
+
 	_, err = output.Seek(0, io.SeekStart)
 	require.NoError(t, err)
 	bin, err := ioutil.ReadAll(output)
@@ -110,7 +119,7 @@ func TestWriter(t *testing.T) {
 		'a', 'b', 'e', 'm', // major brand
 		0x12, 0x34, 0x56, 0x78, // minor version
 		'a', 'b', 'c', 'd', // compatible brand
-		'e', 'f', 'g', 'h', // compatible brand
+		'E', 'F', 'G', 'H', // compatible brand
 		// moov
 		0x00, 0x00, 0x00, 0x7b, // size
 		'm', 'o', 'o', 'v', // type

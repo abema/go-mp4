@@ -20,6 +20,10 @@ func (w *Writer) Write(p []byte) (int, error) {
 	return w.writer.Write(p)
 }
 
+func (w *Writer) Seek(offset int64, whence int) (int64, error) {
+	return w.writer.Seek(offset, whence)
+}
+
 func (w *Writer) StartBox(bi *BoxInfo) (*BoxInfo, error) {
 	bi, err := WriteBoxInfo(w.writer, bi)
 	if err != nil {
