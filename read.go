@@ -57,10 +57,8 @@ func readBoxStructureFromInternal(r io.ReadSeeker, bi *BoxInfo, path BoxPath, ha
 		if _, err := Unmarshal(r, bi.Size-bi.HeaderSize, &ftyp, bi.Context); err != nil {
 			return nil, err
 		}
-		for _, cb := range ftyp.CompatibleBrands {
-			if cb.CompatibleBrand == CompatibleBrandQT() {
-				bi.IsQuickTimeCompatible = true
-			}
+		if ftyp.HasCompatibleBrand(BrandQT()) {
+			bi.IsQuickTimeCompatible = true
 		}
 		if _, err := bi.SeekToPayload(r); err != nil {
 			return nil, err
