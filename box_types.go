@@ -1272,13 +1272,20 @@ func (*Saiz) GetType() BoxType {
 
 /*********************** SampleEntry *************************/
 
+func BoxTypeAvc1() BoxType { return StrToBoxType("avc1") }
+func BoxTypeEncv() BoxType { return StrToBoxType("encv") }
+func BoxTypeMp4a() BoxType { return StrToBoxType("mp4a") }
+func BoxTypeEnca() BoxType { return StrToBoxType("enca") }
+func BoxTypeAvcC() BoxType { return StrToBoxType("avcC") }
+func BoxTypePasp() BoxType { return StrToBoxType("pasp") }
+
 func init() {
-	AddAnyTypeBoxDef(&VisualSampleEntry{}, StrToBoxType("avc1"))
-	AddAnyTypeBoxDef(&VisualSampleEntry{}, StrToBoxType("encv"))
-	AddAnyTypeBoxDef(&AudioSampleEntry{}, StrToBoxType("mp4a"))
-	AddAnyTypeBoxDef(&AudioSampleEntry{}, StrToBoxType("enca"))
-	AddAnyTypeBoxDef(&AVCDecoderConfiguration{}, StrToBoxType("avcC"))
-	AddAnyTypeBoxDef(&PixelAspectRatioBox{}, StrToBoxType("pasp"))
+	AddAnyTypeBoxDef(&VisualSampleEntry{}, BoxTypeAvc1())
+	AddAnyTypeBoxDef(&VisualSampleEntry{}, BoxTypeEncv())
+	AddAnyTypeBoxDef(&AudioSampleEntry{}, BoxTypeMp4a())
+	AddAnyTypeBoxDef(&AudioSampleEntry{}, BoxTypeEnca())
+	AddAnyTypeBoxDef(&AVCDecoderConfiguration{}, BoxTypeAvcC())
+	AddAnyTypeBoxDef(&PixelAspectRatioBox{}, BoxTypePasp())
 }
 
 type SampleEntry struct {
