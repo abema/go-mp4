@@ -43,6 +43,7 @@ func Main(args []string) {
 
 	if len(flagSet.Args()) < 2 {
 		fmt.Printf("USAGE: mp4tool edit [OPTIONS] INPUT.mp4 OUTPUT.mp4\n")
+		flagSet.PrintDefaults()
 		return
 	}
 
