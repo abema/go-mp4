@@ -7,6 +7,7 @@ import (
 	"github.com/abema/go-mp4/mp4tool/divide"
 	"github.com/abema/go-mp4/mp4tool/dump"
 	"github.com/abema/go-mp4/mp4tool/edit"
+	"github.com/abema/go-mp4/mp4tool/fragment"
 	"github.com/abema/go-mp4/mp4tool/probe"
 	"github.com/abema/go-mp4/mp4tool/psshdump"
 )
@@ -40,6 +41,8 @@ func alpha(args []string) {
 	}
 
 	switch args[0] {
+	case "fragment":
+		fragment.Main(args[1:])
 	case "edit":
 		edit.Main(args[1:])
 	case "divide":
@@ -56,6 +59,7 @@ func printUsage() {
 	fmt.Println("  dump")
 	fmt.Println("  psshdump")
 	fmt.Println("  probe")
+	fmt.Println("  alpha fragment")
 	fmt.Println("  alpha edit")
 	fmt.Println("  alpha divide")
 }
