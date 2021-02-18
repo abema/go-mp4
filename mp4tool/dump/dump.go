@@ -40,6 +40,7 @@ func Main(args []string) {
 
 	if len(flagSet.Args()) < 1 {
 		fmt.Printf("USAGE: mp4tool dump [OPTIONS] INPUT.mp4\n")
+		flagSet.PrintDefaults()
 		return
 	}
 
