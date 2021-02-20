@@ -3,7 +3,6 @@ package mp4
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 
 	"github.com/abema/go-mp4/bitio"
@@ -192,6 +191,7 @@ func probeTrak(r io.ReadSeeker, bi *BoxInfo) (*Track, error) {
 		{BoxTypeMdia(), BoxTypeMinf(), BoxTypeStbl(), BoxTypeStsd(), BoxTypeEncv(), BoxTypeAvcC()},
 		{BoxTypeMdia(), BoxTypeMinf(), BoxTypeStbl(), BoxTypeStsd(), BoxTypeMp4a()},
 		{BoxTypeMdia(), BoxTypeMinf(), BoxTypeStbl(), BoxTypeStsd(), BoxTypeMp4a(), BoxTypeEsds()},
+		{BoxTypeMdia(), BoxTypeMinf(), BoxTypeStbl(), BoxTypeStsd(), BoxTypeMp4a(), BoxTypeWave(), BoxTypeEsds()},
 		{BoxTypeMdia(), BoxTypeMinf(), BoxTypeStbl(), BoxTypeStsd(), BoxTypeEnca()},
 		{BoxTypeMdia(), BoxTypeMinf(), BoxTypeStbl(), BoxTypeStsd(), BoxTypeEnca(), BoxTypeEsds()},
 		{BoxTypeMdia(), BoxTypeMinf(), BoxTypeStbl(), BoxTypeStco()},
@@ -372,10 +372,10 @@ func probeTrak(r io.ReadSeeker, bi *BoxInfo) (*Track, error) {
 func detectAACProfile(esds *Esds) (oti, audOTI uint8, err error) {
 	configDscr := findDescriptorByTag(esds.Descriptors, DecoderConfigDescrTag)
 	if configDscr == nil || configDscr.DecoderConfigDescriptor == nil {
-		return 0, 0, errors.New("DecoderConfigDescriptor not found")
+		return 0, 0, nil
 	}
 	if configDscr.DecoderConfigDescriptor.ObjectTypeIndication != 0x40 {
-		return 0, 0, fmt.Errorf("unsupported object type indication: %d", int(configDscr.DecoderConfigDescriptor.ObjectTypeIndication))
+		return configDscr.DecoderConfigDescriptor.ObjectTypeIndication, 0, nil
 	}
 
 	specificDscr := findDescriptorByTag(esds.Descriptors, DecSpecificInfoTag)
@@ -388,17 +388,17 @@ func detectAACProfile(esds *Esds) (oti, audOTI uint8, err error) {
 
 	// audio object type
 	audioObjectType, read, err := getAudioObjectType(r)
-	remaining -= read
 	if err != nil {
 		return 0, 0, err
 	}
+	remaining -= read
 
 	// sampling frequency index
 	samplingFrequencyIndex, err := r.ReadBits(4)
-	remaining -= 4
 	if err != nil {
 		return 0, 0, err
 	}
+	remaining -= 4
 	if samplingFrequencyIndex[0] == 0x0f {
 		if _, err = r.ReadBits(24); err != nil {
 			return 0, 0, err
@@ -406,23 +406,16 @@ func detectAACProfile(esds *Esds) (oti, audOTI uint8, err error) {
 		remaining -= 24
 	}
 
-	// channel configuration
-	if _, err = r.ReadBits(4); err != nil {
-		return 0, 0, err
-	}
-	remaining -= 4
-
-	if audioObjectType == 5 || audioObjectType == 29 {
-		// HE-AAC
-		return 40, 5, nil
-
-	}
-
-	if remaining >= 16 {
+	if audioObjectType == 2 && remaining >= 20 {
+		if _, err = r.ReadBits(4); err != nil {
+			return 0, 0, err
+		}
+		remaining -= 4
 		syncExtensionType, err := r.ReadBits(11)
 		if err != nil {
 			return 0, 0, err
 		}
+		remaining -= 11
 		if syncExtensionType[0] == 0x2 && syncExtensionType[1] == 0xb7 {
 			extAudioObjectType, _, err := getAudioObjectType(r)
 			if err != nil {
@@ -433,20 +426,42 @@ func detectAACProfile(esds *Esds) (oti, audOTI uint8, err error) {
 				if err != nil {
 					return 0, 0, err
 				}
+				remaining--
 				if sbr[0] != 0 {
-					// HE-AAC
-					return 40, 5, nil
+					if extAudioObjectType == 5 {
+						sfi, err := r.ReadBits(4)
+						if err != nil {
+							return 0, 0, err
+						}
+						remaining -= 4
+						if sfi[0] == 0xf {
+							if _, err := r.ReadBits(24); err != nil {
+								return 0, 0, err
+							}
+							remaining -= 24
+						}
+						if remaining >= 12 {
+							syncExtensionType, err := r.ReadBits(11)
+							if err != nil {
+								return 0, 0, err
+							}
+							if syncExtensionType[0] == 0x5 && syncExtensionType[1] == 0x48 {
+								ps, err := r.ReadBits(1)
+								if err != nil {
+									return 0, 0, err
+								}
+								if ps[0] != 0 {
+									return 0x40, 29, nil
+								}
+							}
+						}
+					}
+					return 0x40, 5, nil
 				}
 			}
 		}
 	}
-
-	if audioObjectType == 2 {
-		// AAC-LC
-		return 40, 2, nil
-	}
-
-	return 0, 0, fmt.Errorf("unsupported audio object type: %d", audioObjectType)
+	return 0x40, audioObjectType, nil
 }
 
 func findDescriptorByTag(dscrs []Descriptor, tag int8) *Descriptor {
@@ -460,18 +475,17 @@ func findDescriptorByTag(dscrs []Descriptor, tag int8) *Descriptor {
 
 func getAudioObjectType(r bitio.Reader) (byte, int, error) {
 	audioObjectType, err := r.ReadBits(5)
-	read := 5
 	if err != nil {
-		return 0, read, err
+		return 0, 0, err
 	}
-	if audioObjectType[0] == 0x1f {
-		audioObjectType, err = r.ReadBits(6)
-		read += 6
-		if err != nil {
-			return 0, read, err
-		}
+	if audioObjectType[0] != 0x1f {
+		return audioObjectType[0], 5, nil
 	}
-	return audioObjectType[0], read, nil
+	audioObjectType, err = r.ReadBits(6)
+	if err != nil {
+		return 0, 0, err
+	}
+	return audioObjectType[0] + 32, 11, nil
 }
 
 func probeMoof(r io.ReadSeeker, bi *BoxInfo) (*Segment, error) {
