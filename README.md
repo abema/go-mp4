@@ -10,6 +10,8 @@ go-mp4 is Go library for reading and writing MP4.
 
 ## Integration with your Go application
 
+### Reading
+
 You can parse MP4 file as follows:
 
 ```go
@@ -47,28 +49,13 @@ _, err := mp4.ReadBoxStructure(file, func(h *mp4.ReadHandle) (interface{}, error
 boxes, err := mp4.ExtractBox(file, nil, mp4.BoxPath{mp4.BoxTypeMoov(), mp4.BoxTypeTrak(), mp4.BoxTypeTkhd()})
 ```
 
-go-mp4 has no buffering feature for I/O.
-If you should reduce Read function calls, you can wrap the io.ReadSeeker by [bufseekio](https://github.com/sunfish-shogi/bufseekio).
-
-You can create additional box definition as follows:
-
 ```go
-func BoxTypeXxxx() BoxType { return mp4.StrToBoxType("xxxx") }
-
-func init() {
-	mp4.AddBoxDef(&Xxxx{}, 0)
-}
-
-type Xxxx struct {
-	FullBox  `mp4:"0,extend"`
-	UI32      uint32 `mp4:"1,size=32"`
-	ByteArray []byte `mp4:"2,size=8,len=dynamic"`
-}
-
-func (*Xxxx) GetType() BoxType {
-	return BoxTypeXxxx()
-}
+// get basic informations
+info, _ := mp4.Probe(bufseekio.NewReadSeeker(file, 1024, 4))                                           
+fmt.Println("track num:", len(info.Tracks))
 ```
+
+### Writing
 
 Writer helps you to write box tree.
 The following sample code edits emsg box and writes to another file.
@@ -105,6 +92,33 @@ _, err = mp4.ReadBoxStructure(r, func(h *mp4.ReadHandle) (interface{}, error) {
 	}
 })
 ```
+
+### User-defined Boxes
+
+You can create additional box definition as follows:
+
+```go
+func BoxTypeXxxx() BoxType { return mp4.StrToBoxType("xxxx") }
+
+func init() {
+	mp4.AddBoxDef(&Xxxx{}, 0)
+}
+
+type Xxxx struct {
+	FullBox  `mp4:"0,extend"`
+	UI32      uint32 `mp4:"1,size=32"`
+	ByteArray []byte `mp4:"2,size=8,len=dynamic"`
+}
+
+func (*Xxxx) GetType() BoxType {
+	return BoxTypeXxxx()
+}
+```
+
+### Buffering
+
+go-mp4 has no buffering feature for I/O.
+If you should reduce Read function calls, you can wrap the io.ReadSeeker by [bufseekio](https://github.com/sunfish-shogi/bufseekio).
 
 ## Command Line Tool
 
