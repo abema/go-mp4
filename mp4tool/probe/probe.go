@@ -118,7 +118,7 @@ func buildReport(r io.ReadSeeker) (*report, error) {
 		switch tr.Codec {
 		case mp4.CodecAVC1:
 			if tr.AVC != nil {
-				t.Codec = fmt.Sprintf("avc1.%02x%02x%02x",
+				t.Codec = fmt.Sprintf("avc1.%02X%02X%02X",
 					tr.AVC.Profile,
 					tr.AVC.ProfileCompatibility,
 					tr.AVC.Level,
@@ -134,10 +134,12 @@ func buildReport(r io.ReadSeeker) (*report, error) {
 			}
 			t.IDRFrameNum = len(idxs)
 		case mp4.CodecMP4A:
-			if tr.MP4A != nil {
-				t.Codec = fmt.Sprintf("mp4a.%d.%d", tr.MP4A.OTI, tr.MP4A.AudOTI)
-			} else {
+			if tr.MP4A == nil || tr.MP4A.OTI == 0 {
 				t.Codec = "mp4a"
+			} else if tr.MP4A.AudOTI == 0 {
+				t.Codec = fmt.Sprintf("mp4a.%X", tr.MP4A.OTI)
+			} else {
+				t.Codec = fmt.Sprintf("mp4a.%X.%d", tr.MP4A.OTI, tr.MP4A.AudOTI)
 			}
 		default:
 			t.Codec = "unknown"

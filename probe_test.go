@@ -61,7 +61,7 @@ func TestProbe(t *testing.T) {
 	assert.Equal(t, uint32(44100), info.Tracks[1].Timescale)
 	assert.Equal(t, uint64(45124), info.Tracks[1].Duration)
 	assert.Equal(t, CodecMP4A, info.Tracks[1].Codec)
-	assert.Equal(t, uint8(40), info.Tracks[1].MP4A.OTI)
+	assert.Equal(t, uint8(0x40), info.Tracks[1].MP4A.OTI)
 	assert.Equal(t, uint8(2), info.Tracks[1].MP4A.AudOTI)
 	assert.Equal(t, uint16(2), info.Tracks[1].MP4A.ChannelCount)
 	assert.False(t, info.Tracks[1].Encrypted)
@@ -176,6 +176,120 @@ func TestProbeFra(t *testing.T) {
 	assert.Equal(t, uint32(9), info.Segments[3].SampleCount)
 	assert.Equal(t, uint32(9216), info.Segments[3].Duration)
 	assert.Equal(t, int32(0), info.Segments[3].CompositionTimeOffset)
+}
+
+func TestDetectAACProfile(t *testing.T) {
+	testCases := []struct {
+		name           string
+		esds           *Esds
+		expectedOTI    uint8
+		expectedAudOTI uint8
+	}{
+		{
+			name: "40.2",
+			esds: &Esds{
+				Descriptors: []Descriptor{
+					{Tag: DecoderConfigDescrTag, DecoderConfigDescriptor: &DecoderConfigDescriptor{ObjectTypeIndication: 0x40}},
+					{Tag: DecSpecificInfoTag, Data: []byte{
+						// audio-object-type=0x2 (5bits), sample-frequency-index (4bits), padding (7bits)
+						0x10, 0x00,
+					}},
+				},
+			},
+			expectedOTI:    0x40,
+			expectedAudOTI: 2,
+		},
+		{
+			name: "40.5 ExtAudType=5 SBR=1 SFI=0x0",
+			esds: &Esds{
+				Descriptors: []Descriptor{
+					{Tag: DecoderConfigDescrTag, DecoderConfigDescriptor: &DecoderConfigDescriptor{ObjectTypeIndication: 0x40}},
+					{Tag: DecSpecificInfoTag, Data: []byte{
+						// audio-object-type=0x2 (5bits), sample-frequency-index (4bits),
+						// channel config (4bits), sync-extension-type=0x2b7 (11bits),
+						0x10, 0x02, 0xb7,
+						// audio-object-type=0x5 (5bits), sbr=1 (1bit), sfi=0x0 (4bits), padding (6bits)
+						0x2c, 0x00,
+					}},
+				},
+			},
+			expectedOTI:    0x40,
+			expectedAudOTI: 5,
+		},
+		{
+			name: "40.29 ExtAudType=5 SBR=1 SFI=0xf PS=1",
+			esds: &Esds{
+				Descriptors: []Descriptor{
+					{Tag: DecoderConfigDescrTag, DecoderConfigDescriptor: &DecoderConfigDescriptor{ObjectTypeIndication: 0x40}},
+					{Tag: DecSpecificInfoTag, Data: []byte{
+						// audio-object-type=0x2 (5bits), sample-frequency-index (4bits),
+						// channel config (4bits), sync-extension-type=0x2b7 (11bits),
+						0x10, 0x02, 0xb7,
+						// audio-object-type=0x5 (5bits), sbr=1 (1bit), sfi=0xf (4bits), ext (24bits),
+						// sync-extension-type=0x548 (11bits), ps=1 (1bit), padding (2bits)
+						0x2f, 0xc0, 0x00, 0x00, 0x2a, 0x44,
+					}},
+				},
+			},
+			expectedOTI:    0x40,
+			expectedAudOTI: 29,
+		},
+		{
+			name: "40.5 ExtAudType=5 SBR=1 SFI=0xf PS=0",
+			esds: &Esds{
+				Descriptors: []Descriptor{
+					{Tag: DecoderConfigDescrTag, DecoderConfigDescriptor: &DecoderConfigDescriptor{ObjectTypeIndication: 0x40}},
+					{Tag: DecSpecificInfoTag, Data: []byte{
+						// audio-object-type=0x2 (5bits), sample-frequency-index (4bits),
+						// channel config (4bits), sync-extension-type=0x2b7 (11bits),
+						0x10, 0x02, 0xb7,
+						// audio-object-type=0x5 (5bits), sbr=1 (1bit), sfi=0xf (4bits), ext (24bits),
+						// sync-extension-type=0x548 (11bits), ps=1 (1bit), padding (2bits)
+						0x2f, 0xc0, 0x00, 0x00, 0x2a, 0x40,
+					}},
+				},
+			},
+			expectedOTI:    0x40,
+			expectedAudOTI: 5,
+		},
+		{
+			name: "40.2 sample-frequency-index=0xf",
+			esds: &Esds{
+				Descriptors: []Descriptor{
+					{Tag: DecoderConfigDescrTag, DecoderConfigDescriptor: &DecoderConfigDescriptor{ObjectTypeIndication: 0x40}},
+					{Tag: DecSpecificInfoTag, Data: []byte{
+						// audio-object-type=0x2 (5bits), sample-frequency-index=0xf (4bits), ext(24bits), padding(7bits)
+						0x17, 0x80, 0x00, 0x00, 0x00,
+					}},
+				},
+			},
+			expectedOTI:    0x40,
+			expectedAudOTI: 2,
+		},
+		{
+			name: "40.42",
+			esds: &Esds{
+				Descriptors: []Descriptor{
+					{Tag: DecoderConfigDescrTag, DecoderConfigDescriptor: &DecoderConfigDescriptor{ObjectTypeIndication: 0x40}},
+					{Tag: DecSpecificInfoTag, Data: []byte{
+						// audio-object-type=0x1f (5bits), 0xa (6bits)
+						// sample-frequency-index (4bits), padding (1bits)
+						0x15, 0x00,
+					}},
+				},
+			},
+			expectedOTI:    0x40,
+			expectedAudOTI: 2,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			oti, audOTI, err := detectAACProfile(tc.esds)
+			require.NoError(t, err)
+			assert.Equal(t, tc.expectedOTI, oti)
+			assert.Equal(t, tc.expectedAudOTI, audOTI)
+		})
+	}
 }
 
 func TestSamplesGetBitrate(t *testing.T) {
