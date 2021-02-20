@@ -64,6 +64,9 @@ func ExtractBoxes(r io.ReadSeeker, parent *BoxInfo, paths []BoxPath) ([]*BoxInfo
 		if parent != nil {
 			path = path[1:]
 		}
+		if handle.BoxInfo.Type == BoxTypeAny() {
+			return nil, nil
+		}
 		fm, m := matchPath(paths, path)
 		if m {
 			boxes = append(boxes, &handle.BoxInfo)
