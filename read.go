@@ -19,9 +19,8 @@ func (lhs BoxPath) compareWith(rhs BoxPath) (forwardMatch bool, match bool) {
 	}
 	if len(lhs) < len(rhs) {
 		return true, false
-	} else {
-		return false, true
 	}
+	return false, true
 }
 
 type ReadHandle struct {
@@ -96,12 +95,12 @@ func readBoxStructureFromInternal(r io.ReadSeeker, bi *BoxInfo, path BoxPath, ha
 			return nil, 0, err
 		}
 
-		if box, n, err := UnmarshalAny(r, bi.Type, bi.Size-bi.HeaderSize, bi.Context); err != nil {
+		box, n, err := UnmarshalAny(r, bi.Type, bi.Size-bi.HeaderSize, bi.Context)
+		if err != nil {
 			return nil, 0, err
-		} else {
-			childrenOffset = bi.Offset + bi.HeaderSize + n
-			return box, n, nil
 		}
+		childrenOffset = bi.Offset + bi.HeaderSize + n
+		return box, n, nil
 	}
 
 	h.ReadData = func(w io.Writer) (uint64, error) {
@@ -122,11 +121,11 @@ func readBoxStructureFromInternal(r io.ReadSeeker, bi *BoxInfo, path BoxPath, ha
 				return nil, err
 			}
 
-			if _, n, err := UnmarshalAny(r, bi.Type, bi.Size-bi.HeaderSize, bi.Context); err != nil {
+			_, n, err := UnmarshalAny(r, bi.Type, bi.Size-bi.HeaderSize, bi.Context)
+			if err != nil {
 				return nil, err
-			} else {
-				childrenOffset = bi.Offset + bi.HeaderSize + n
 			}
+			childrenOffset = bi.Offset + bi.HeaderSize + n
 		} else {
 			if _, err := r.Seek(int64(childrenOffset), io.SeekStart); err != nil {
 				return nil, err

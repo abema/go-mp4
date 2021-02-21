@@ -48,11 +48,11 @@ func TestMarshal(t *testing.T) {
 		Varint uint16 `mp4:"21,varint"`
 
 		// string, slice, pointer, array
-		String     string `mp4:"22,string"`
-		String_C_P string `mp4:"23,string=c_p"`
-		Bytes      []byte `mp4:"24,size=8,len=5"`
-		Uints      []uint `mp4:"25,size=16,len=dynamic"`
-		Ptr        *inner `mp4:"26,extend"`
+		String   string `mp4:"22,string"`
+		StringCP string `mp4:"23,string=c_p"`
+		Bytes    []byte `mp4:"24,size=8,len=5"`
+		Uints    []uint `mp4:"25,size=16,len=dynamic"`
+		Ptr      *inner `mp4:"26,extend"`
 
 		// bool
 		Bool     bool  `mp4:"27,size=1"`
@@ -112,10 +112,10 @@ func TestMarshal(t *testing.T) {
 		// varint: 0xa434=1010,0100,0011,0100b
 		Varint: 0x1234,
 
-		String:     "abema.tv",
-		String_C_P: "CyberAgent, Inc.",
-		Bytes:      []byte("abema"),
-		Uints:      []uint{0x01, 0x02, 0x03, 0x04, 0x05},
+		String:   "abema.tv",
+		StringCP: "CyberAgent, Inc.",
+		Bytes:    []byte("abema"),
+		Uints:    []uint{0x01, 0x02, 0x03, 0x04, 0x05},
 		Ptr: &inner{
 			Array: [4]byte{'h', 'o', 'g', 'e'},
 		},
