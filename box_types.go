@@ -1949,9 +1949,8 @@ func (stsz *Stsz) GetFieldLength(name string, ctx Context) uint {
 	case "EntrySize":
 		if stsz.SampleSize == 0 {
 			return uint(stsz.SampleCount)
-		} else {
-			return 0
 		}
+		return 0
 	}
 	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=stsz fieldName=%s", name))
 }
