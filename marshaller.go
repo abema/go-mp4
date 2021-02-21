@@ -549,15 +549,15 @@ func (u *unmarshaller) unmarshalBool(v reflect.Value, fi *fieldInstance) error {
 func (u *unmarshaller) unmarshalString(v reflect.Value, fi *fieldInstance) error {
 	switch fi.strType {
 	case stringType_C:
-		return u.unmarshalString_C(v)
+		return u.unmarshalStringC(v)
 	case stringType_C_P:
-		return u.unmarshalString_C_P(v, fi)
+		return u.unmarshalStringCP(v, fi)
 	default:
 		return fmt.Errorf("unknown string type: %d", fi.strType)
 	}
 }
 
-func (u *unmarshaller) unmarshalString_C(v reflect.Value) error {
+func (u *unmarshaller) unmarshalStringC(v reflect.Value) error {
 	data := make([]byte, 0, 16)
 	for {
 		if u.rbits >= u.size*8 {
@@ -581,13 +581,13 @@ func (u *unmarshaller) unmarshalString_C(v reflect.Value) error {
 	return nil
 }
 
-func (u *unmarshaller) unmarshalString_C_P(v reflect.Value, fi *fieldInstance) error {
+func (u *unmarshaller) unmarshalStringCP(v reflect.Value, fi *fieldInstance) error {
 	if ok, err := u.tryReadPString(v, fi); err != nil {
 		return err
 	} else if ok {
 		return nil
 	}
-	return u.unmarshalString_C(v)
+	return u.unmarshalStringC(v)
 }
 
 func (u *unmarshaller) tryReadPString(v reflect.Value, fi *fieldInstance) (ok bool, err error) {
