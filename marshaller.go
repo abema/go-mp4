@@ -261,12 +261,12 @@ type unmarshaller struct {
 }
 
 func UnmarshalAny(r io.ReadSeeker, boxType BoxType, payloadSize uint64, ctx Context) (box IBox, n uint64, err error) {
-	if dst, err := boxType.New(ctx); err != nil {
+	dst, err := boxType.New(ctx)
+	if err != nil {
 		return nil, 0, err
-	} else {
-		n, err := Unmarshal(r, payloadSize, dst, ctx)
-		return dst, n, err
 	}
+	n, err = Unmarshal(r, payloadSize, dst, ctx)
+	return dst, n, err
 }
 
 func Unmarshal(r io.ReadSeeker, payloadSize uint64, dst IBox, ctx Context) (n uint64, err error) {
