@@ -8,10 +8,11 @@ import (
 )
 
 type mockBox struct {
-	Type       BoxType
-	DynSizeMap map[string]uint
-	DynLenMap  map[string]uint
-	DynOptMap  map[string]bool
+	Type         BoxType
+	DynSizeMap   map[string]uint
+	DynLenMap    map[string]uint
+	DynOptMap    map[string]bool
+	IsPStringMap map[string]bool
 }
 
 func (m *mockBox) GetType() BoxType {
@@ -40,6 +41,13 @@ func (m *mockBox) IsOptFieldEnabled(n string, ctx Context) bool {
 	} else {
 		return enabled
 	}
+}
+
+func (m *mockBox) IsPString(name string, bytes []byte, remainingSize uint64, ctx Context) bool {
+	if b, ok := m.IsPStringMap[name]; ok {
+		return b
+	}
+	return true
 }
 
 func TestFullBoxFlags(t *testing.T) {

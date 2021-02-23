@@ -223,6 +223,67 @@ func TestUnsupportedBoxVersionErr(t *testing.T) {
 	}
 }
 
+func TestReadPString(t *testing.T) {
+	type testBox struct {
+		mockBox
+		Box
+		String   string `mp4:"1,string"`
+		StringCP string `mp4:"2,string=c_p"`
+		Uint32   uint32 `mp4:"3,size=32"`
+	}
+
+	testCases := []struct {
+		name      string
+		src       []byte
+		isPString bool
+		wants     string
+	}{
+		{
+			name:      "c style string",
+			src:       []byte{0x05, 'a', 'b', 'e', 'm', 'a'},
+			isPString: true,
+			wants:     "abema",
+		}, {
+			name:      "pascal style string",
+			src:       []byte{'a', 'b', 'e', 'm', 'a', 0x00},
+			isPString: true,
+			wants:     "abema",
+		}, {
+			name:      "pascal style string isPString=true",
+			src:       []byte{0x0a, 'a', 'b', 'e', 'm', 'a', '1', '2', '3', '4', '5'},
+			isPString: true,
+			wants:     "abema12345",
+		}, {
+			name:      "pascal style string isPString=false",
+			src:       []byte{0x0a, 'a', 'b', 'e', 'm', 'a', '1', '2', '3', '4', '5', 0x00},
+			isPString: false,
+			wants:     "\nabema12345",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			boxType := StrToBoxType("test")
+			mb := mockBox{
+				Type:         boxType,
+				IsPStringMap: map[string]bool{"StringCP": tc.isPString},
+			}
+			AddBoxDef(&testBox{mockBox: mb}, 0)
+			src := append(append([]byte{
+				'h', 'e', 'l', 'l', 'o', 0x00,
+			}, tc.src...),
+				0x01, 0x23, 0x45, 0x67,
+			)
+			dst := testBox{mockBox: mb}
+			n, err := Unmarshal(bytes.NewReader(src), uint64(len(src)), &dst, Context{})
+			require.NoError(t, err)
+			assert.Equal(t, uint64(len(src)), n)
+			assert.Equal(t, "hello", dst.String)
+			assert.Equal(t, tc.wants, dst.StringCP)
+			assert.Equal(t, uint32(0x01234567), dst.Uint32)
+		})
+	}
+}
+
 func TestReadVarint(t *testing.T) {
 	testCases := []struct {
 		name     string
