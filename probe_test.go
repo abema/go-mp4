@@ -74,6 +74,42 @@ func TestProbe(t *testing.T) {
 	assert.Equal(t, 0, idxs[0])
 }
 
+func TestProbeEncryptedVideo(t *testing.T) {
+	f, err := os.Open("./_examples/sample_init.encv.mp4")
+	require.NoError(t, err)
+	defer f.Close()
+
+	info, err := Probe(f)
+	require.NoError(t, err)
+
+	require.Len(t, info.Tracks, 2)
+
+	assert.Equal(t, uint32(1), info.Tracks[0].TrackID)
+	assert.Equal(t, CodecAVC1, info.Tracks[0].Codec)
+	assert.True(t, info.Tracks[0].Encrypted)
+
+	assert.Equal(t, uint32(2), info.Tracks[1].TrackID)
+	assert.Equal(t, CodecMP4A, info.Tracks[1].Codec)
+	assert.False(t, info.Tracks[1].Encrypted)
+}
+
+func TestProbeEncryptedAudio(t *testing.T) {
+	f, err := os.Open("./_examples/sample_init.enca.mp4")
+	require.NoError(t, err)
+	defer f.Close()
+
+	info, err := Probe(f)
+	require.NoError(t, err)
+
+	assert.Equal(t, uint32(1), info.Tracks[0].TrackID)
+	assert.Equal(t, CodecAVC1, info.Tracks[0].Codec)
+	assert.False(t, info.Tracks[0].Encrypted)
+
+	assert.Equal(t, uint32(2), info.Tracks[1].TrackID)
+	assert.Equal(t, CodecMP4A, info.Tracks[1].Codec)
+	assert.True(t, info.Tracks[1].Encrypted)
+}
+
 func TestProbeWithFMP4(t *testing.T) {
 	f, err := os.Open("./_examples/sample_fragmented.mp4")
 	require.NoError(t, err)
@@ -274,12 +310,12 @@ func TestDetectAACProfile(t *testing.T) {
 					{Tag: DecSpecificInfoTag, Data: []byte{
 						// audio-object-type=0x1f (5bits), 0xa (6bits)
 						// sample-frequency-index (4bits), padding (1bits)
-						0x15, 0x00,
+						0xf9, 0x40,
 					}},
 				},
 			},
 			expectedOTI:    0x40,
-			expectedAudOTI: 2,
+			expectedAudOTI: 42,
 		},
 	}
 	for _, tc := range testCases {
