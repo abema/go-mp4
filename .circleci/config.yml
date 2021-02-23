@@ -1,7 +1,6 @@
 version: 2
 jobs:
   build:
-    working_directory: /go/src/github.com/abema/go-mp4
     docker:
     - image: circleci/golang:1.14
     steps:
