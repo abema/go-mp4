@@ -154,7 +154,7 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 				}
 				if !full && line.Len()+len(str)+2 > terminalWidth {
 					fmt.Fprintf(line, " ... (use \"-full %s\" to show all)", h.BoxInfo.Type)
-				} else {
+				} else if str != "" {
 					fmt.Fprintf(line, " %s", str)
 				}
 
