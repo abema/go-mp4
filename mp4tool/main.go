@@ -16,10 +16,12 @@ func main() {
 
 	if len(args) == 0 {
 		printUsage()
-		return
+		os.Exit(1)
 	}
 
 	switch args[0] {
+	case "help":
+		printUsage()
 	case "dump":
 		dump.Main(args[1:])
 	case "psshdump":
@@ -30,13 +32,14 @@ func main() {
 		alpha(args[1:])
 	default:
 		printUsage()
+		os.Exit(1)
 	}
 }
 
 func alpha(args []string) {
 	if len(args) < 1 {
 		printUsage()
-		return
+		os.Exit(1)
 	}
 
 	switch args[0] {
@@ -46,16 +49,17 @@ func alpha(args []string) {
 		divide.Main(args[1:])
 	default:
 		printUsage()
+		os.Exit(1)
 	}
 }
 
 func printUsage() {
-	fmt.Printf("USAGE: mp4tool COMMAND_NAME [ARGS]\n")
-	fmt.Println()
-	fmt.Println("COMMAND_NAME:")
-	fmt.Println("  dump")
-	fmt.Println("  psshdump")
-	fmt.Println("  probe")
-	fmt.Println("  alpha edit")
-	fmt.Println("  alpha divide")
+	fmt.Fprintf(os.Stderr, "USAGE: mp4tool COMMAND_NAME [ARGS]\n")
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "COMMAND_NAME:")
+	fmt.Fprintln(os.Stderr, "  dump")
+	fmt.Fprintln(os.Stderr, "  psshdump")
+	fmt.Fprintln(os.Stderr, "  probe")
+	fmt.Fprintln(os.Stderr, "  alpha edit")
+	fmt.Fprintln(os.Stderr, "  alpha divide")
 }

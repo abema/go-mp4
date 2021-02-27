@@ -39,9 +39,9 @@ func Main(args []string) {
 	flagSet.Parse(args)
 
 	if len(flagSet.Args()) < 1 {
-		fmt.Printf("USAGE: mp4tool dump [OPTIONS] INPUT.mp4\n")
+		fmt.Fprintf(os.Stderr, "USAGE: mp4tool dump [OPTIONS] INPUT.mp4\n")
 		flagSet.PrintDefaults()
-		return
+		os.Exit(1)
 	}
 
 	fpath := flagSet.Args()[0]
