@@ -12,8 +12,8 @@ import (
 
 func Main(args []string) {
 	if len(args) < 1 {
-		fmt.Printf("USAGE: mp4tool divide INPUT.mp4\n")
-		return
+		fmt.Fprintf(os.Stderr, "USAGE: mp4tool divide INPUT.mp4\n")
+		os.Exit(1)
 	}
 
 	if err := dump(args[0]); err != nil {

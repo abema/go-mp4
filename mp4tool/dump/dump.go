@@ -39,9 +39,9 @@ func Main(args []string) {
 	flagSet.Parse(args)
 
 	if len(flagSet.Args()) < 1 {
-		fmt.Printf("USAGE: mp4tool dump [OPTIONS] INPUT.mp4\n")
+		fmt.Fprintf(os.Stderr, "USAGE: mp4tool dump [OPTIONS] INPUT.mp4\n")
 		flagSet.PrintDefaults()
-		return
+		os.Exit(1)
 	}
 
 	fpath := flagSet.Args()[0]
@@ -154,7 +154,7 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 				}
 				if !full && line.Len()+len(str)+2 > terminalWidth {
 					fmt.Fprintf(line, " ... (use \"-full %s\" to show all)", h.BoxInfo.Type)
-				} else {
+				} else if str != "" {
 					fmt.Fprintf(line, " %s", str)
 				}
 
