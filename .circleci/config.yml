@@ -7,10 +7,4 @@ jobs:
     - checkout
     - run: go vet ./...
     - run: go test -coverprofile=coverage.txt -covermode=count ./...
-    - run:
-        name: "upload coverage"
-        command: |
-          curl -s https://codecov.io/bash > codecov
-          VERSION=$(grep '^VERSION=\".*\"' codecov | awk -F '"' '{print $2}')
-          shasum -c --ignore-missing <(curl -s https://raw.githubusercontent.com/codecov/codecov-bash/${VERSION}/SHA256SUM)
-          bash codecov -f coverage.txt
+
