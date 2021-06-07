@@ -12,7 +12,7 @@ jobs:
         root: .
         paths:
         - .
-  coverage:
+  upload_coverage:
     docker:
     - image: circleci/golang:1.16
     steps:
@@ -20,3 +20,11 @@ jobs:
         at: .
     - run: go install github.com/mattn/goveralls@v0.0.8
     - run: goveralls -coverprofile=coverage.txt -service=circle-ci
+workflows:
+  version: 2
+  all:
+    jobs:
+    - build
+    - upload_coverage:
+        requires:
+          - build
