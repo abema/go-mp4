@@ -42,9 +42,9 @@ func Main(args []string) {
 	flagSet.Parse(args)
 
 	if len(flagSet.Args()) < 2 {
-		fmt.Printf("USAGE: mp4tool edit [OPTIONS] INPUT.mp4 OUTPUT.mp4\n")
+		fmt.Fprintf(os.Stderr, "USAGE: mp4tool edit [OPTIONS] INPUT.mp4 OUTPUT.mp4\n")
 		flagSet.PrintDefaults()
-		return
+		os.Exit(1)
 	}
 
 	config.dropBoxes = strings.Split(*dropBoxes, ",")
