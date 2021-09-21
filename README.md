@@ -47,11 +47,21 @@ _, err := mp4.ReadBoxStructure(file, func(h *mp4.ReadHandle) (interface{}, error
 ```go
 // extract specific boxes
 boxes, err := mp4.ExtractBox(file, nil, mp4.BoxPath{mp4.BoxTypeMoov(), mp4.BoxTypeTrak(), mp4.BoxTypeTkhd()})
+if err != nil {
+   :
+}
+for _, box := range boxes {
+  tkhd := box.(*mp4.Tkhd)
+  fmt.Println("track ID:", tkhd.TrackID)
+}
 ```
 
 ```go
 // get basic informations
-info, _ := mp4.Probe(bufseekio.NewReadSeeker(file, 1024, 4))                                           
+info, err := mp4.Probe(bufseekio.NewReadSeeker(file, 1024, 4))  
+if err != nil {
+   :
+}
 fmt.Println("track num:", len(info.Tracks))
 ```
 
