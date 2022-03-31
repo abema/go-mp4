@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -147,7 +148,6 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 				if err != nil {
 					return nil, err
 				}
-
 				str, err := mp4.Stringify(box, h.BoxInfo.Context)
 				if err != nil {
 					return nil, err
@@ -155,9 +155,30 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 				if !full && line.Len()+len(str)+2 > terminalWidth {
 					fmt.Fprintf(line, " ... (use \"-full %s\" to show all)", h.BoxInfo.Type)
 				} else if str != "" {
-					fmt.Fprintf(line, " %s", str)
-				}
+					if h.BoxInfo.Type == mp4.BoxTypeMdat() {
+						p := strings.Index(str, "[")
+						q := strings.Index(str, "]")
+						hexset := strings.Split(str[p + 1:q], ", ")
+						hexseq := ""
+						hexln  := ""
+						for cnt, val := range hexset {
+							ret, _ := strconv.ParseUint(val, 0, 16)
+							if cnt % 16 == 0 {
+								hexseq = fmt.Sprintf("    %02x", ret)
+							} else if cnt % 16 == 15 {
+								hexseq = fmt.Sprintf("%s %02x\n", hexseq, ret)
+								hexln += hexseq
+							} else {
+								hexseq = fmt.Sprintf("%s %02x", hexseq, ret)
+							}
+						}
+						hexln += hexseq
+						fmt.Fprintf(line, " %s\n%s]", str[:p + 1], hexln)
+					} else {
+						fmt.Fprintf(line, " %s", str)
+					}
 
+				}
 				fmt.Println(line.String())
 				_, err = h.Expand()
 				return nil, err
