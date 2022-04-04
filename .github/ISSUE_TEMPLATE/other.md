@@ -1,6 +1,6 @@
 ---
 name: Others
-about: ''
+about: Others
 title: ''
 labels: ''
 assignees: sunfish-shogi
