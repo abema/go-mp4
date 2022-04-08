@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/abema/go-mp4"
+	"github.com/abema/go-mp4/mp4tool/util"
 	"github.com/sunfish-shogi/bufseekio"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -121,22 +122,7 @@ func (m *mp4dump) dump(r io.ReadSeeker) error {
 		// supported box type
 		if h.BoxInfo.IsSupportedType() {
 			if !full && h.BoxInfo.Size-h.BoxInfo.HeaderSize >= 64 &&
-				(h.BoxInfo.Type == mp4.BoxTypeEmsg() ||
-					h.BoxInfo.Type == mp4.BoxTypeEsds() ||
-					h.BoxInfo.Type == mp4.BoxTypeFtyp() ||
-					h.BoxInfo.Type == mp4.BoxTypePssh() ||
-					h.BoxInfo.Type == mp4.BoxTypeCtts() ||
-					h.BoxInfo.Type == mp4.BoxTypeCo64() ||
-					h.BoxInfo.Type == mp4.BoxTypeElst() ||
-					h.BoxInfo.Type == mp4.BoxTypeSbgp() ||
-					h.BoxInfo.Type == mp4.BoxTypeSdtp() ||
-					h.BoxInfo.Type == mp4.BoxTypeStco() ||
-					h.BoxInfo.Type == mp4.BoxTypeStsc() ||
-					h.BoxInfo.Type == mp4.BoxTypeStts() ||
-					h.BoxInfo.Type == mp4.BoxTypeStss() ||
-					h.BoxInfo.Type == mp4.BoxTypeStsz() ||
-					h.BoxInfo.Type == mp4.BoxTypeTfra() ||
-					h.BoxInfo.Type == mp4.BoxTypeTrun()) {
+				util.ShouldHasNoChildren(h.BoxInfo.Type) {
 				fmt.Fprintf(line, " ... (use \"-full %s\" to show all)", h.BoxInfo.Type)
 				fmt.Println(line.String())
 				return nil, nil
