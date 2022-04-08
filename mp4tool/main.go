@@ -7,6 +7,7 @@ import (
 	"github.com/abema/go-mp4/mp4tool/divide"
 	"github.com/abema/go-mp4/mp4tool/dump"
 	"github.com/abema/go-mp4/mp4tool/edit"
+	"github.com/abema/go-mp4/mp4tool/extract"
 	"github.com/abema/go-mp4/mp4tool/probe"
 	"github.com/abema/go-mp4/mp4tool/psshdump"
 )
@@ -28,6 +29,8 @@ func main() {
 		psshdump.Main(args[1:])
 	case "probe":
 		probe.Main(args[1:])
+	case "extract":
+		extract.Main(args[1:])
 	case "alpha":
 		alpha(args[1:])
 	default:
@@ -60,6 +63,7 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "  dump")
 	fmt.Fprintln(os.Stderr, "  psshdump")
 	fmt.Fprintln(os.Stderr, "  probe")
+	fmt.Fprintln(os.Stderr, "  extract")
 	fmt.Fprintln(os.Stderr, "  alpha edit")
 	fmt.Fprintln(os.Stderr, "  alpha divide")
 }
