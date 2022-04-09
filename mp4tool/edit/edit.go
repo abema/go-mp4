@@ -35,7 +35,7 @@ type Config struct {
 
 var config Config
 
-func Main(args []string) {
+func Main(args []string) int {
 	flagSet := flag.NewFlagSet("edit", flag.ExitOnError)
 	flagSet.Uint64Var(&config.values.BaseMediaDecodeTime, "base_media_decode_time", UNoValue, "set new value to base_media_decode_time")
 	dropBoxes := flagSet.String("drop", "", "drop boxes")
@@ -47,7 +47,7 @@ func Main(args []string) {
 
 	if len(flagSet.Args()) < 2 {
 		flagSet.Usage()
-		os.Exit(1)
+		return 1
 	}
 
 	config.dropBoxes = strings.Split(*dropBoxes, ",")
@@ -58,8 +58,9 @@ func Main(args []string) {
 	err := editFile(inputPath, outputPath)
 	if err != nil {
 		fmt.Println("Error:", err)
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
 func editFile(inputPath, outputPath string) error {

@@ -16,7 +16,7 @@ const (
 	blockHistorySize = 4
 )
 
-func Main(args []string) {
+func Main(args []string) int {
 	flagSet := flag.NewFlagSet("extract", flag.ExitOnError)
 	flagSet.Usage = func() {
 		println("USAGE: mp4tool extract [OPTIONS] BOX_TYPE INPUT.mp4")
@@ -26,7 +26,7 @@ func Main(args []string) {
 
 	if len(flagSet.Args()) < 2 {
 		flagSet.Usage()
-		os.Exit(1)
+		return 1
 	}
 
 	boxType := flagSet.Args()[0]
@@ -35,21 +35,22 @@ func Main(args []string) {
 	if len(boxType) != 4 {
 		println("Error:", "invalid argument:", boxType)
 		println("BOX_TYPE must be 4 characters.")
-		os.Exit(1)
+		return 1
 	}
 
 	input, err := os.Open(inputPath)
 	if err != nil {
 		fmt.Println("Error:", err)
-		os.Exit(1)
+		return 1
 	}
 	defer input.Close()
 
 	r := bufseekio.NewReadSeeker(input, blockSize, blockHistorySize)
 	if err := extract(r, mp4.StrToBoxType(boxType)); err != nil {
 		fmt.Println("Error:", err)
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
 func extract(r io.ReadSeeker, boxType mp4.BoxType) error {

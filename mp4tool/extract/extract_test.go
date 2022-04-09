@@ -28,6 +28,12 @@ func TestExtract(t *testing.T) {
 			boxType:      "mdhd",
 			expectedSize: 64, // = 32 (1st trak) + 32 (2nd trak)
 		},
+		{
+			name:         "sample_fragmented.mp4/trun",
+			file:         "../../_examples/sample_fragmented.mp4",
+			boxType:      "trun",
+			expectedSize: 452,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -38,7 +44,7 @@ func TestExtract(t *testing.T) {
 				os.Stdout = stdout
 			}()
 			os.Stdout = w
-			Main([]string{tc.boxType, tc.file})
+			require.Zero(t, Main([]string{tc.boxType, tc.file}))
 			w.Close()
 			b, err := ioutil.ReadAll(r)
 			require.NoError(t, err)
@@ -46,4 +52,15 @@ func TestExtract(t *testing.T) {
 			assert.Equal(t, tc.boxType, string(b[4:8]))
 		})
 	}
+}
+
+func TestValidation(t *testing.T) {
+	// valid
+	require.Zero(t, Main([]string{"xxxx", "../../_examples/sample.mp4"}))
+
+	// invalid
+	require.NotZero(t, Main([]string{}))
+	require.NotZero(t, Main([]string{"xxxx"}))
+	require.NotZero(t, Main([]string{"xxxxx", "../../_examples/sample.mp4"}))
+	require.NotZero(t, Main([]string{"xxxx", "not_found.mp4"}))
 }

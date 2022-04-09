@@ -10,16 +10,17 @@ import (
 	"github.com/sunfish-shogi/bufseekio"
 )
 
-func Main(args []string) {
+func Main(args []string) int {
 	if len(args) < 1 {
 		println("USAGE: mp4tool psshdump INPUT.mp4")
-		os.Exit(1)
+		return 1
 	}
 
 	if err := dump(args[0]); err != nil {
 		fmt.Println("Error:", err)
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
 func dump(inputFilePath string) error {

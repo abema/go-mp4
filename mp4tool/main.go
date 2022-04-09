@@ -24,35 +24,35 @@ func main() {
 	case "help":
 		printUsage()
 	case "dump":
-		dump.Main(args[1:])
+		os.Exit(dump.Main(args[1:]))
 	case "psshdump":
-		psshdump.Main(args[1:])
+		os.Exit(psshdump.Main(args[1:]))
 	case "probe":
-		probe.Main(args[1:])
+		os.Exit(probe.Main(args[1:]))
 	case "extract":
-		extract.Main(args[1:])
+		os.Exit(extract.Main(args[1:]))
 	case "alpha":
-		alpha(args[1:])
+		os.Exit(alpha(args[1:]))
 	default:
 		printUsage()
 		os.Exit(1)
 	}
 }
 
-func alpha(args []string) {
+func alpha(args []string) int {
 	if len(args) < 1 {
 		printUsage()
-		os.Exit(1)
+		return 1
 	}
 
 	switch args[0] {
 	case "edit":
-		edit.Main(args[1:])
+		return edit.Main(args[1:])
 	case "divide":
-		divide.Main(args[1:])
+		return divide.Main(args[1:])
 	default:
 		printUsage()
-		os.Exit(1)
+		return 1
 	}
 }
 

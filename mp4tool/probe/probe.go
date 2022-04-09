@@ -12,7 +12,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func Main(args []string) {
+func Main(args []string) int {
 	flagSet := flag.NewFlagSet("fragment", flag.ExitOnError)
 	format := flagSet.String("format", "json", "output format (yaml|json)")
 	flagSet.Usage = func() {
@@ -23,14 +23,14 @@ func Main(args []string) {
 
 	if len(flagSet.Args()) < 1 {
 		flagSet.Usage()
-		os.Exit(1)
+		return 1
 	}
 
 	ipath := flagSet.Args()[0]
 	input, err := os.Open(ipath)
 	if err != nil {
 		fmt.Println("Failed to open the input file:", err)
-		os.Exit(1)
+		return 1
 	}
 	defer input.Close()
 
@@ -38,7 +38,7 @@ func Main(args []string) {
 	rep, err := buildReport(r)
 	if err != nil {
 		fmt.Println("Error:", err)
-		os.Exit(1)
+		return 1
 	}
 	switch *format {
 	case "json":
@@ -50,8 +50,9 @@ func Main(args []string) {
 	}
 	if err != nil {
 		fmt.Println("Error:", err)
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
 type report struct {
