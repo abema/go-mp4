@@ -23,16 +23,17 @@ func segmentFileName(i int) string {
 	return fmt.Sprintf("%d.mp4", i)
 }
 
-func Main(args []string) {
+func Main(args []string) int {
 	if len(args) < 2 {
 		println("USAGE: mp4tool divide INPUT.mp4 OUTPUT_DIR")
-		os.Exit(1)
+		return 1
 	}
 
 	if err := divide(args[0], args[1]); err != nil {
 		fmt.Println("Error:", err)
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
 type childInfo map[uint32]uint64

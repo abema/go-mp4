@@ -29,7 +29,7 @@ func init() {
 	}
 }
 
-func Main(args []string) {
+func Main(args []string) int {
 	flagSet := flag.NewFlagSet("dump", flag.ExitOnError)
 	full := flagSet.String("full", "", "Show full content of specified box types\nFor example: -full free,ctts,stts")
 	showAll := flagSet.Bool("a", false, "Show full content of boxes excepting mdat, free and styp")
@@ -45,7 +45,7 @@ func Main(args []string) {
 
 	if len(flagSet.Args()) < 1 {
 		flagSet.Usage()
-		os.Exit(1)
+		return 1
 	}
 
 	fpath := flagSet.Args()[0]
@@ -71,8 +71,9 @@ func Main(args []string) {
 	err := m.dumpFile(fpath)
 	if err != nil {
 		fmt.Println("Error:", err)
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
 type mp4dump struct {
