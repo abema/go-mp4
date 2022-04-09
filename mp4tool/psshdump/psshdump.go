@@ -31,7 +31,10 @@ func dump(inputFilePath string) error {
 
 	r := bufseekio.NewReadSeeker(inputFile, 1024, 4)
 
-	bs, err := mp4.ExtractBoxWithPayload(r, nil, mp4.BoxPath{mp4.BoxTypeMoov(), mp4.BoxTypePssh()})
+	bs, err := mp4.ExtractBoxesWithPayload(r, nil, []mp4.BoxPath{
+		{mp4.BoxTypeMoov(), mp4.BoxTypePssh()},
+		{mp4.BoxTypeMoof(), mp4.BoxTypePssh()},
+	})
 	if err != nil {
 		return err
 	}
