@@ -15,11 +15,14 @@ import (
 func Main(args []string) {
 	flagSet := flag.NewFlagSet("fragment", flag.ExitOnError)
 	format := flagSet.String("format", "json", "output format (yaml|json)")
+	flagSet.Usage = func() {
+		println("USAGE: mp4tool beta probe [OPTIONS] INPUT.mp4")
+		flagSet.PrintDefaults()
+	}
 	flagSet.Parse(args)
 
 	if len(flagSet.Args()) < 1 {
-		fmt.Fprintf(os.Stderr, "USAGE: mp4tool beta probe [OPTIONS] INPUT.mp4\n")
-		flagSet.PrintDefaults()
+		flagSet.Usage()
 		os.Exit(1)
 	}
 

@@ -12,7 +12,7 @@ import (
 
 func Main(args []string) {
 	if len(args) < 1 {
-		fmt.Fprintf(os.Stderr, "USAGE: mp4tool divide INPUT.mp4\n")
+		println("USAGE: mp4tool psshdump INPUT.mp4")
 		os.Exit(1)
 	}
 

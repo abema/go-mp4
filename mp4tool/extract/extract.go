@@ -18,11 +18,14 @@ const (
 
 func Main(args []string) {
 	flagSet := flag.NewFlagSet("extract", flag.ExitOnError)
+	flagSet.Usage = func() {
+		println("USAGE: mp4tool extract [OPTIONS] BOX_TYPE INPUT.mp4")
+		flagSet.PrintDefaults()
+	}
 	flagSet.Parse(args)
 
 	if len(flagSet.Args()) < 2 {
-		println("USAGE: mp4tool extract [OPTIONS] BOX_TYPE INPUT.mp4")
-		flagSet.PrintDefaults()
+		flagSet.Usage()
 		os.Exit(1)
 	}
 
