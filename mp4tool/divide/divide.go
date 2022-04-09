@@ -24,8 +24,8 @@ func segmentFileName(i int) string {
 }
 
 func Main(args []string) {
-	if len(os.Args) < 2 {
-		fmt.Fprintf(os.Stderr, "USAGE: mp4tool divide INPUT.mp4 OUTPUT_DIR\n")
+	if len(args) < 2 {
+		println("USAGE: mp4tool divide INPUT.mp4 OUTPUT_DIR")
 		os.Exit(1)
 	}
 

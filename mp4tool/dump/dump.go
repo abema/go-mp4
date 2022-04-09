@@ -37,11 +37,14 @@ func Main(args []string) {
 	free := flagSet.Bool("free", false, "Deprecated: use \"-full free,styp\"")
 	offset := flagSet.Bool("offset", false, "Show offset of box")
 	hex := flagSet.Bool("hex", false, "Use hex for size and offset")
+	flagSet.Usage = func() {
+		println("USAGE: mp4tool dump [OPTIONS] INPUT.mp4")
+		flagSet.PrintDefaults()
+	}
 	flagSet.Parse(args)
 
 	if len(flagSet.Args()) < 1 {
-		fmt.Fprintf(os.Stderr, "USAGE: mp4tool dump [OPTIONS] INPUT.mp4\n")
-		flagSet.PrintDefaults()
+		flagSet.Usage()
 		os.Exit(1)
 	}
 

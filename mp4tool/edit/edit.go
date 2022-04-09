@@ -39,11 +39,14 @@ func Main(args []string) {
 	flagSet := flag.NewFlagSet("edit", flag.ExitOnError)
 	flagSet.Uint64Var(&config.values.BaseMediaDecodeTime, "base_media_decode_time", UNoValue, "set new value to base_media_decode_time")
 	dropBoxes := flagSet.String("drop", "", "drop boxes")
+	flagSet.Usage = func() {
+		println("USAGE: mp4tool edit [OPTIONS] INPUT.mp4 OUTPUT.mp4")
+		flagSet.PrintDefaults()
+	}
 	flagSet.Parse(args)
 
 	if len(flagSet.Args()) < 2 {
-		fmt.Fprintf(os.Stderr, "USAGE: mp4tool edit [OPTIONS] INPUT.mp4 OUTPUT.mp4\n")
-		flagSet.PrintDefaults()
+		flagSet.Usage()
 		os.Exit(1)
 	}
 
