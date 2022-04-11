@@ -7,12 +7,11 @@ import (
 	"io"
 	"os"
 	"strings"
-	"syscall"
 
 	"github.com/abema/go-mp4"
 	"github.com/abema/go-mp4/mp4tool/util"
 	"github.com/sunfish-shogi/bufseekio"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 const (
@@ -24,7 +23,7 @@ const (
 var terminalWidth = 180
 
 func init() {
-	if width, _, err := terminal.GetSize(syscall.Stdin); err == nil {
+	if width, _, err := term.GetSize(int(os.Stdin.Fd())); err == nil {
 		terminalWidth = width
 	}
 }
