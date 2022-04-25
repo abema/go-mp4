@@ -46,12 +46,12 @@ _, err := mp4.ReadBoxStructure(file, func(h *mp4.ReadHandle) (interface{}, error
 
 ```go
 // extract specific boxes
-boxes, err := mp4.ExtractBox(file, nil, mp4.BoxPath{mp4.BoxTypeMoov(), mp4.BoxTypeTrak(), mp4.BoxTypeTkhd()})
+boxes, err := mp4.ExtractBoxWithPayload(file, nil, mp4.BoxPath{mp4.BoxTypeMoov(), mp4.BoxTypeTrak(), mp4.BoxTypeTkhd()})
 if err != nil {
    :
 }
 for _, box := range boxes {
-  tkhd := box.(*mp4.Tkhd)
+  tkhd := box.Payload.(*mp4.Tkhd)
   fmt.Println("track ID:", tkhd.TrackID)
 }
 ```
