@@ -7,11 +7,13 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  test:
     strategy:
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
-        go-version: [ 1.16, 1.17, 1.18 ]
+        # FIXME: windows-latest not working
+        # os: [ ubuntu-latest, windows-latest, macos-latest ]
+        os: [ ubuntu-latest, macos-latest ]
+        go-version: [ "1.16", "1.17", ">=1.18" ]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
@@ -20,5 +22,12 @@ jobs:
         go-version: ${{ matrix.go-version }}
         check-latest: true
     - run: go vet ./...
-    - run: go test
+    - run: go test -coverprofile=coverage.txt -covermode=atomic ./...
     - run: go install ./mp4tool
+    - name: Upload Coverage Report
+      if: ${{ matrix.os == 'ubuntu-latest' && matrix.go-version == '1.17' }}
+      env:
+        COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
+      run: |
+        go install github.com/mattn/goveralls@latest
+        goveralls -coverprofile=coverage.txt
