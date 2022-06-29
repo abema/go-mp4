@@ -2,7 +2,7 @@ go-mp4
 ------
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/abema/go-mp4.svg)](https://pkg.go.dev/github.com/abema/go-mp4)
-[![CircleCI](https://circleci.com/gh/abema/go-mp4.svg?style=svg)](https://circleci.com/gh/abema/go-mp4)
+![Test](https://github.com/abema/go-mp4/actions/workflows/test.yml/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/abema/go-mp4/badge.svg)](https://coveralls.io/github/abema/go-mp4)
 [![Go Report Card](https://goreportcard.com/badge/github.com/abema/go-mp4)](https://goreportcard.com/report/github.com/abema/go-mp4)
 
