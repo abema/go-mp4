@@ -132,6 +132,61 @@ func (*Cslg) GetType() BoxType {
 	return BoxTypeCslg()
 }
 
+func (cslg *Cslg) GetCompositionToDTSShift() int64 {
+	switch cslg.GetVersion() {
+	case 0:
+		return int64(cslg.CompositionToDTSShiftV0)
+	case 1:
+		return cslg.CompositionToDTSShiftV1
+	default:
+		return 0
+	}
+}
+
+func (cslg *Cslg) GetLeastDecodeToDisplayDelta() int64 {
+	switch cslg.GetVersion() {
+	case 0:
+		return int64(cslg.LeastDecodeToDisplayDeltaV0)
+	case 1:
+		return cslg.LeastDecodeToDisplayDeltaV1
+	default:
+		return 0
+	}
+}
+
+func (cslg *Cslg) GetGreatestDecodeToDisplayDelta() int64 {
+	switch cslg.GetVersion() {
+	case 0:
+		return int64(cslg.GreatestDecodeToDisplayDeltaV0)
+	case 1:
+		return cslg.GreatestDecodeToDisplayDeltaV1
+	default:
+		return 0
+	}
+}
+
+func (cslg *Cslg) GetCompositionStartTime() int64 {
+	switch cslg.GetVersion() {
+	case 0:
+		return int64(cslg.CompositionStartTimeV0)
+	case 1:
+		return cslg.CompositionStartTimeV1
+	default:
+		return 0
+	}
+}
+
+func (cslg *Cslg) GetCompositionEndTime() int64 {
+	switch cslg.GetVersion() {
+	case 0:
+		return int64(cslg.CompositionEndTimeV0)
+	case 1:
+		return cslg.CompositionEndTimeV1
+	default:
+		return 0
+	}
+}
+
 /*************************** ctts ****************************/
 
 func BoxTypeCtts() BoxType { return StrToBoxType("ctts") }
@@ -164,6 +219,17 @@ func (ctts *Ctts) GetFieldLength(name string, ctx Context) uint {
 		return uint(ctts.EntryCount)
 	}
 	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=ctts fieldName=%s", name))
+}
+
+func (ctts *Ctts) GetSampleOffset(index int) int64 {
+	switch ctts.GetVersion() {
+	case 0:
+		return int64(ctts.Entries[index].SampleOffsetV0)
+	case 1:
+		return int64(ctts.Entries[index].SampleOffsetV1)
+	default:
+		return 0
+	}
 }
 
 /*************************** dinf ****************************/
@@ -306,6 +372,28 @@ func (elst *Elst) GetFieldLength(name string, ctx Context) uint {
 		return uint(elst.EntryCount)
 	}
 	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=elst fieldName=%s", name))
+}
+
+func (elst *Elst) GetSegmentDuration(index int) uint64 {
+	switch elst.GetVersion() {
+	case 0:
+		return uint64(elst.Entries[index].SegmentDurationV0)
+	case 1:
+		return elst.Entries[index].SegmentDurationV1
+	default:
+		return 0
+	}
+}
+
+func (elst *Elst) GetMediaTime(index int) int64 {
+	switch elst.GetVersion() {
+	case 0:
+		return int64(elst.Entries[index].MediaTimeV0)
+	case 1:
+		return elst.Entries[index].MediaTimeV1
+	default:
+		return 0
+	}
 }
 
 /*************************** emsg ****************************/
@@ -893,6 +981,39 @@ func (*Mdhd) GetType() BoxType {
 	return BoxTypeMdhd()
 }
 
+func (mdhd *Mdhd) GetCreationTime() uint64 {
+	switch mdhd.GetVersion() {
+	case 0:
+		return uint64(mdhd.CreationTimeV0)
+	case 1:
+		return mdhd.CreationTimeV1
+	default:
+		return 0
+	}
+}
+
+func (mdhd *Mdhd) GetModificationTime() uint64 {
+	switch mdhd.GetVersion() {
+	case 0:
+		return uint64(mdhd.ModificationTimeV0)
+	case 1:
+		return mdhd.ModificationTimeV1
+	default:
+		return 0
+	}
+}
+
+func (mdhd *Mdhd) GetDuration() uint64 {
+	switch mdhd.GetVersion() {
+	case 0:
+		return uint64(mdhd.DurationV0)
+	case 1:
+		return mdhd.DurationV1
+	default:
+		return 0
+	}
+}
+
 /*************************** mdia ****************************/
 
 func BoxTypeMdia() BoxType { return StrToBoxType("mdia") }
@@ -929,6 +1050,17 @@ type Mehd struct {
 // GetType returns the BoxType
 func (*Mehd) GetType() BoxType {
 	return BoxTypeMehd()
+}
+
+func (mdhd *Mehd) GetFragmentDuration() uint64 {
+	switch mdhd.GetVersion() {
+	case 0:
+		return uint64(mdhd.FragmentDurationV0)
+	case 1:
+		return mdhd.FragmentDurationV1
+	default:
+		return 0
+	}
 }
 
 /*************************** meta ****************************/
@@ -1136,6 +1268,39 @@ func (mvhd *Mvhd) StringifyField(name string, indent string, depth int, ctx Cont
 	}
 }
 
+func (mvhd *Mvhd) GetCreationTime() uint64 {
+	switch mvhd.GetVersion() {
+	case 0:
+		return uint64(mvhd.CreationTimeV0)
+	case 1:
+		return mvhd.CreationTimeV1
+	default:
+		return 0
+	}
+}
+
+func (mvhd *Mvhd) GetModificationTime() uint64 {
+	switch mvhd.GetVersion() {
+	case 0:
+		return uint64(mvhd.ModificationTimeV0)
+	case 1:
+		return mvhd.ModificationTimeV1
+	default:
+		return 0
+	}
+}
+
+func (mvhd *Mvhd) GetDuration() uint64 {
+	switch mvhd.GetVersion() {
+	case 0:
+		return uint64(mvhd.DurationV0)
+	case 1:
+		return mvhd.DurationV1
+	default:
+		return 0
+	}
+}
+
 // GetRate returns value of rate as float64
 func (mvhd *Mvhd) GetRate() float64 {
 	return float64(mvhd.Rate) / (1 << 16)
@@ -1231,6 +1396,17 @@ func (saio *Saio) GetFieldLength(name string, ctx Context) uint {
 
 func (*Saio) GetType() BoxType {
 	return BoxTypeSaio()
+}
+
+func (saio *Saio) GetOffset(index int) uint64 {
+	switch saio.GetVersion() {
+	case 0:
+		return uint64(saio.OffsetV0[index])
+	case 1:
+		return saio.OffsetV1[index]
+	default:
+		return 0
+	}
 }
 
 /*************************** saiz ****************************/
@@ -1739,6 +1915,28 @@ func (sidx *Sidx) GetFieldLength(name string, ctx Context) uint {
 	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=sidx fieldName=%s", name))
 }
 
+func (sidx *Sidx) GetEarliestPresentationTime() uint64 {
+	switch sidx.GetVersion() {
+	case 0:
+		return uint64(sidx.EarliestPresentationTimeV0)
+	case 1:
+		return sidx.EarliestPresentationTimeV1
+	default:
+		return 0
+	}
+}
+
+func (sidx *Sidx) GetFirstOffset() uint64 {
+	switch sidx.GetVersion() {
+	case 0:
+		return uint64(sidx.FirstOffsetV0)
+	case 1:
+		return sidx.FirstOffsetV1
+	default:
+		return 0
+	}
+}
+
 /*************************** sinf ****************************/
 
 func BoxTypeSinf() BoxType { return StrToBoxType("sinf") }
@@ -2070,6 +2268,17 @@ func (*Tfdt) GetType() BoxType {
 	return BoxTypeTfdt()
 }
 
+func (tfdt *Tfdt) GetBaseMediaDecodeTime() uint64 {
+	switch tfdt.GetVersion() {
+	case 0:
+		return uint64(tfdt.BaseMediaDecodeTimeV0)
+	case 1:
+		return tfdt.BaseMediaDecodeTimeV1
+	default:
+		return 0
+	}
+}
+
 /*************************** tfhd ****************************/
 
 func BoxTypeTfhd() BoxType { return StrToBoxType("tfhd") }
@@ -2180,6 +2389,28 @@ func (tfra *Tfra) GetFieldLength(name string, ctx Context) uint {
 	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=tfra fieldName=%s", name))
 }
 
+func (tfra *Tfra) GetTime(index int) uint64 {
+	switch tfra.GetVersion() {
+	case 0:
+		return uint64(tfra.Entries[index].TimeV0)
+	case 1:
+		return tfra.Entries[index].TimeV1
+	default:
+		return 0
+	}
+}
+
+func (tfra *Tfra) GetMoofOffset(index int) uint64 {
+	switch tfra.GetVersion() {
+	case 0:
+		return uint64(tfra.Entries[index].MoofOffsetV0)
+	case 1:
+		return tfra.Entries[index].MoofOffsetV1
+	default:
+		return 0
+	}
+}
+
 /*************************** tkhd ****************************/
 
 func BoxTypeTkhd() BoxType { return StrToBoxType("tkhd") }
@@ -2224,6 +2455,39 @@ func (tkhd *Tkhd) StringifyField(name string, indent string, depth int, ctx Cont
 		return util.FormatUnsignedFixedFloat1616(tkhd.Height), true
 	default:
 		return "", false
+	}
+}
+
+func (tkhd *Tkhd) GetCreationTime() uint64 {
+	switch tkhd.GetVersion() {
+	case 0:
+		return uint64(tkhd.CreationTimeV0)
+	case 1:
+		return tkhd.CreationTimeV1
+	default:
+		return 0
+	}
+}
+
+func (tkhd *Tkhd) GetModificationTime() uint64 {
+	switch tkhd.GetVersion() {
+	case 0:
+		return uint64(tkhd.ModificationTimeV0)
+	case 1:
+		return tkhd.ModificationTimeV1
+	default:
+		return 0
+	}
+}
+
+func (tkhd *Tkhd) GetDuration() uint64 {
+	switch tkhd.GetVersion() {
+	case 0:
+		return uint64(tkhd.DurationV0)
+	case 1:
+		return tkhd.DurationV1
+	default:
+		return 0
 	}
 }
 
@@ -2387,6 +2651,17 @@ func (trun *Trun) GetFieldLength(name string, ctx Context) uint {
 		return uint(trun.SampleCount)
 	}
 	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=trun fieldName=%s", name))
+}
+
+func (trun *Trun) GetSampleCompositionTimeOffset(index int) int64 {
+	switch trun.GetVersion() {
+	case 0:
+		return int64(trun.Entries[index].SampleCompositionTimeOffsetV0)
+	case 1:
+		return int64(trun.Entries[index].SampleCompositionTimeOffsetV1)
+	default:
+		return 0
+	}
 }
 
 /*************************** udta ****************************/
