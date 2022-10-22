@@ -147,7 +147,7 @@ func TestMarshal(t *testing.T) {
 		0x00, 0x12, 0x34, 0x56, // padding(5bits) & uint32r
 		0x07, 0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x33, // padding(5bits) & int64r
 		0x00, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, // padding(5bits) & uint64r
-		0xa4, 0x34, // varint
+		0x80, 0x80, 0xa4, 0x34, // varint
 		'a', 'b', 'e', 'm', 'a', '.', 't', 'v', 0, // string
 		'C', 'y', 'b', 'e', 'r', 'A', 'g', 'e', 'n', 't', ',', ' ', 'I', 'n', 'c', '.', 0, // string
 		'a', 'b', 'e', 'm', 'a', // bytes
@@ -296,6 +296,8 @@ func TestReadVarint(t *testing.T) {
 		{name: "2 bytes", input: []byte{0xac, 0x52}, expected: 0x1652},
 		{name: "3 bytes", input: []byte{0xac, 0xd2, 0x43}, expected: 0xb2943},
 		{name: "overrun", input: []byte{0xac, 0xd2, 0xef}, err: true},
+		{name: "1 byte padded", input: []byte{0x80, 0x80, 0x80, 0x6c}, expected: 0x6c},
+		{name: "2 byte padded", input: []byte{0x80, 0x80, 0x81, 0x0c}, expected: 0x8c},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -323,10 +325,11 @@ func TestWriteVarint(t *testing.T) {
 		input    uint64
 		expected []byte
 	}{
-		{name: "0", input: 0x0, expected: []byte{0x0}},
-		{name: "1 byte", input: 0x6c, expected: []byte{0x6c}},
-		{name: "2 bytes", input: 0x1652, expected: []byte{0xac, 0x52}},
-		{name: "3 bytes", input: 0xb2943, expected: []byte{0xac, 0xd2, 0x43}},
+		{name: "0", input: 0x0, expected: []byte{0x80, 0x80, 0x80, 0x00}},
+		{name: "1 byte", input: 0x6c, expected: []byte{0x80, 0x80, 0x80, 0x6c}},
+		{name: "1 byte into 2 bytes", input: 0x8c, expected: []byte{0x80, 0x80, 0x81, 0x0c}},
+		{name: "2 bytes", input: 0x1652, expected: []byte{0x80, 0x80, 0xac, 0x52}},
+		{name: "3 bytes", input: 0xb2943, expected: []byte{0x80, 0xac, 0xd2, 0x43}},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

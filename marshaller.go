@@ -230,25 +230,18 @@ func (m *marshaller) marshalString(v reflect.Value) error {
 }
 
 func (m *marshaller) writeUvarint(u uint64) error {
-	if u == 0 {
-		if err := m.writer.WriteBits([]byte{0}, 8); err != nil {
+	for i := 21; i > 0; i -= 7 {
+		if err := m.writer.WriteBits([]byte{(byte(u >> uint(i))) | 0x80}, 8); err != nil {
 			return err
 		}
 		m.wbits += 8
-		return nil
 	}
-	for i := 63; i >= 0; i -= 7 {
-		if u>>uint(i) != 0 {
-			data := byte(u>>uint(i)) & 0x7f
-			if i != 0 {
-				data |= 0x80
-			}
-			if err := m.writer.WriteBits([]byte{data}, 8); err != nil {
-				return err
-			}
-			m.wbits += 8
-		}
+
+	if err := m.writer.WriteBits([]byte{byte(u) & 0x7f}, 8); err != nil {
+		return err
 	}
+	m.wbits += 8
+
 	return nil
 }
 
