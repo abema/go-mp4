@@ -260,16 +260,11 @@ func probeTrak(r io.ReadSeeker, bi *BoxInfo) (*Track, error) {
 
 	if elst != nil {
 		editList := make([]*EditListEntry, 0, len(elst.Entries))
-		for _, entry := range elst.Entries {
-			editInfo := new(EditListEntry)
-			if elst.GetVersion() == 0 {
-				editInfo.MediaTime = int64(entry.MediaTimeV0)
-				editInfo.SegmentDuration = uint64(entry.SegmentDurationV0)
-			} else {
-				editInfo.MediaTime = entry.MediaTimeV1
-				editInfo.SegmentDuration = entry.SegmentDurationV1
-			}
-			editList = append(editList, editInfo)
+		for i := range elst.Entries {
+			editList = append(editList, &EditListEntry{
+				MediaTime:       elst.GetMediaTime(i),
+				SegmentDuration: elst.GetSegmentDuration(i),
+			})
 		}
 		track.EditList = editList
 	}
@@ -278,11 +273,7 @@ func probeTrak(r io.ReadSeeker, bi *BoxInfo) (*Track, error) {
 		return nil, errors.New("mdhd box not found")
 	}
 	track.Timescale = mdhd.Timescale
-	if mdhd.GetVersion() == 0 {
-		track.Duration = uint64(mdhd.DurationV0)
-	} else {
-		track.Duration = mdhd.DurationV1
-	}
+	track.Duration = mdhd.GetDuration()
 
 	if avc1 != nil && avcC != nil {
 		track.AVC = &AVCDecConfigInfo{
@@ -345,16 +336,12 @@ func probeTrak(r io.ReadSeeker, bi *BoxInfo) (*Track, error) {
 
 	if ctts != nil {
 		var si uint32
-		for _, entry := range ctts.Entries {
+		for ci, entry := range ctts.Entries {
 			for i := uint32(0); i < entry.SampleCount; i++ {
 				if si >= uint32(len(track.Samples)) {
 					break
 				}
-				if ctts.GetVersion() == 0 {
-					track.Samples[si].CompositionTimeOffset = int64(entry.SampleOffsetV0)
-				} else {
-					track.Samples[si].CompositionTimeOffset = int64(entry.SampleOffsetV1)
-				}
+				track.Samples[si].CompositionTimeOffset = ctts.GetSampleOffset(ci)
 				si++
 			}
 		}
@@ -553,12 +540,7 @@ func probeMoof(r io.ReadSeeker, bi *BoxInfo) (*Segment, error) {
 
 		var duration uint32
 		for ei := range trun.Entries {
-			var offset int32
-			if trun.GetVersion() == 0 {
-				offset = int32(duration) + int32(trun.Entries[ei].SampleCompositionTimeOffsetV0)
-			} else {
-				offset = int32(duration) + int32(trun.Entries[ei].SampleCompositionTimeOffsetV1)
-			}
+			offset := int32(duration) + int32(trun.GetSampleCompositionTimeOffset(ei))
 			if ei == 0 || offset < segment.CompositionTimeOffset {
 				segment.CompositionTimeOffset = offset
 			}
