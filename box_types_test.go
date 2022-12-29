@@ -474,6 +474,16 @@ func TestBoxTypes(t *testing.T) {
 				"{Tag=SLConfigDescr Size=5 Data=[0x11, 0x22, 0x33, 0x44, 0x55]}]",
 		},
 		{
+			name: "fiel",
+			src: &Fiel{
+				FieldCount:    233,
+				FieldOrdering: 112,
+			},
+			dst: &Fiel{},
+			bin: []byte{0xe9, 0x70},
+			str: `FieldCount=0xe9 FieldOrdering=0x70`,
+		},
+		{
 			name: "free",
 			src: &Free{
 				Data: []byte{0x12, 0x34, 0x56},
@@ -547,6 +557,113 @@ func TestBoxTypes(t *testing.T) {
 				'A', 'b', 'e', 'm', 'a', 0x00, // name
 			},
 			str: `Version=0 Flags=0x000000 PreDefined=305419896 HandlerType="abem" Name="Abema"`,
+		},
+		{
+			name: "hvcC",
+			src: &HvcC{
+				ConfigurationVersion: 1,
+				GeneralProfileIdc:    1,
+				GeneralProfileCompatibility: [32]bool{
+					false, true, true, false, false, false, false, false,
+					false, false, false, false, false, false, false, false,
+					false, false, false, false, false, false, false, false,
+					false, false, false, false, false, false, false, false,
+				},
+				GeneralConstraintIndicator: [6]uint8{144, 0, 0, 0, 0, 0},
+				GeneralLevelIdc:            120,
+				Reserved1:                  0xe,
+				Reserved2:                  0x3f,
+				Reserved3:                  0x3f,
+				ChromaFormatIdc:            1,
+				Reserved4:                  31,
+				Reserved5:                  31,
+				TemporalIdNested:           3,
+				LengthSizeMinusOne:         3,
+				NumOfNaluArrays:            4,
+				NaluArrays: []HEVCNaluArray{
+					{
+						NaluType: 32,
+						NumNalus: 1,
+						Nalus: []HEVCNalu{{
+							Length: 24,
+							NALUnit: []byte{
+								64, 1, 12, 1, 255, 255, 1, 96,
+								0, 0, 3, 0, 144, 0, 0, 3,
+								0, 0, 3, 0, 120, 153, 152, 9,
+							},
+						}},
+					},
+					{
+						NaluType: 33,
+						NumNalus: 1,
+						Nalus: []HEVCNalu{{
+							Length: 42,
+							NALUnit: []byte{
+								6, 1, 1, 1, 96, 0, 0, 3,
+								0, 144, 0, 0, 3, 0, 0, 3,
+								0, 120, 160, 3, 192, 128, 16, 229,
+								150, 102, 105, 36, 202, 224, 16,
+								0, 0, 3, 0, 16, 0, 0, 3,
+								1, 224, 128,
+							},
+						}},
+					},
+					{
+						NaluType: 34,
+						NumNalus: 1,
+						Nalus: []HEVCNalu{{
+							Length: 7,
+							NALUnit: []byte{
+								68, 1, 193, 114, 180, 98, 64,
+							},
+						}},
+					},
+					{
+						NaluType: 39,
+						NumNalus: 1,
+						Nalus: []HEVCNalu{{
+							Length: 11,
+							NALUnit: []byte{
+								78, 1, 5, 255, 255, 255, 166, 44,
+								162, 222, 9,
+							},
+						}},
+					},
+				},
+			},
+			dst: &HvcC{},
+			bin: []byte{
+				0x01, 0x01, 0x60, 0x00, 0x00, 0x00, 0x90, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x78, 0xe0, 0x00, 0xfc,
+				0xfd, 0xf8, 0xf8, 0x00, 0x00, 0x0f, 0x04, 0x20,
+				0x00, 0x01, 0x00, 0x18, 0x40, 0x01, 0x0c, 0x01,
+				0xff, 0xff, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00,
+				0x90, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00,
+				0x78, 0x99, 0x98, 0x09, 0x21, 0x00, 0x01, 0x00,
+				0x2a, 0x06, 0x01, 0x01, 0x01, 0x60, 0x00, 0x00,
+				0x03, 0x00, 0x90, 0x00, 0x00, 0x03, 0x00, 0x00,
+				0x03, 0x00, 0x78, 0xa0, 0x03, 0xc0, 0x80, 0x10,
+				0xe5, 0x96, 0x66, 0x69, 0x24, 0xca, 0xe0, 0x10,
+				0x00, 0x00, 0x03, 0x00, 0x10, 0x00, 0x00, 0x03,
+				0x01, 0xe0, 0x80, 0x22, 0x00, 0x01, 0x00, 0x07,
+				0x44, 0x01, 0xc1, 0x72, 0xb4, 0x62, 0x40, 0x27,
+				0x00, 0x01, 0x00, 0x0b, 0x4e, 0x01, 0x05, 0xff,
+				0xff, 0xff, 0xa6, 0x2c, 0xa2, 0xde, 0x09,
+			},
+			str: `ConfigurationVersion=0x1 GeneralProfileSpace=0x0 GeneralTierFlag=false GeneralProfileIdc=0x1 ` +
+				`GeneralProfileCompatibility=[false, true, true, false, false, false, false, false, false, false, false, ` +
+				`false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, ` +
+				`false, false, false, false, false, false] GeneralConstraintIndicator=[0x90, 0x0, 0x0, 0x0, 0x0, 0x0] GeneralLevelIdc=0x78 ` +
+				`MinSpatialSegmentationIdc=0 ParallelismType=0x0 ChromaFormatIdc=0x1 BitDepthLumaMinus8=0x0 BitDepthChromaMinus8=0x0 ` +
+				`AvgFrameRate=0 ConstantFrameRate=0x0 NumTemporalLayers=0x0 TemporalIdNested=0x3 LengthSizeMinusOne=0x3 NumOfNaluArrays=0x4 ` +
+				`NaluArrays=[{Completeness=false Reserved=false NaluType=0x20 NumNalus=1 Nalus=[{Length=24 NALUnit=[0x40, 0x1, 0xc, 0x1, ` +
+				`0xff, 0xff, 0x1, 0x60, 0x0, 0x0, 0x3, 0x0, 0x90, 0x0, 0x0, 0x3, 0x0, 0x0, 0x3, 0x0, 0x78, 0x99, 0x98, 0x9]}]}, ` +
+				`{Completeness=false Reserved=false NaluType=0x21 NumNalus=1 Nalus=[{Length=42 NALUnit=[0x6, 0x1, 0x1, 0x1, 0x60, 0x0, ` +
+				`0x0, 0x3, 0x0, 0x90, 0x0, 0x0, 0x3, 0x0, 0x0, 0x3, 0x0, 0x78, 0xa0, 0x3, 0xc0, 0x80, 0x10, 0xe5, 0x96, 0x66, 0x69, 0x24, ` +
+				`0xca, 0xe0, 0x10, 0x0, 0x0, 0x3, 0x0, 0x10, 0x0, 0x0, 0x3, 0x1, 0xe0, 0x80]}]}, {Completeness=false Reserved=false ` +
+				`NaluType=0x22 NumNalus=1 Nalus=[{Length=7 NALUnit=[0x44, 0x1, 0xc1, 0x72, 0xb4, 0x62, 0x40]}]}, ` +
+				`{Completeness=false Reserved=false NaluType=0x27 NumNalus=1 Nalus=[{Length=11 NALUnit=[0x4e, 0x1, 0x5, 0xff, 0xff, 0xff, ` +
+				`0xa6, 0x2c, 0xa2, 0xde, 0x9]}]}]`,
 		},
 		{
 			name: "ilst",
