@@ -58,7 +58,7 @@ type EditListEntry struct {
 type Samples []*Sample
 
 type Sample struct {
-	Size                  uint32
+	Size                  uint64
 	TimeDelta             uint32
 	CompositionTimeOffset int64
 }
@@ -66,7 +66,7 @@ type Sample struct {
 type Chunks []*Chunk
 
 type Chunk struct {
-	DataOffset      uint32
+	DataOffset      uint64
 	SamplesPerChunk uint32
 }
 
@@ -195,6 +195,7 @@ func probeTrak(r io.ReadSeeker, bi *BoxInfo) (*Track, error) {
 		{BoxTypeMdia(), BoxTypeMinf(), BoxTypeStbl(), BoxTypeStsd(), BoxTypeEnca()},
 		{BoxTypeMdia(), BoxTypeMinf(), BoxTypeStbl(), BoxTypeStsd(), BoxTypeEnca(), BoxTypeEsds()},
 		{BoxTypeMdia(), BoxTypeMinf(), BoxTypeStbl(), BoxTypeStco()},
+		{BoxTypeMdia(), BoxTypeMinf(), BoxTypeStbl(), BoxTypeCo64()},
 		{BoxTypeMdia(), BoxTypeMinf(), BoxTypeStbl(), BoxTypeStts()},
 		{BoxTypeMdia(), BoxTypeMinf(), BoxTypeStbl(), BoxTypeCtts()},
 		{BoxTypeMdia(), BoxTypeMinf(), BoxTypeStbl(), BoxTypeStsc()},
@@ -215,6 +216,7 @@ func probeTrak(r io.ReadSeeker, bi *BoxInfo) (*Track, error) {
 	var stsc *Stsc
 	var ctts *Ctts
 	var stsz *Stsz
+	var co64 *Co64
 	for _, bip := range bips {
 		switch bip.Info.Type {
 		case BoxTypeTkhd():
@@ -250,6 +252,8 @@ func probeTrak(r io.ReadSeeker, bi *BoxInfo) (*Track, error) {
 			ctts = bip.Payload.(*Ctts)
 		case BoxTypeStsz():
 			stsz = bip.Payload.(*Stsz)
+		case BoxTypeCo64():
+			co64 = bip.Payload.(*Co64)
 		}
 	}
 
@@ -299,14 +303,21 @@ func probeTrak(r io.ReadSeeker, bi *BoxInfo) (*Track, error) {
 		}
 	}
 
-	if stco == nil {
-		return nil, errors.New("stco box not found")
-	}
 	track.Chunks = make([]*Chunk, 0)
-	for _, offset := range stco.ChunkOffset {
-		track.Chunks = append(track.Chunks, &Chunk{
-			DataOffset: offset,
-		})
+	if stco != nil {
+		for _, offset := range stco.ChunkOffset {
+			track.Chunks = append(track.Chunks, &Chunk{
+				DataOffset: uint64(offset),
+			})
+		}
+	} else if co64 != nil {
+		for _, offset := range co64.ChunkOffset {
+			track.Chunks = append(track.Chunks, &Chunk{
+				DataOffset: offset,
+			})
+		}
+	} else {
+		return nil, errors.New("stco/co64 box not found")
 	}
 
 	if stts == nil {
@@ -349,7 +360,7 @@ func probeTrak(r io.ReadSeeker, bi *BoxInfo) (*Track, error) {
 
 	if stsz != nil {
 		for i := 0; i < len(stsz.EntrySize) && i < len(track.Samples); i++ {
-			track.Samples[i].Size = stsz.EntrySize[i]
+			track.Samples[i].Size = uint64(stsz.EntrySize[i])
 		}
 	}
 
@@ -559,7 +570,7 @@ func FindIDRFrames(r io.ReadSeeker, trackInfo *TrackInfo) ([]int, error) {
 	if trackInfo.AVC == nil {
 		return nil, nil
 	}
-	lengthSize := uint32(trackInfo.AVC.LengthSize)
+	lengthSize := uint64(trackInfo.AVC.LengthSize)
 
 	var si int
 	idxs := make([]int, 0, 8)
@@ -571,7 +582,7 @@ func FindIDRFrames(r io.ReadSeeker, trackInfo *TrackInfo) ([]int, error) {
 			if sample.Size == 0 {
 				continue
 			}
-			for nalOffset := uint32(0); nalOffset+lengthSize+1 <= sample.Size; {
+			for nalOffset := uint64(0); nalOffset+lengthSize+1 <= sample.Size; {
 				if _, err := r.Seek(int64(dataOffset+nalOffset), io.SeekStart); err != nil {
 					return nil, err
 				}
@@ -579,9 +590,9 @@ func FindIDRFrames(r io.ReadSeeker, trackInfo *TrackInfo) ([]int, error) {
 				if _, err := io.ReadFull(r, data); err != nil {
 					return nil, err
 				}
-				var length uint32
+				var length uint64
 				for i := 0; i < int(lengthSize); i++ {
-					length = (length << 8) + uint32(data[i])
+					length = (length << 8) + uint64(data[i])
 				}
 				nalHeader := data[lengthSize]
 				nalType := nalHeader & 0x1f
