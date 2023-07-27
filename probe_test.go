@@ -52,8 +52,8 @@ func TestProbe(t *testing.T) {
 	assert.Equal(t, int64(2048), info.Tracks[0].Samples[0].CompositionTimeOffset)
 	assert.Equal(t, int64(1024), info.Tracks[0].Samples[9].CompositionTimeOffset)
 	require.Len(t, info.Tracks[0].Chunks, 9)
-	assert.Equal(t, uint32(48), info.Tracks[0].Chunks[0].DataOffset)
-	assert.Equal(t, uint32(6038), info.Tracks[0].Chunks[8].DataOffset)
+	assert.Equal(t, uint64(48), info.Tracks[0].Chunks[0].DataOffset)
+	assert.Equal(t, uint64(6038), info.Tracks[0].Chunks[8].DataOffset)
 	assert.Equal(t, uint32(2), info.Tracks[0].Chunks[0].SamplesPerChunk)
 	assert.Equal(t, uint32(1), info.Tracks[0].Chunks[8].SamplesPerChunk)
 
