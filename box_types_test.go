@@ -3362,6 +3362,10 @@ func TestFixedPoint(t *testing.T) {
 	assert.Equal(t, uint16(32), tkhd.GetWidthInt())
 	assert.Equal(t, float64(1516.171875), tkhd.GetHeight())
 	assert.Equal(t, uint16(1516), tkhd.GetHeightInt())
+
+	ase := AudioSampleEntry{SampleRate: 0x205800}
+	assert.Equal(t, float64(32.34375), ase.GetSampleRate())
+	assert.Equal(t, uint16(32), ase.GetSampleRateInt())
 }
 
 func TestGetters(t *testing.T) {

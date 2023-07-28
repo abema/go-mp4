@@ -1645,6 +1645,14 @@ func (ase *AudioSampleEntry) StringifyField(name string, indent string, depth in
 	}
 }
 
+func (ase *AudioSampleEntry) GetSampleRate() float64 {
+	return float64(ase.SampleRate) / (1 << 16)
+}
+
+func (ase *AudioSampleEntry) GetSampleRateInt() uint16 {
+	return uint16(ase.SampleRate >> 16)
+}
+
 const (
 	AVCBaselineProfile uint8 = 66  // 0x42
 	AVCMainProfile     uint8 = 77  // 0x4d
