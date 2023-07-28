@@ -101,7 +101,7 @@ var sampleMP4Output = "" +
 	`            [url ] Size=12 Version=0 Flags=0x000001` + "\n" +
 	`        [stbl] Size=564` + "\n" +
 	`          [stsd] Size=106 Version=0 Flags=0x000000 EntryCount=1` + "\n" +
-	`            [mp4a] Size=90 DataReferenceIndex=1 EntryVersion=0 ChannelCount=2 SampleSize=16 PreDefined=0 SampleRate=2890137600` + "\n" +
+	`            [mp4a] Size=90 DataReferenceIndex=1 EntryVersion=0 ChannelCount=2 SampleSize=16 PreDefined=0 SampleRate=44100` + "\n" +
 	`              [esds] Size=54 ... (use "-full esds" to show all)` + "\n" +
 	`          [stts] Size=48 ... (use "-full stts" to show all)` + "\n" +
 	`          [stsc] Size=100 ... (use "-full stsc" to show all)` + "\n" +
@@ -160,7 +160,7 @@ var sampleMP4OutputFullMvhdLoci = "" +
 	`            [url ] Size=12 Version=0 Flags=0x000001` + "\n" +
 	`        [stbl] Size=564` + "\n" +
 	`          [stsd] Size=106 Version=0 Flags=0x000000 EntryCount=1` + "\n" +
-	`            [mp4a] Size=90 DataReferenceIndex=1 EntryVersion=0 ChannelCount=2 SampleSize=16 PreDefined=0 SampleRate=2890137600` + "\n" +
+	`            [mp4a] Size=90 DataReferenceIndex=1 EntryVersion=0 ChannelCount=2 SampleSize=16 PreDefined=0 SampleRate=44100` + "\n" +
 	`              [esds] Size=54 ... (use "-full esds" to show all)` + "\n" +
 	`          [stts] Size=48 ... (use "-full stts" to show all)` + "\n" +
 	`          [stsc] Size=100 ... (use "-full stsc" to show all)` + "\n" +
@@ -219,7 +219,7 @@ var sampleMP4OutputOffset = "" +
 	`            [url ] Offset=7569 Size=12 Version=0 Flags=0x000001` + "\n" +
 	`        [stbl] Offset=7581 Size=564` + "\n" +
 	`          [stsd] Offset=7589 Size=106 Version=0 Flags=0x000000 EntryCount=1` + "\n" +
-	`            [mp4a] Offset=7605 Size=90 DataReferenceIndex=1 EntryVersion=0 ChannelCount=2 SampleSize=16 PreDefined=0 SampleRate=2890137600` + "\n" +
+	`            [mp4a] Offset=7605 Size=90 DataReferenceIndex=1 EntryVersion=0 ChannelCount=2 SampleSize=16 PreDefined=0 SampleRate=44100` + "\n" +
 	`              [esds] Offset=7641 Size=54 ... (use "-full esds" to show all)` + "\n" +
 	`          [stts] Offset=7695 Size=48 ... (use "-full stts" to show all)` + "\n" +
 	`          [stsc] Offset=7743 Size=100 ... (use "-full stsc" to show all)` + "\n" +
@@ -278,7 +278,7 @@ var sampleMP4OutputHex = "" +
 	`            [url ] Size=0xc Version=0 Flags=0x000001` + "\n" +
 	`        [stbl] Size=0x234` + "\n" +
 	`          [stsd] Size=0x6a Version=0 Flags=0x000000 EntryCount=1` + "\n" +
-	`            [mp4a] Size=0x5a DataReferenceIndex=1 EntryVersion=0 ChannelCount=2 SampleSize=16 PreDefined=0 SampleRate=2890137600` + "\n" +
+	`            [mp4a] Size=0x5a DataReferenceIndex=1 EntryVersion=0 ChannelCount=2 SampleSize=16 PreDefined=0 SampleRate=44100` + "\n" +
 	`              [esds] Size=0x36 ... (use "-full esds" to show all)` + "\n" +
 	`          [stts] Size=0x30 ... (use "-full stts" to show all)` + "\n" +
 	`          [stsc] Size=0x64 ... (use "-full stsc" to show all)` + "\n" +

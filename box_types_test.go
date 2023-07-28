@@ -1389,7 +1389,7 @@ func TestBoxTypes(t *testing.T) {
 				`ChannelCount=9029 ` +
 				`SampleSize=17767 ` +
 				`PreDefined=26505 ` +
-				`SampleRate=19088743`,
+				`SampleRate=291.27110`,
 		},
 		{
 			name: "AudioSampleEntry",
@@ -1421,7 +1421,7 @@ func TestBoxTypes(t *testing.T) {
 				`ChannelCount=9029 ` +
 				`SampleSize=17767 ` +
 				`PreDefined=26505 ` +
-				`SampleRate=19088743`,
+				`SampleRate=291.27110`,
 		},
 		{
 			name: "AudioSampleEntry (QuickTime v0)",
@@ -1453,7 +1453,7 @@ func TestBoxTypes(t *testing.T) {
 				`ChannelCount=9029 ` +
 				`SampleSize=17767 ` +
 				`PreDefined=26505 ` +
-				`SampleRate=19088743`,
+				`SampleRate=291.27110`,
 			ctx: Context{IsQuickTimeCompatible: true},
 		},
 		{
@@ -1488,7 +1488,7 @@ func TestBoxTypes(t *testing.T) {
 				`ChannelCount=9029 ` +
 				`SampleSize=17767 ` +
 				`PreDefined=26505 ` +
-				`SampleRate=19088743 ` +
+				`SampleRate=291.27110 ` +
 				`QuickTimeData=[0x0, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]`,
 			ctx: Context{IsQuickTimeCompatible: true},
 		},
@@ -1530,7 +1530,7 @@ func TestBoxTypes(t *testing.T) {
 				`ChannelCount=9029 ` +
 				`SampleSize=17767 ` +
 				`PreDefined=26505 ` +
-				`SampleRate=19088743 ` +
+				`SampleRate=291.27110 ` +
 				`QuickTimeData=[` +
 				`0x0, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, ` +
 				`0x0, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, ` +
@@ -3362,6 +3362,10 @@ func TestFixedPoint(t *testing.T) {
 	assert.Equal(t, uint16(32), tkhd.GetWidthInt())
 	assert.Equal(t, float64(1516.171875), tkhd.GetHeight())
 	assert.Equal(t, uint16(1516), tkhd.GetHeightInt())
+
+	ase := AudioSampleEntry{SampleRate: 0x205800}
+	assert.Equal(t, float64(32.34375), ase.GetSampleRate())
+	assert.Equal(t, uint16(32), ase.GetSampleRateInt())
 }
 
 func TestGetters(t *testing.T) {
