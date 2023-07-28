@@ -1608,7 +1608,7 @@ type AudioSampleEntry struct {
 	SampleSize    uint16    `mp4:"4,size=16,opt=dynamic"`
 	PreDefined    uint16    `mp4:"5,size=16,opt=dynamic"`
 	Reserved2     uint16    `mp4:"6,size=16,opt=dynamic,const=0"`
-	SampleRate    uint32    `mp4:"7,size=32,opt=dynamic"`
+	SampleRate    uint32    `mp4:"7,size=32,opt=dynamic"` // fixed-point 16.16
 	QuickTimeData []byte    `mp4:"8,size=8,opt=dynamic,len=dynamic"`
 }
 
@@ -1633,6 +1633,16 @@ func (ase *AudioSampleEntry) GetFieldLength(name string, ctx Context) uint {
 		}
 	}
 	return 0
+}
+
+// StringifyField returns field value as string
+func (ase *AudioSampleEntry) StringifyField(name string, indent string, depth int, ctx Context) (string, bool) {
+	switch name {
+	case "SampleRate":
+		return util.FormatUnsignedFixedFloat1616(ase.SampleRate), true
+	default:
+		return "", false
+	}
 }
 
 const (
