@@ -18,7 +18,7 @@ func TestPsshdump(t *testing.T) {
 	}{
 		{
 			name: "sample_init.encv.mp4",
-			file: "../../_examples/sample_init.encv.mp4",
+			file: "../../../../testdata/sample_init.encv.mp4",
 			wants: "0:\n" +
 				"  offset: 1307\n" +
 				"  size: 52\n" +
@@ -31,7 +31,7 @@ func TestPsshdump(t *testing.T) {
 		},
 		{
 			name: "sample_init.encv.mp4",
-			file: "../../_examples/sample_init.enca.mp4",
+			file: "../../../../testdata/sample_init.enca.mp4",
 			wants: "0:\n" +
 				"  offset: 1307\n" +
 				"  size: 52\n" +

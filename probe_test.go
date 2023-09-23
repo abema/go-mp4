@@ -9,7 +9,7 @@ import (
 )
 
 func TestProbe(t *testing.T) {
-	f, err := os.Open("./_examples/sample.mp4")
+	f, err := os.Open("./testdata/sample.mp4")
 	require.NoError(t, err)
 	defer f.Close()
 
@@ -75,7 +75,7 @@ func TestProbe(t *testing.T) {
 }
 
 func TestProbeEncryptedVideo(t *testing.T) {
-	f, err := os.Open("./_examples/sample_init.encv.mp4")
+	f, err := os.Open("./testdata/sample_init.encv.mp4")
 	require.NoError(t, err)
 	defer f.Close()
 
@@ -94,7 +94,7 @@ func TestProbeEncryptedVideo(t *testing.T) {
 }
 
 func TestProbeEncryptedAudio(t *testing.T) {
-	f, err := os.Open("./_examples/sample_init.enca.mp4")
+	f, err := os.Open("./testdata/sample_init.enca.mp4")
 	require.NoError(t, err)
 	defer f.Close()
 
@@ -111,7 +111,7 @@ func TestProbeEncryptedAudio(t *testing.T) {
 }
 
 func TestProbeWithFMP4(t *testing.T) {
-	f, err := os.Open("./_examples/sample_fragmented.mp4")
+	f, err := os.Open("./testdata/sample_fragmented.mp4")
 	require.NoError(t, err)
 	defer f.Close()
 
@@ -165,7 +165,7 @@ func TestProbeWithFMP4(t *testing.T) {
 }
 
 func TestProbeFra(t *testing.T) {
-	f, err := os.Open("./_examples/sample_fragmented.mp4")
+	f, err := os.Open("./testdata/sample_fragmented.mp4")
 	require.NoError(t, err)
 	defer f.Close()
 

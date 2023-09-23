@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/abema/go-mp4"
-	"github.com/abema/go-mp4/mp4tool/util"
+	"github.com/abema/go-mp4/cmd/mp4tool/internal/util"
 	"github.com/sunfish-shogi/bufseekio"
 )
 

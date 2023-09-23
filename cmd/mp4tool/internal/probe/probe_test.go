@@ -18,18 +18,18 @@ func TestProbe(t *testing.T) {
 	}{
 		{
 			name:  "sample.mp4 no-options",
-			file:  "../../_examples/sample.mp4",
+			file:  "../../../../testdata/sample.mp4",
 			wants: sampleMP4JSONOutput,
 		},
 		{
 			name:    "sample.mp4 format-json",
-			file:    "../../_examples/sample.mp4",
+			file:    "../../../../testdata/sample.mp4",
 			options: []string{"-format", "json"},
 			wants:   sampleMP4JSONOutput,
 		},
 		{
 			name:    "sample.mp4 format-json",
-			file:    "../../_examples/sample.mp4",
+			file:    "../../../../testdata/sample.mp4",
 			options: []string{"-format", "yaml"},
 			wants:   sampleMP4YamlOutput,
 		},

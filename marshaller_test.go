@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/abema/go-mp4/bitio"
+	"github.com/abema/go-mp4/internal/bitio"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

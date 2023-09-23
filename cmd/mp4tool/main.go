@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/abema/go-mp4/mp4tool/divide"
-	"github.com/abema/go-mp4/mp4tool/dump"
-	"github.com/abema/go-mp4/mp4tool/edit"
-	"github.com/abema/go-mp4/mp4tool/extract"
-	"github.com/abema/go-mp4/mp4tool/probe"
-	"github.com/abema/go-mp4/mp4tool/psshdump"
+	"github.com/abema/go-mp4/cmd/mp4tool/internal/divide"
+	"github.com/abema/go-mp4/cmd/mp4tool/internal/dump"
+	"github.com/abema/go-mp4/cmd/mp4tool/internal/edit"
+	"github.com/abema/go-mp4/cmd/mp4tool/internal/extract"
+	"github.com/abema/go-mp4/cmd/mp4tool/internal/probe"
+	"github.com/abema/go-mp4/cmd/mp4tool/internal/psshdump"
 )
 
 func main() {
