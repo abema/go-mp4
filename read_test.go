@@ -10,7 +10,7 @@ import (
 )
 
 func TestReadBoxStructure(t *testing.T) {
-	f, err := os.Open("./_examples/sample.mp4")
+	f, err := os.Open("./testdata/sample.mp4")
 	require.NoError(t, err)
 	defer f.Close()
 
@@ -74,7 +74,7 @@ func TestReadBoxStructure(t *testing.T) {
 	assert.Equal(t, 57, n)
 }
 
-// > mp4tool dump _examples/sample.mp4 | cat -n
+// > mp4tool dump testdata/sample.mp4 | cat -n
 //  1	[ftyp] Size=32 MajorBrand="isom" MinorVersion=512 CompatibleBrands=[{CompatibleBrand="isom"}, {CompatibleBrand="iso2"}, {CompatibleBrand="avc1"}, {CompatibleBrand="mp41"}]
 //  2	[free] Size=8 Data=[...] (use "-full free" to show all)
 //  3	[mdat] Size=6402 Data=[...] (use "-full mdat" to show all)
@@ -134,7 +134,7 @@ func TestReadBoxStructure(t *testing.T) {
 // 57	    [loci] (unsupported box type) Size=35 Data=[...] (use "-full loci" to show all)
 
 func TestReadBoxStructureQT(t *testing.T) {
-	f, err := os.Open("./_examples/sample_qt.mp4")
+	f, err := os.Open("./testdata/sample_qt.mp4")
 	require.NoError(t, err)
 	defer f.Close()
 

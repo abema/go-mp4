@@ -103,7 +103,7 @@ func TestExtractBoxWithPayload(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.name, func(t *testing.T) {
-			f, err := os.Open("./_examples/sample.mp4")
+			f, err := os.Open("./testdata/sample.mp4")
 			require.NoError(t, err)
 			defer f.Close()
 
@@ -166,7 +166,7 @@ func TestExtractBox(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.name, func(t *testing.T) {
-			f, err := os.Open("./_examples/sample.mp4")
+			f, err := os.Open("./testdata/sample.mp4")
 			require.NoError(t, err)
 			defer f.Close()
 
@@ -234,7 +234,7 @@ func TestExtractBoxes(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.name, func(t *testing.T) {
-			f, err := os.Open("./_examples/sample.mp4")
+			f, err := os.Open("./testdata/sample.mp4")
 			require.NoError(t, err)
 			defer f.Close()
 
@@ -251,7 +251,7 @@ func TestExtractBoxes(t *testing.T) {
 }
 
 func TestExtractDescendantBox(t *testing.T) {
-	f, err := os.Open("./_examples/sample.mp4")
+	f, err := os.Open("./testdata/sample.mp4")
 	require.NoError(t, err)
 	defer f.Close()
 

@@ -18,24 +18,24 @@ func TestDump(t *testing.T) {
 	}{
 		{
 			name:  "sample.mp4 no-options",
-			file:  "../../_examples/sample.mp4",
+			file:  "../../../../testdata/sample.mp4",
 			wants: sampleMP4Output,
 		},
 		{
 			name:    "sample.mp4 with -full mvhd,loci option",
-			file:    "../../_examples/sample.mp4",
+			file:    "../../../../testdata/sample.mp4",
 			options: []string{"-full", "mvhd,loci"},
 			wants:   sampleMP4OutputFullMvhdLoci,
 		},
 		{
 			name:    "sample.mp4 with -offset option",
-			file:    "../../_examples/sample.mp4",
+			file:    "../../../../testdata/sample.mp4",
 			options: []string{"-offset"},
 			wants:   sampleMP4OutputOffset,
 		},
 		{
 			name:    "sample.mp4 with -hex option",
-			file:    "../../_examples/sample.mp4",
+			file:    "../../../../testdata/sample.mp4",
 			options: []string{"-hex"},
 			wants:   sampleMP4OutputHex,
 		},

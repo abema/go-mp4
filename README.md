@@ -135,7 +135,7 @@ If you should reduce Read function calls, you can wrap the io.ReadSeeker by [buf
 Install mp4tool as follows:
 
 ```sh
-go install github.com/abema/go-mp4/mp4tool@latest
+go install github.com/abema/go-mp4/cmd/mp4tool@latest
 
 mp4tool -help
 ```
