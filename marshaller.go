@@ -13,6 +13,7 @@ import (
 
 const (
 	anyVersion = math.MaxUint8
+	maxFieldLength = 100 * 1024
 )
 
 var ErrUnsupportedBoxVersion = errors.New("unsupported box version")
@@ -417,7 +418,7 @@ func (u *unmarshaller) unmarshalSlice(v reflect.Value, fi *fieldInstance) error 
 		}
 	}
 
-	if length > math.MaxInt32 {
+	if length > maxFieldLength {
 		return fmt.Errorf("out of memory: requestedSize=%d", length)
 	}
 

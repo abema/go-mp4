@@ -638,6 +638,10 @@ func (hdlr *Hdlr) OnReadName(r bitio.ReadSeeker, leftBits uint64, ctx Context) (
 		return 0, true, nil
 	}
 
+	if size > maxFieldLength {
+		return 0, false, fmt.Errorf("out of memory: requestedSize=%d", size)
+	}
+
 	buf := make([]byte, size)
 	if _, err := io.ReadFull(r, buf); err != nil {
 		return 0, false, err

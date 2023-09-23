@@ -50,7 +50,7 @@ func readBoxStructureFromInternal(r io.ReadSeeker, bi *BoxInfo, path BoxPath, ha
 		return nil, err
 	}
 
-	// check comatible-brands
+	// check compatible-brands
 	if len(path) == 0 && bi.Type == BoxTypeFtyp() {
 		var ftyp Ftyp
 		if _, err := Unmarshal(r, bi.Size-bi.HeaderSize, &ftyp, bi.Context); err != nil {
