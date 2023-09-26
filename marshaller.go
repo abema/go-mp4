@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	anyVersion = math.MaxUint8
+	anyVersion              = math.MaxUint8
+	maxInitialSliceCapacity = 100 * 1024
 )
 
 var ErrUnsupportedBoxVersion = errors.New("unsupported box version")
@@ -423,7 +424,11 @@ func (u *unmarshaller) unmarshalSlice(v reflect.Value, fi *fieldInstance) error 
 
 	if fi.size != 0 && fi.size%8 == 0 && u.rbits%8 == 0 && elemType.Kind() == reflect.Uint8 && fi.size == 8 {
 		totalSize := length * uint64(fi.size) / 8
-		buf := bytes.NewBuffer(make([]byte, 0, totalSize))
+		capacity := totalSize
+		if u.dst.GetType() != BoxTypeMdat() && capacity > maxInitialSliceCapacity {
+			capacity = maxInitialSliceCapacity
+		}
+		buf := bytes.NewBuffer(make([]byte, 0, capacity))
 		if _, err := io.CopyN(buf, u.reader, int64(totalSize)); err != nil {
 			return err
 		}
