@@ -422,7 +422,7 @@ func (u *unmarshaller) unmarshalSlice(v reflect.Value, fi *fieldInstance) error 
 		return fmt.Errorf("out of memory: requestedSize=%d", length)
 	}
 
-	if fi.size != 0 && fi.size%8 == 0 && u.rbits%8 == 0 && elemType.Kind() == reflect.Uint8 && fi.size == 8 {
+	if u.rbits%8 == 0 && elemType.Kind() == reflect.Uint8 && fi.size == 8 {
 		totalSize := length * uint64(fi.size) / 8
 		capacity := totalSize
 		if u.dst.GetType() != BoxTypeMdat() && capacity > maxInitialSliceCapacity {
