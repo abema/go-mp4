@@ -637,8 +637,9 @@ func (hdlr *Hdlr) OnReadName(r bitio.ReadSeeker, leftBits uint64, ctx Context) (
 		hdlr.Name = ""
 		return 0, true, nil
 	}
-	if size > 1024 {
-		return 0, false, errors.New("too large hdlr box")
+
+	if !readerHasSize(r, size) {
+		return 0, false, fmt.Errorf("not enough bits")
 	}
 
 	buf := make([]byte, size)
