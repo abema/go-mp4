@@ -228,3 +228,13 @@ func TestReadBoxStructureQT(t *testing.T) {
 // 47	          [stsc] Size=28 Version=0 Flags=0x000000 EntryCount=1 Entries=[{FirstChunk=1 SamplesPerChunk=1 SampleDescriptionIndex=1}]
 // 48	          [stsz] Size=111852 ... (use "-full stsz" to show all)
 // 49	          [stco] Size=111848 ... (use "-full stco" to show all)
+
+// this used to cause an infinite loop.
+func TestReadBoxStructureZeroSize(t *testing.T) {
+	b := []byte("\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01")
+
+	_, err := ReadBoxStructure(bytes.NewReader(b), func(h *ReadHandle) (interface{}, error) {
+		return nil, nil
+	})
+	require.Error(t, err)
+}
