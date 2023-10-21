@@ -9,6 +9,11 @@ go-mp4
 go-mp4 is Go library and CLI tool which provide low-level I/O interfaces of MP4.
 This library supports you to parse or build any MP4 boxes(atoms) directly.
 
+go-mp4 provides very flexible interfaces for reading boxes.
+If you want to read only specific parts of MP4 file, this library extracts those boxes via io.ReadSeeker interface.
+
+On the other hand, this library is not suitable for complex data conversions.
+
 ## Integration with your Go application
 
 ### Reading
