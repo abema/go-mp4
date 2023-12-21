@@ -176,7 +176,8 @@ func divide(inputFilePath, outputDir string) error {
 			h.BoxInfo.Type == mp4.BoxTypeMvhd() ||
 			h.BoxInfo.Type == mp4.BoxTypeTrak() ||
 			h.BoxInfo.Type == mp4.BoxTypeMvex() ||
-			h.BoxInfo.Type == mp4.BoxTypeUdta() {
+			h.BoxInfo.Type == mp4.BoxTypeUdta() ||
+			h.BoxInfo.Type == mp4.BoxTypeSidx() {
 
 			var writeAll bool
 			var trackID uint32
