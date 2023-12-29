@@ -189,12 +189,12 @@ func TestBoxTypesMetadata(t *testing.T) {
 				Entries: []Key{
 					{
 						KeySize:      27,
-						KeyNamespace: []byte("mtda"),
+						KeyNamespace: []byte("mdta"),
 						KeyValue:     []byte("com.android.version"),
 					},
 					{
 						KeySize:      25,
-						KeyNamespace: []byte("mtda"),
+						KeyNamespace: []byte("mdta"),
 						KeyValue:     []byte("com.android.model"),
 					},
 				},
@@ -205,13 +205,13 @@ func TestBoxTypesMetadata(t *testing.T) {
 				0x0, 0x0, 0x0, // Flags
 				0x0, 0x0, 0x0, 0x2, // entry count
 				0x0, 0x0, 0x0, 0x1b, // entry 1 keysize
-				0x6d, 0x74, 0x64, 0x61, // entry 1 key namespace
+				0x6d, 0x64, 0x74, 0x61, // entry 1 key namespace
 				0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x6e, 0x64, 0x72, 0x6f, 0x69, 0x64, 0x2e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, // entry 1 key value
 				0x0, 0x0, 0x0, 0x19, // entry 2 keysize
-				0x6d, 0x74, 0x64, 0x61, // entry 2 key namespace
+				0x6d, 0x64, 0x74, 0x61, // entry 2 key namespace
 				0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x6e, 0x64, 0x72, 0x6f, 0x69, 0x64, 0x2e, 0x6d, 0x6f, 0x64, 0x65, 0x6c, // entry 2 key value
 			},
-			str: `Version=0 Flags=0x000000 EntryCount=2 Entries=[{KeySize=27 KeyNamespace="mtda" KeyValue="com.android.version"}, {KeySize=25 KeyNamespace="mtda" KeyValue="com.android.model"}]`,
+			str: `Version=0 Flags=0x000000 EntryCount=2 Entries=[{KeySize=27 KeyNamespace="mdta" KeyValue="com.android.version"}, {KeySize=25 KeyNamespace="mdta" KeyValue="com.android.model"}]`,
 			ctx: Context{},
 		},
 	}
