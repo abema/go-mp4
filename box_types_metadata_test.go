@@ -160,6 +160,60 @@ func TestBoxTypesMetadata(t *testing.T) {
 			str: `Data=".foo"`,
 			ctx: Context{UnderIlstFreeMeta: true},
 		},
+		{
+			name: "ilst numbered item",
+			src: &Item{
+				AnyTypeBox: AnyTypeBox{Type: Uint32ToBoxType(1)},
+				Version:    0,
+				Flags:      [3]byte{'0'},
+				ItemName:   []byte("data"),
+				Data:       Data{DataType: 0, DataLang: 0x12345678, Data: []byte("foo")}},
+			dst: &Item{
+				AnyTypeBox: AnyTypeBox{Type: Uint32ToBoxType(1)},
+			},
+			bin: []byte{
+				0x00,            // Version
+				0x30, 0x00, 0x0, // Flags
+				0x64, 0x61, 0x74, 0x61, // Item Name
+				0x0, 0x0, 0x0, 0x0, // data type
+				0x12, 0x34, 0x56, 0x78, // data lang
+				0x66, 0x6f, 0x6f, // data
+			},
+			str: `Version=0 Flags=0x000000 ItemName="data" Data={DataType=BINARY DataLang=305419896 Data=[0x66, 0x6f, 0x6f]}`,
+			ctx: Context{UnderIlst: true},
+		},
+		{
+			name: "keys",
+			src: &Keys{
+				EntryCount: 2,
+				Entries: []Key{
+					{
+						KeySize:      27,
+						KeyNamespace: []byte("mtda"),
+						KeyValue:     []byte("com.android.version"),
+					},
+					{
+						KeySize:      25,
+						KeyNamespace: []byte("mtda"),
+						KeyValue:     []byte("com.android.model"),
+					},
+				},
+			},
+			dst: &Keys{},
+			bin: []byte{
+				0x0,           // Version
+				0x0, 0x0, 0x0, // Flags
+				0x0, 0x0, 0x0, 0x2, // entry count
+				0x0, 0x0, 0x0, 0x1b, // entry 1 keysize
+				0x6d, 0x74, 0x64, 0x61, // entry 1 key namespace
+				0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x6e, 0x64, 0x72, 0x6f, 0x69, 0x64, 0x2e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, // entry 1 key value
+				0x0, 0x0, 0x0, 0x19, // entry 2 keysize
+				0x6d, 0x74, 0x64, 0x61, // entry 2 key namespace
+				0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x6e, 0x64, 0x72, 0x6f, 0x69, 0x64, 0x2e, 0x6d, 0x6f, 0x64, 0x65, 0x6c, // entry 2 key value
+			},
+			str: `Version=0 Flags=0x000000 EntryCount=2 Entries=[{KeySize=27 KeyNamespace="mtda" KeyValue="com.android.version"}, {KeySize=25 KeyNamespace="mtda" KeyValue="com.android.model"}]`,
+			ctx: Context{},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -75,6 +75,12 @@ func init() {
 	for _, bt := range ilstMetaBoxTypes {
 		AddAnyTypeBoxDefEx(&IlstMetaContainer{}, bt, isIlstMetaContainer)
 	}
+	// NOTE: Theoretically the number of keys can go up to 0xFFFFFFFF but
+	// we avoid initializing that many keys BoxType atoms. Instead we
+	// handle up to 1024 keys
+	for i := uint32(0); i < 1024; i++ {
+		AddAnyTypeBoxDefEx(&Item{}, Uint32ToBoxType(i), isIlstMetaContainer)
+	}
 	AddAnyTypeBoxDefEx(&StringData{}, StrToBoxType("mean"), isUnderIlstFreeFormat)
 	AddAnyTypeBoxDefEx(&StringData{}, StrToBoxType("name"), isUnderIlstFreeFormat)
 }
@@ -107,11 +113,12 @@ const (
 	DataTypeFloat64BigEndian   = 23
 )
 
+// https://developer.apple.com/documentation/quicktime-file-format/value_atom
 type Data struct {
 	Box
-	DataType uint32 `mp4:"0,size=32"`
-	DataLang uint32 `mp4:"1,size=32"`
-	Data     []byte `mp4:"2,size=8"`
+	DataType uint32 `mp4:"1,size=32"`
+	DataLang uint32 `mp4:"2,size=32"`
+	Data     []byte `mp4:"3,size=8"`
 }
 
 // GetType returns the BoxType
@@ -167,6 +174,85 @@ func (sd *StringData) StringifyField(name string, indent string, depth int, ctx 
 	return "", false
 }
 
+// Item is a item under an item list
+// https://developer.apple.com/documentation/quicktime-file-format/metadata_item_list_atom/item_list
+type Item struct {
+	AnyTypeBox
+	Version  uint8   `mp4:"0,size=8"`
+	Flags    [3]byte `mp4:"1,size=8"`
+	ItemName []byte  `mp4:"2,size=8,len=4"`
+	Data     Data    `mp4:"3"`
+}
+
+// StringifyField returns field value as string
+func (i *Item) StringifyField(name string, indent string, depth int, ctx Context) (string, bool) {
+	switch name {
+	case "ItemName":
+		return fmt.Sprintf("\"%s\"", util.EscapeUnprintables(string(i.ItemName))), true
+	}
+	return "", false
+}
+
 func isUnderIlstFreeFormat(ctx Context) bool {
 	return ctx.UnderIlstFreeMeta
+}
+
+func BoxTypeKeys() BoxType { return StrToBoxType("keys") }
+
+func init() {
+	AddBoxDef(&Keys{})
+}
+
+/*************************** keys ****************************/
+
+// Keys is the Keys Atom
+// https://developer.apple.com/documentation/quicktime-file-format/metadata_item_keys_atom
+type Keys struct {
+	FullBox    `mp4:"0,extend"`
+	EntryCount int32 `mp4:"1,size=32"`
+	Entries    []Key `mp4:"2,len=dynamic"`
+}
+
+// GetType implements the IBox interface and returns the BoxType
+func (*Keys) GetType() BoxType {
+	return BoxTypeKeys()
+}
+
+// GetFieldLength implements the ICustomFieldObject interface and returns the length of dynamic fields
+func (k *Keys) GetFieldLength(name string, ctx Context) uint {
+	switch name {
+	case "Entries":
+		return uint(k.EntryCount)
+	}
+	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=keys fieldName=%s", name))
+}
+
+// Key is a key value field in the Keys atom
+// https://developer.apple.com/documentation/quicktime-file-format/metadata_item_keys_atom/key_value_key_size-8
+type Key struct {
+	BaseCustomFieldObject
+	KeySize      int32  `mp4:"0,size=32"`
+	KeyNamespace []byte `mp4:"1,size=8,len=4"`
+	KeyValue     []byte `mp4:"2,size=8,len=dynamic"`
+}
+
+// GetFieldLength implements the ICustomFieldObject interface and returns the length of dynamic fields
+func (k *Key) GetFieldLength(name string, ctx Context) uint {
+	switch name {
+	case "KeyValue":
+		// sizeOf(KeySize)+sizeOf(KeyNamespace) = 8 bytes
+		return uint(k.KeySize) - 8
+	}
+	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=key fieldName=%s", name))
+}
+
+// StringifyField returns field value as string
+func (k *Key) StringifyField(name string, indent string, depth int, ctx Context) (string, bool) {
+	switch name {
+	case "KeyNamespace":
+		return fmt.Sprintf("\"%s\"", util.EscapeUnprintables(string(k.KeyNamespace))), true
+	case "KeyValue":
+		return fmt.Sprintf("\"%s\"", util.EscapeUnprintables(string(k.KeyValue))), true
+	}
+	return "", false
 }
