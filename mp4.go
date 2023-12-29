@@ -20,6 +20,7 @@ func StrToBoxType(code string) BoxType {
 	return BoxType{code[0], code[1], code[2], code[3]}
 }
 
+// Uint32ToBoxType returns a new BoxType from the provied uint32
 func Uint32ToBoxType(i uint32) BoxType {
 	b := make([]byte, 4)
 	binary.BigEndian.PutUint32(b, i)

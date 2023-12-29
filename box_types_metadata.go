@@ -76,7 +76,7 @@ func init() {
 		AddAnyTypeBoxDefEx(&IlstMetaContainer{}, bt, isIlstMetaContainer)
 	}
 	// NOTE: Theoretically the number of keys can go up to 0xFFFFFFFF but
-	// we avoid initializing that many keys BoxType atoms. Instead we
+	// we avoid initializing that many keys BoxTypes. Instead we
 	// handle up to 1024 keys
 	for i := uint32(0); i < 1024; i++ {
 		AddAnyTypeBoxDefEx(&Item{}, Uint32ToBoxType(i), isIlstMetaContainer)
@@ -113,6 +113,7 @@ const (
 	DataTypeFloat64BigEndian   = 23
 )
 
+// Data is a Value BoxType
 // https://developer.apple.com/documentation/quicktime-file-format/value_atom
 type Data struct {
 	Box
@@ -205,7 +206,7 @@ func init() {
 
 /*************************** keys ****************************/
 
-// Keys is the Keys Atom
+// Keys is the Keys BoxType
 // https://developer.apple.com/documentation/quicktime-file-format/metadata_item_keys_atom
 type Keys struct {
 	FullBox    `mp4:"0,extend"`
@@ -227,7 +228,7 @@ func (k *Keys) GetFieldLength(name string, ctx Context) uint {
 	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=keys fieldName=%s", name))
 }
 
-// Key is a key value field in the Keys atom
+// Key is a key value field in the Keys BoxType
 // https://developer.apple.com/documentation/quicktime-file-format/metadata_item_keys_atom/key_value_key_size-8
 type Key struct {
 	BaseCustomFieldObject
