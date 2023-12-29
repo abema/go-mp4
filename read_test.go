@@ -141,7 +141,6 @@ func TestReadBoxStructureQT(t *testing.T) {
 	var n int
 	_, err = ReadBoxStructure(f, func(h *ReadHandle) (interface{}, error) {
 		n++
-		t.Logf("n: %d, box: %s\n", n, h.BoxInfo.Type)
 		switch n {
 		case 51, 44: // unsupported
 			require.False(t, h.BoxInfo.IsSupportedType())
