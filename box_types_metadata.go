@@ -116,9 +116,9 @@ const (
 // https://developer.apple.com/documentation/quicktime-file-format/value_atom
 type Data struct {
 	Box
-	DataType uint32 `mp4:"1,size=32"`
-	DataLang uint32 `mp4:"2,size=32"`
-	Data     []byte `mp4:"3,size=8"`
+	DataType uint32 `mp4:"0,size=32"`
+	DataLang uint32 `mp4:"1,size=32"`
+	Data     []byte `mp4:"2,size=8"`
 }
 
 // GetType returns the BoxType
