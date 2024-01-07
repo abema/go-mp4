@@ -108,6 +108,17 @@ func (boxType BoxType) getBoxDef(ctx Context) *boxDef {
 			return boxDef
 		}
 	}
+	if ctx.UnderIlst {
+		typeID := int(binary.BigEndian.Uint32(boxType[:]))
+		if typeID >= 1 && typeID <= ctx.QuickTimeKeysMetaEntryCount {
+			payload := &Item{}
+			return &boxDef{
+				dataType: reflect.TypeOf(payload).Elem(),
+				isTarget: isIlstMetaContainer,
+				fields:   buildFields(payload),
+			}
+		}
+	}
 	return nil
 }
 

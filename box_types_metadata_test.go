@@ -180,7 +180,7 @@ func TestBoxTypesMetadata(t *testing.T) {
 				0x66, 0x6f, 0x6f, // data
 			},
 			str: `Version=0 Flags=0x000000 ItemName="data" Data={DataType=BINARY DataLang=305419896 Data=[0x66, 0x6f, 0x6f]}`,
-			ctx: Context{UnderIlst: true},
+			ctx: Context{UnderIlst: true, QuickTimeKeysMetaEntryCount: 1},
 		},
 		{
 			name: "keys",
