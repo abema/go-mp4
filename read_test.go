@@ -176,8 +176,11 @@ func TestReadBoxStructureQT(t *testing.T) {
 			assert.Equal(t, int32(1), box.(*Keys).EntryCount)
 			_, err = h.Expand()
 			require.NoError(t, err)
-		case 56:
+		case 56: // ilst number item
+			require.True(t, h.BoxInfo.IsSupportedType())
+			_, err = h.Expand()
 			require.Equal(t, Uint32ToBoxType(1), h.BoxInfo.Type)
+			require.NoError(t, err)
 		default: // otherwise
 			require.True(t, h.BoxInfo.IsSupportedType())
 			_, err = h.Expand()
