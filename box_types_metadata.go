@@ -1,10 +1,8 @@
 package mp4
 
 import (
-	"encoding/binary"
 	"fmt"
 
-	"github.com/abema/go-mp4/internal/bitio"
 	"github.com/abema/go-mp4/internal/util"
 )
 
@@ -224,20 +222,6 @@ func (k *Keys) GetFieldLength(name string, ctx Context) uint {
 		return uint(k.EntryCount)
 	}
 	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=keys fieldName=%s", name))
-}
-
-func (k *Keys) OnReadField(name string, r bitio.ReadSeeker, leftBits uint64, ctx Context) (rbits uint64, override bool, err error) {
-	switch name {
-	// Override EntryCount unmarshaller so we can set QuickTimeKeysMetaEntryCount on Context
-	case "EntryCount":
-		err = binary.Read(r, binary.BigEndian, &k.EntryCount)
-		ctx.QuickTimeKeysMetaEntryCount = int(k.EntryCount)
-		override = true
-		rbits += uint64(32)
-		return
-	default:
-		return
-	}
 }
 
 /*************************** key ****************************/
