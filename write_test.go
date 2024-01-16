@@ -3,7 +3,6 @@ package mp4
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"testing"
 
 	"gopkg.in/src-d/go-billy.v4/memfs"
@@ -110,7 +109,7 @@ func TestWriter(t *testing.T) {
 
 	_, err = output.Seek(0, io.SeekStart)
 	require.NoError(t, err)
-	bin, err := ioutil.ReadAll(output)
+	bin, err := io.ReadAll(output)
 	require.NoError(t, err)
 	assert.Equal(t, []byte{
 		// ftyp

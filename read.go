@@ -192,7 +192,7 @@ func readBoxStructure(r io.ReadSeeker, totalSize uint64, isRoot bool, path BoxPa
 	}
 
 	if totalSize != 0 && !ctx.IsQuickTimeCompatible {
-		return nil, errors.New("Unexpected EOF")
+		return nil, errors.New("unexpected EOF")
 	}
 
 	return vals, nil

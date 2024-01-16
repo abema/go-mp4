@@ -3,7 +3,6 @@ package mp4
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"testing"
 
 	"github.com/orcaman/writerseeker"
@@ -108,7 +107,7 @@ func TestWriteBoxInfo(t *testing.T) {
 			if !c.hasError {
 				require.NoError(t, err)
 				assert.Equal(t, c.expectedBI, bi)
-				b, err := ioutil.ReadAll(w.Reader())
+				b, err := io.ReadAll(w.Reader())
 				require.NoError(t, err)
 				assert.Equal(t, c.expectedBytes, b)
 			} else {

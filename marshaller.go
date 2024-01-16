@@ -33,11 +33,7 @@ func readerHasSize(reader bitio.ReadSeeker, size uint64) bool {
 	}
 
 	_, err = reader.Seek(pre, io.SeekStart)
-	if err != nil {
-		return false
-	}
-
-	return true
+	return err == nil
 }
 
 type marshaller struct {
@@ -128,8 +124,7 @@ func (m *marshaller) marshalStruct(v reflect.Value, fs []*field) error {
 func (m *marshaller) marshalArray(v reflect.Value, fi *fieldInstance) error {
 	size := v.Type().Size()
 	for i := 0; i < int(size)/int(v.Type().Elem().Size()); i++ {
-		var err error
-		err = m.marshal(v.Index(i), fi)
+		err := m.marshal(v.Index(i), fi)
 		if err != nil {
 			return err
 		}
@@ -414,8 +409,7 @@ func (u *unmarshaller) unmarshalStruct(v reflect.Value, fs []*field) error {
 func (u *unmarshaller) unmarshalArray(v reflect.Value, fi *fieldInstance) error {
 	size := v.Type().Size()
 	for i := 0; i < int(size)/int(v.Type().Elem().Size()); i++ {
-		var err error
-		err = u.unmarshal(v.Index(i), fi)
+		err := u.unmarshal(v.Index(i), fi)
 		if err != nil {
 			return err
 		}
