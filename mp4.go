@@ -1,6 +1,7 @@
 package mp4
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"reflect"
@@ -17,6 +18,13 @@ func StrToBoxType(code string) BoxType {
 		panic(fmt.Errorf("invalid box type id length: [%s]", code))
 	}
 	return BoxType{code[0], code[1], code[2], code[3]}
+}
+
+// Uint32ToBoxType returns a new BoxType from the provied uint32
+func Uint32ToBoxType(i uint32) BoxType {
+	b := make([]byte, 4)
+	binary.BigEndian.PutUint32(b, i)
+	return BoxType{b[0], b[1], b[2], b[3]}
 }
 
 func (boxType BoxType) String() string {
@@ -98,6 +106,17 @@ func (boxType BoxType) getBoxDef(ctx Context) *boxDef {
 		boxDef := &boxDefs[i]
 		if boxDef.isTarget == nil || boxDef.isTarget(ctx) {
 			return boxDef
+		}
+	}
+	if ctx.UnderIlst {
+		typeID := int(binary.BigEndian.Uint32(boxType[:]))
+		if typeID >= 1 && typeID <= ctx.QuickTimeKeysMetaEntryCount {
+			payload := &Item{}
+			return &boxDef{
+				dataType: reflect.TypeOf(payload).Elem(),
+				isTarget: isIlstMetaContainer,
+				fields:   buildFields(payload),
+			}
 		}
 	}
 	return nil

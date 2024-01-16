@@ -142,14 +142,14 @@ func TestReadBoxStructureQT(t *testing.T) {
 	_, err = ReadBoxStructure(f, func(h *ReadHandle) (interface{}, error) {
 		n++
 		switch n {
-		case 5, 45: // unsupported
+		case 51, 44: // unsupported
 			require.False(t, h.BoxInfo.IsSupportedType())
 			buf := bytes.NewBuffer(nil)
 			n, err := h.ReadData(buf)
 			require.NoError(t, err)
 			require.Equal(t, h.BoxInfo.Size-h.BoxInfo.HeaderSize, n)
 			assert.Len(t, buf.Bytes(), int(n))
-		case 40: // mp4a
+		case 39: // mp4a
 			require.True(t, h.BoxInfo.IsSupportedType())
 			require.Equal(t, StrToBoxType("mp4a"), h.BoxInfo.Type)
 			box, n, err := h.ReadPayload()
@@ -158,7 +158,7 @@ func TestReadBoxStructureQT(t *testing.T) {
 			assert.Equal(t, []byte{0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2}, box.(*AudioSampleEntry).QuickTimeData)
 			_, err = h.Expand()
 			require.NoError(t, err)
-		case 43: // mp4a
+		case 42: // mp4a
 			require.True(t, h.BoxInfo.IsSupportedType())
 			require.Equal(t, StrToBoxType("mp4a"), h.BoxInfo.Type)
 			box, n, err := h.ReadPayload()
@@ -166,6 +166,20 @@ func TestReadBoxStructureQT(t *testing.T) {
 			require.Equal(t, uint64(4), n)
 			assert.Equal(t, []byte{0x0, 0x0, 0x0, 0x0}, box.(*AudioSampleEntry).QuickTimeData)
 			_, err = h.Expand()
+			require.NoError(t, err)
+		case 54: // keys
+			require.True(t, h.BoxInfo.IsSupportedType())
+			require.Equal(t, StrToBoxType("keys"), h.BoxInfo.Type)
+			box, n, err := h.ReadPayload()
+			require.NoError(t, err)
+			require.Equal(t, uint64(35), n)
+			assert.Equal(t, int32(1), box.(*Keys).EntryCount)
+			_, err = h.Expand()
+			require.NoError(t, err)
+		case 56: // ilst number item
+			require.True(t, h.BoxInfo.IsSupportedType())
+			_, err = h.Expand()
+			require.Equal(t, Uint32ToBoxType(1), h.BoxInfo.Type)
 			require.NoError(t, err)
 		default: // otherwise
 			require.True(t, h.BoxInfo.IsSupportedType())
@@ -175,59 +189,66 @@ func TestReadBoxStructureQT(t *testing.T) {
 		return nil, nil
 	})
 	require.NoError(t, err)
-	assert.Equal(t, 49, n)
+	assert.Equal(t, 56, n)
 }
 
 // > mp4tool dump -full mp4a sample_qt.mp4 | cat -n
 //  1	[ftyp] Size=20 MajorBrand="qt  " MinorVersion=512 CompatibleBrands=[{CompatibleBrand="qt  "}]
 //  2	[free] Size=42 Data=[...] (use "-full free" to show all)
-//  3	[moov] Size=340232
-//  4	  [udta] Size=31
-//  5	    [(c)enc] (unsupported box type) Size=23 Data=[...] (use "-full (c)enc" to show all)
+//  3	[ftyp] Size=20 MajorBrand="qt  " MinorVersion=512 CompatibleBrands=[{CompatibleBrand="qt  "}]
+//  4	[free] Size=42 Data=[...] (use "-full free" to show all)
+//  5	[moov] Size=340357
 //  6	  [mvhd] Size=108 ... (use "-full mvhd" to show all)
 //  7	  [trak] Size=115889
 //  8	    [tkhd] Size=92 ... (use "-full tkhd" to show all)
 //  9	    [mdia] Size=115789
-// 10	      [mdhd] Size=32 Version=0 Flags=0x000000 CreationTimeV0=2082844800 ModificationTimeV0=2082844800 Timescale=24 DurationV0=14315 Language="```" PreDefined=0
+// 10	      [mdhd] Size=32 Version=0 Flags=0x000000 CreationTimeV0=2082844800 ModificationTimeV0=2082844800 Timescale=24 DurationV0=14315 Language="und" PreDefined=0
 // 11	      [hdlr] Size=45 Version=0 Flags=0x000000 PreDefined=1835560050 HandlerType="vide" Name="VideoHandler"
 // 12	      [minf] Size=115704
-// 13	        [hdlr] Size=44 Version=0 Flags=0x000000 PreDefined=1684565106 HandlerType="url " Name="DataHandler"
-// 14	        [vmhd] Size=20 Version=0 Flags=0x000001 Graphicsmode=0 Opcolor=[0, 0, 0]
-// 15	        [dinf] Size=36
-// 16	          [dref] Size=28 Version=0 Flags=0x000000 EntryCount=1
-// 17	            [url ] Size=12 Version=0 Flags=0x000001
-// 18	        [stbl] Size=115596
-// 19	          [stsd] Size=148 Version=0 Flags=0x000000 EntryCount=1
-// 20	            [avc1] Size=132 ... (use "-full avc1" to show all)
-// 21	              [avcC] Size=46 ... (use "-full avcC" to show all)
-// 22	          [stts] Size=24 Version=0 Flags=0x000000 EntryCount=1 Entries=[{SampleCount=14315 SampleDelta=1}]
-// 23	          [stss] Size=832 ... (use "-full stss" to show all)
-// 24	          [stsc] Size=28 Version=0 Flags=0x000000 EntryCount=1 Entries=[{FirstChunk=1 SamplesPerChunk=1 SampleDescriptionIndex=1}]
-// 25	          [stsz] Size=57280 ... (use "-full stsz" to show all)
-// 26	          [stco] Size=57276 ... (use "-full stco" to show all)
+// 13	        [vmhd] Size=20 Version=0 Flags=0x000001 Graphicsmode=0 Opcolor=[0, 0, 0]
+// 14	        [dinf] Size=36
+// 15	          [dref] Size=28 Version=0 Flags=0x000000 EntryCount=1
+// 16	            [url ] Size=12 Version=0 Flags=0x000001
+// 17	        [stbl] Size=115596
+// 18	          [stsd] Size=148 Version=0 Flags=0x000000 EntryCount=1
+// 19	            [avc1] Size=132 DataReferenceIndex=1 PreDefined=0 PreDefined2=[1179012432, 512, 512] Width=424 Height=240 Horizresolution=4718592 Vertresolution=4718592 FrameCount=1 Compressorname="libx264" Depth=24 PreDefined3=-1
+// 20	              [avcC] Size=46 ... (use "-full avcC" to show all)
+// 21	          [stts] Size=24 Version=0 Flags=0x000000 EntryCount=1 Entries=[{SampleCount=14315 SampleDelta=1}]
+// 22	          [stss] Size=832 ... (use "-full stss" to show all)
+// 23	          [stsc] Size=28 Version=0 Flags=0x000000 EntryCount=1 Entries=[{FirstChunk=1 SamplesPerChunk=1 SampleDescriptionIndex=1}]
+// 24	          [stsz] Size=57280 ... (use "-full stsz" to show all)
+// 25	          [stco] Size=57276 ... (use "-full stco" to show all)
+// 26	        [hdlr] Size=44 Version=0 Flags=0x000000 PreDefined=1684565106 HandlerType="url " Name="DataHandler"
 // 27	  [trak] Size=224196
 // 28	    [tkhd] Size=92 ... (use "-full tkhd" to show all)
 // 29	    [mdia] Size=224096
-// 30	      [mdhd] Size=32 Version=0 Flags=0x000000 CreationTimeV0=2082844800 ModificationTimeV0=2082844800 Timescale=48000 DurationV0=28628992 Language="```" PreDefined=0
+// 30	      [mdhd] Size=32 Version=0 Flags=0x000000 CreationTimeV0=2082844800 ModificationTimeV0=2082844800 Timescale=48000 DurationV0=28628992 Language="und" PreDefined=0
 // 31	      [hdlr] Size=45 Version=0 Flags=0x000000 PreDefined=1835560050 HandlerType="soun" Name="SoundHandler"
 // 32	      [minf] Size=224011
-// 33	        [hdlr] Size=44 Version=0 Flags=0x000000 PreDefined=1684565106 HandlerType="url " Name="DataHandler"
-// 34	        [smhd] Size=16 Version=0 Flags=0x000000 Balance=0
-// 35	        [dinf] Size=36
-// 36	          [dref] Size=28 Version=0 Flags=0x000000 EntryCount=1
-// 37	            [url ] Size=12 Version=0 Flags=0x000001
-// 38	        [stbl] Size=223907
-// 39	          [stsd] Size=147 Version=0 Flags=0x000000 EntryCount=1
-// 40	            [mp4a] Size=131 DataReferenceIndex=1 EntryVersion=1 ChannelCount=2 SampleSize=16 PreDefined=65534 SampleRate=3145728000 QuickTimeData=[0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2]
-// 41	              [wave] Size=79
-// 42	                [frma] Size=12 DataFormat="mp4a"
-// 43	                [mp4a] Size=12 QuickTimeData=[0x0, 0x0, 0x0, 0x0]
-// 44	                [esds] Size=39 ... (use "-full esds" to show all)
-// 45	                [0x00000000] (unsupported box type) Size=8 Data=[...] (use "-full 0x00000000" to show all)
-// 46	          [stts] Size=24 Version=0 Flags=0x000000 EntryCount=1 Entries=[{SampleCount=27958 SampleDelta=1024}]
-// 47	          [stsc] Size=28 Version=0 Flags=0x000000 EntryCount=1 Entries=[{FirstChunk=1 SamplesPerChunk=1 SampleDescriptionIndex=1}]
-// 48	          [stsz] Size=111852 ... (use "-full stsz" to show all)
-// 49	          [stco] Size=111848 ... (use "-full stco" to show all)
+// 33	        [smhd] Size=16 Version=0 Flags=0x000000 Balance=0
+// 34	        [dinf] Size=36
+// 35	          [dref] Size=28 Version=0 Flags=0x000000 EntryCount=1
+// 36	            [url ] Size=12 Version=0 Flags=0x000001
+// 37	        [stbl] Size=223907
+// 38	          [stsd] Size=147 Version=0 Flags=0x000000 EntryCount=1
+// 39	            [mp4a] Size=131 DataReferenceIndex=1 EntryVersion=1 ChannelCount=2 SampleSize=16 PreDefined=65534 SampleRate=48000 QuickTimeData=[0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2]
+// 40	              [wave] Size=79
+// 41	                [frma] Size=12 DataFormat="mp4a"
+// 42	                [mp4a] Size=12 QuickTimeData=[0x0, 0x0, 0x0, 0x0]
+// 43	                [esds] Size=39 ... (use "-full esds" to show all)
+// 44	                [0x00000000] (unsupported box type) Size=8 Data=[...] (use "-full 0x00000000" to show all)
+// 45	          [stts] Size=24 Version=0 Flags=0x000000 EntryCount=1 Entries=[{SampleCount=27958 SampleDelta=1024}]
+// 46	          [stsc] Size=28 Version=0 Flags=0x000000 EntryCount=1 Entries=[{FirstChunk=1 SamplesPerChunk=1 SampleDescriptionIndex=1}]
+// 47	          [stsz] Size=111852 ... (use "-full stsz" to show all)
+// 48	          [stco] Size=111848 ... (use "-full stco" to show all)
+// 49	        [hdlr] Size=44 Version=0 Flags=0x000000 PreDefined=1684565106 HandlerType="url " Name="DataHandler"
+// 50	  [udta] Size=156
+// 51	    [(c)enc] (unsupported box type) Size=23 Data=[...] (use "-full (c)enc" to show all)
+// 52	    [meta] Size=125 Version=0 Flags=0x000000
+// 53	      [hdlr] Size=33 Version=0 Flags=0x000000 PreDefined=0 HandlerType="mdta" Name=""
+// 54	      [keys] Size=43 Version=0 Flags=0x000000 EntryCount=1 Entries=[{KeySize=27 KeyNamespace="mdta" KeyValue="com.android.version"}]
+// 55	      [ilst] Size=37
+// 56	        [0x00000001] Size=29 Version=0 Flags=0x000000 ItemName="data" Data={DataType=UTF8 DataLang=0 Data="1.0.0"}
 
 // this used to cause an infinite loop.
 func TestReadBoxStructureZeroSize(t *testing.T) {
