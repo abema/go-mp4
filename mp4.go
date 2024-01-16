@@ -100,6 +100,8 @@ func AddAnyTypeBoxDefEx(payload IAnyType, boxType BoxType, isTarget func(Context
 	})
 }
 
+var itemBoxFields = buildFields(&Item{})
+
 func (boxType BoxType) getBoxDef(ctx Context) *boxDef {
 	boxDefs := boxMap[boxType]
 	for i := len(boxDefs) - 1; i >= 0; i-- {
@@ -111,11 +113,10 @@ func (boxType BoxType) getBoxDef(ctx Context) *boxDef {
 	if ctx.UnderIlst {
 		typeID := int(binary.BigEndian.Uint32(boxType[:]))
 		if typeID >= 1 && typeID <= ctx.QuickTimeKeysMetaEntryCount {
-			payload := &Item{}
 			return &boxDef{
-				dataType: reflect.TypeOf(payload).Elem(),
+				dataType: reflect.TypeOf(Item{}),
 				isTarget: isIlstMetaContainer,
-				fields:   buildFields(payload),
+				fields:   itemBoxFields,
 			}
 		}
 	}
