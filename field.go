@@ -2,6 +2,7 @@ package mp4
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"reflect"
 	"sort"
@@ -179,6 +180,9 @@ func buildField(fieldName string, tag string) *field {
 		if err != nil {
 			panic(err)
 		}
+		if ver > math.MaxUint8 {
+			panic("ver-tag must be <=255")
+		}
 		f.version = uint8(ver)
 	}
 
@@ -187,6 +191,9 @@ func buildField(fieldName string, tag string) *field {
 		ver, err := strconv.Atoi(val)
 		if err != nil {
 			panic(err)
+		}
+		if ver > math.MaxUint8 {
+			panic("nver-tag must be <=255")
 		}
 		f.nVersion = uint8(ver)
 	}

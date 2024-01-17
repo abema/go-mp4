@@ -1,7 +1,7 @@
 package extract
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 
@@ -46,7 +46,7 @@ func TestExtract(t *testing.T) {
 			os.Stdout = w
 			require.Zero(t, Main([]string{tc.boxType, tc.file}))
 			w.Close()
-			b, err := ioutil.ReadAll(r)
+			b, err := io.ReadAll(r)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedSize, len(b))
 			assert.Equal(t, tc.boxType, string(b[4:8]))

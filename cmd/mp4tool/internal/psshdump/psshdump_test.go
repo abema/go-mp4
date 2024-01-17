@@ -1,7 +1,7 @@
 package psshdump
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 
@@ -54,7 +54,7 @@ func TestPsshdump(t *testing.T) {
 			os.Stdout = w
 			Main(append(tc.options, tc.file))
 			w.Close()
-			b, err := ioutil.ReadAll(r)
+			b, err := io.ReadAll(r)
 			require.NoError(t, err)
 			assert.Equal(t, tc.wants, string(b))
 		})
