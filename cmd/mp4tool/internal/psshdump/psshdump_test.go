@@ -52,8 +52,10 @@ func TestPsshdump(t *testing.T) {
 				os.Stdout = stdout
 			}()
 			os.Stdout = w
-			Main(append(tc.options, tc.file))
-			w.Close()
+			go func() {
+				require.Zero(t, Main(append(tc.options, tc.file)))
+				w.Close()
+			}()
 			b, err := io.ReadAll(r)
 			require.NoError(t, err)
 			assert.Equal(t, tc.wants, string(b))
