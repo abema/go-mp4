@@ -18,7 +18,7 @@ On the other hand, this library is not suitable for complex data conversions.
 
 ### Reading
 
-You can parse MP4 file as follows:
+You can visit to boxes(atoms) included in MP4 file by depth-first, using [ReadBoxStructure](https://pkg.go.dev/github.com/abema/go-mp4#ReadBoxStructure) or [ReadBoxStructureFromInternal](https://pkg.go.dev/github.com/abema/go-mp4#ReadBoxStructureFromInternal).
 
 ```go
 // expand all boxes
@@ -49,6 +49,8 @@ _, err := mp4.ReadBoxStructure(file, func(h *mp4.ReadHandle) (interface{}, error
 	return nil, nil
 })
 ```
+
+[ExtractBox](https://pkg.go.dev/github.com/abema/go-mp4#ExtractBox), [ExtractBoxes](https://pkg.go.dev/github.com/abema/go-mp4#ExtractBoxes), [ExtractBoxWithPayload](https://pkg.go.dev/github.com/abema/go-mp4#ExtractBoxWithPayload), [ExtractBoxesWithPayload](https://pkg.go.dev/github.com/abema/go-mp4#ExtractBoxesWithPayload), and [Probe](https://pkg.go.dev/github.com/abema/go-mp4#Probe) are wrapper functions of ReadBoxStructure.
 
 ```go
 // extract specific boxes
