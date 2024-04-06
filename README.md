@@ -18,7 +18,7 @@ On the other hand, this library is not suitable for complex data conversions.
 
 ### Reading
 
-You can visit to boxes(atoms) included in MP4 file by depth-first, using [ReadBoxStructure](https://pkg.go.dev/github.com/abema/go-mp4#ReadBoxStructure) or [ReadBoxStructureFromInternal](https://pkg.go.dev/github.com/abema/go-mp4#ReadBoxStructureFromInternal).
+Using [ReadBoxStructure](https://pkg.go.dev/github.com/abema/go-mp4#ReadBoxStructure) or [ReadBoxStructureFromInternal](https://pkg.go.dev/github.com/abema/go-mp4#ReadBoxStructureFromInternal), you can scan box(atom) tree by depth-first order.
 
 ```go
 // expand all boxes
