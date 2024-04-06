@@ -113,7 +113,7 @@ _, err = mp4.ReadBoxStructure(r, func(h *mp4.ReadHandle) (interface{}, error) {
 
 Please note that the above sample code doesn't work for some MP4 files.
 If your MP4 files include specific box types (ex. stco, mfra), you should update those when offsets of mdat box changed.
-Next sample code adds an metadata box and updates chunk offsets in scto boxes.
+Next sample code adds an metadata box and updates chunk offsets in stco boxes.
 
 [Sample Code: Insert Metadata and Update stco box](https://gist.github.com/sunfish-shogi/cccde016a38c66d32c07a0234368804e)
 
