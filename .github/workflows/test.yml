@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
-        go-version: [ "1.20", "1.21", ">=1.22" ]
+        go-version: [ "1.21", "1.22", ">=1.23" ]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
@@ -23,7 +23,7 @@ jobs:
     - run: go test "-coverprofile=coverage.txt" -covermode=atomic ./...
     - run: go install ./cmd/mp4tool
     - name: Upload Coverage Report
-      if: ${{ github.event_name == 'push' && matrix.os == 'ubuntu-latest' && matrix.go-version == '1.19' }}
+      if: ${{ github.event_name == 'push' && matrix.os == 'ubuntu-latest' && matrix.go-version == '1.22' }}
       env:
         COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
       run: |
