@@ -43,7 +43,13 @@ func dump(inputFilePath string) error {
 	for i := range bs {
 		pssh := bs[i].Payload.(*mp4.Pssh)
 
-		sysid, _ := pssh.StringifyField("SystemID", "", 0, bs[i].Info.Context)
+		var sysid string
+		for i, v := range pssh.SystemID {
+			sysid += fmt.Sprintf("%02x", v)
+			if i == 3 || i == 5 || i == 7 || i == 9 {
+				sysid += "-"
+			}
+		}
 
 		if _, err := bs[i].Info.SeekToStart(r); err != nil {
 			return err

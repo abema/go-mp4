@@ -24,7 +24,7 @@ func TestPsshdump(t *testing.T) {
 				"  size: 52\n" +
 				"  version: 1\n" +
 				"  flags: 0x000000\n" +
-				"  systemId: \n" +
+				"  systemId: 1077efec-c0b2-4d02-ace3-3c1e52e2fb4b\n" +
 				"  dataSize: 0\n" +
 				"  base64: \"AAAANHBzc2gBAAAAEHfv7MCyTQKs4zweUuL7SwAAAAEBI0VniavN7wEjRWeJq83vAAAAAA==\"\n" +
 				"\n",
@@ -37,7 +37,7 @@ func TestPsshdump(t *testing.T) {
 				"  size: 52\n" +
 				"  version: 1\n" +
 				"  flags: 0x000000\n" +
-				"  systemId: \n" +
+				"  systemId: 1077efec-c0b2-4d02-ace3-3c1e52e2fb4b\n" +
 				"  dataSize: 0\n" +
 				"  base64: \"AAAANHBzc2gBAAAAEHfv7MCyTQKs4zweUuL7SwAAAAEBI0VniavN7wEjRWeJq83vAAAAAA==\"\n" +
 				"\n",
