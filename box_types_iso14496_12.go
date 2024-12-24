@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/abema/go-mp4/internal/bitio"
 	"github.com/abema/go-mp4/internal/util"
@@ -1210,6 +1211,8 @@ func BoxTypeMp4a() BoxType { return StrToBoxType("mp4a") }
 func BoxTypeEnca() BoxType { return StrToBoxType("enca") }
 func BoxTypeAvcC() BoxType { return StrToBoxType("avcC") }
 func BoxTypePasp() BoxType { return StrToBoxType("pasp") }
+func BoxTypeStpp() BoxType { return StrToBoxType("stpp") }
+func BoxTypeSbtt() BoxType { return StrToBoxType("sbtt") }
 
 func init() {
 	AddAnyTypeBoxDef(&VisualSampleEntry{}, BoxTypeMp4v())
@@ -1221,6 +1224,8 @@ func init() {
 	AddAnyTypeBoxDef(&AudioSampleEntry{}, BoxTypeEnca())
 	AddAnyTypeBoxDef(&AVCDecoderConfiguration{}, BoxTypeAvcC())
 	AddAnyTypeBoxDef(&PixelAspectRatioBox{}, BoxTypePasp())
+	AddAnyTypeBoxDef(&XMLSubtitleSampleEntry{}, BoxTypeStpp())
+	AddAnyTypeBoxDef(&TextSubtitleSampleEntry{}, BoxTypeSbtt())
 }
 
 type SampleEntry struct {
@@ -1415,6 +1420,31 @@ type PixelAspectRatioBox struct {
 	AnyTypeBox
 	HSpacing uint32 `mp4:"0,size=32"`
 	VSpacing uint32 `mp4:"1,size=32"`
+}
+
+type XMLSubtitleSampleEntry struct {
+	SampleEntry        `mp4:"0,extend"`
+	Namespace          string `mp4:"1,string"` // space-separated list
+	SchemaLocation     string `mp4:"2,string"` // space-separated list, optional
+	AuxiliaryMIMETypes string `mp4:"3,string"` // space-separated list, optional
+}
+
+func (xse *XMLSubtitleSampleEntry) GetNamespaceList() []string {
+	return strings.Fields(xse.Namespace)
+}
+
+func (xse *XMLSubtitleSampleEntry) GetSchemaLocationList() []string {
+	return strings.Fields(xse.SchemaLocation)
+}
+
+func (xse *XMLSubtitleSampleEntry) GetAuxiliaryMIMETypesList() []string {
+	return strings.Fields(xse.AuxiliaryMIMETypes)
+}
+
+type TextSubtitleSampleEntry struct {
+	SampleEntry     `mp4:"0,extend"`
+	ContentEncoding string `mp4:"1,string"` // optional
+	MIMEFormat      string `mp4:"2,string"`
 }
 
 /*************************** sbgp ****************************/

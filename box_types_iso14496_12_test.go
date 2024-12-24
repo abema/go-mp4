@@ -1437,6 +1437,52 @@ func TestBoxTypesISO14496_12(t *testing.T) {
 			str: `HSpacing=19088743 VSpacing=591751049`,
 		},
 		{
+			name: "XMLSubtitleSampleEntry",
+			src: &XMLSubtitleSampleEntry{
+				SampleEntry: SampleEntry{
+					AnyTypeBox:         AnyTypeBox{Type: StrToBoxType("stpp")},
+					DataReferenceIndex: 0x1234,
+				},
+				Namespace:          "http://foo.org/bar http://baz.org/qux",
+				SchemaLocation:     "http://quux.org/corge",
+				AuxiliaryMIMETypes: "xxx/yyy",
+			},
+			dst: &XMLSubtitleSampleEntry{SampleEntry: SampleEntry{AnyTypeBox: AnyTypeBox{Type: StrToBoxType("stpp")}}},
+			bin: []byte{
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // reserved
+				0x12, 0x34, // data reference index
+				'h', 't', 't', 'p', ':', '/', '/', 'f', 'o', 'o', '.', 'o', 'r', 'g', '/', 'b', 'a', 'r', ' ',
+				'h', 't', 't', 'p', ':', '/', '/', 'b', 'a', 'z', '.', 'o', 'r', 'g', '/', 'q', 'u', 'x', 0, // namespace
+				'h', 't', 't', 'p', ':', '/', '/', 'q', 'u', 'u', 'x', '.', 'o', 'r', 'g', '/', 'c', 'o', 'r', 'g', 'e', 0, // schema location
+				'x', 'x', 'x', '/', 'y', 'y', 'y', 0, // auxiliary mime types
+			},
+			str: `DataReferenceIndex=4660 ` +
+				`Namespace="http://foo.org/bar http://baz.org/qux" ` +
+				`SchemaLocation="http://quux.org/corge" ` +
+				`AuxiliaryMIMETypes="xxx/yyy"`,
+		},
+		{
+			name: "TextSubtitleSampleEntry",
+			src: &TextSubtitleSampleEntry{
+				SampleEntry: SampleEntry{
+					AnyTypeBox:         AnyTypeBox{Type: StrToBoxType("sbtt")},
+					DataReferenceIndex: 0x1234,
+				},
+				ContentEncoding: "foo",
+				MIMEFormat:      "bar/baz",
+			},
+			dst: &TextSubtitleSampleEntry{SampleEntry: SampleEntry{AnyTypeBox: AnyTypeBox{Type: StrToBoxType("sbtt")}}},
+			bin: []byte{
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // reserved
+				0x12, 0x34, // data reference index
+				'f', 'o', 'o', 0, // content encoding
+				'b', 'a', 'r', '/', 'b', 'a', 'z', 0, // mime format
+			},
+			str: `DataReferenceIndex=4660 ` +
+				`ContentEncoding="foo" ` +
+				`MIMEFormat="bar/baz"`,
+		},
+		{
 			name: "sbgp: version 0",
 			src: &Sbgp{
 				FullBox: FullBox{
@@ -2935,207 +2981,242 @@ func TestFixedPoint(t *testing.T) {
 }
 
 func TestGetters(t *testing.T) {
-	cslg := &Cslg{
-		CompositionToDTSShiftV0:        math.MaxInt32,
-		LeastDecodeToDisplayDeltaV0:    math.MaxInt32 - 1,
-		GreatestDecodeToDisplayDeltaV0: math.MaxInt32 - 2,
-		CompositionStartTimeV0:         math.MaxInt32 - 3,
-		CompositionEndTimeV0:           math.MaxInt32 - 4,
-		CompositionToDTSShiftV1:        math.MaxInt64,
-		LeastDecodeToDisplayDeltaV1:    math.MaxInt64 - 1,
-		GreatestDecodeToDisplayDeltaV1: math.MaxInt64 - 2,
-		CompositionStartTimeV1:         math.MaxInt64 - 3,
-		CompositionEndTimeV1:           math.MaxInt64 - 4,
-	}
-	cslg.SetVersion(0)
-	assert.EqualValues(t, math.MaxInt32, cslg.GetCompositionToDTSShift())
-	assert.EqualValues(t, math.MaxInt32-1, cslg.GetLeastDecodeToDisplayDelta())
-	assert.EqualValues(t, math.MaxInt32-2, cslg.GetGreatestDecodeToDisplayDelta())
-	assert.EqualValues(t, math.MaxInt32-3, cslg.GetCompositionStartTime())
-	assert.EqualValues(t, math.MaxInt32-4, cslg.GetCompositionEndTime())
-	cslg.SetVersion(1)
-	assert.EqualValues(t, math.MaxInt64, cslg.GetCompositionToDTSShift())
-	assert.EqualValues(t, math.MaxInt64-1, cslg.GetLeastDecodeToDisplayDelta())
-	assert.EqualValues(t, math.MaxInt64-2, cslg.GetGreatestDecodeToDisplayDelta())
-	assert.EqualValues(t, math.MaxInt64-3, cslg.GetCompositionStartTime())
-	assert.EqualValues(t, math.MaxInt64-4, cslg.GetCompositionEndTime())
+	t.Run("cslg", func(t *testing.T) {
+		cslg := &Cslg{
+			CompositionToDTSShiftV0:        math.MaxInt32,
+			LeastDecodeToDisplayDeltaV0:    math.MaxInt32 - 1,
+			GreatestDecodeToDisplayDeltaV0: math.MaxInt32 - 2,
+			CompositionStartTimeV0:         math.MaxInt32 - 3,
+			CompositionEndTimeV0:           math.MaxInt32 - 4,
+			CompositionToDTSShiftV1:        math.MaxInt64,
+			LeastDecodeToDisplayDeltaV1:    math.MaxInt64 - 1,
+			GreatestDecodeToDisplayDeltaV1: math.MaxInt64 - 2,
+			CompositionStartTimeV1:         math.MaxInt64 - 3,
+			CompositionEndTimeV1:           math.MaxInt64 - 4,
+		}
+		cslg.SetVersion(0)
+		assert.EqualValues(t, math.MaxInt32, cslg.GetCompositionToDTSShift())
+		assert.EqualValues(t, math.MaxInt32-1, cslg.GetLeastDecodeToDisplayDelta())
+		assert.EqualValues(t, math.MaxInt32-2, cslg.GetGreatestDecodeToDisplayDelta())
+		assert.EqualValues(t, math.MaxInt32-3, cslg.GetCompositionStartTime())
+		assert.EqualValues(t, math.MaxInt32-4, cslg.GetCompositionEndTime())
+		cslg.SetVersion(1)
+		assert.EqualValues(t, math.MaxInt64, cslg.GetCompositionToDTSShift())
+		assert.EqualValues(t, math.MaxInt64-1, cslg.GetLeastDecodeToDisplayDelta())
+		assert.EqualValues(t, math.MaxInt64-2, cslg.GetGreatestDecodeToDisplayDelta())
+		assert.EqualValues(t, math.MaxInt64-3, cslg.GetCompositionStartTime())
+		assert.EqualValues(t, math.MaxInt64-4, cslg.GetCompositionEndTime())
+	})
 
-	ctts := &Ctts{
-		Entries: []CttsEntry{
-			{SampleOffsetV0: math.MaxUint32, SampleOffsetV1: math.MinInt32},
-			{SampleOffsetV0: math.MaxUint32 - 1, SampleOffsetV1: math.MinInt32 + 1},
-		},
-	}
-	ctts.SetVersion(0)
-	assert.EqualValues(t, math.MaxUint32, ctts.GetSampleOffset(0))
-	assert.EqualValues(t, math.MaxUint32-1, ctts.GetSampleOffset(1))
-	ctts.SetVersion(1)
-	assert.EqualValues(t, math.MinInt32, ctts.GetSampleOffset(0))
-	assert.EqualValues(t, math.MinInt32+1, ctts.GetSampleOffset(1))
-
-	elst := &Elst{
-		Entries: []ElstEntry{
-			{
-				SegmentDurationV0: math.MaxUint32,
-				MediaTimeV0:       math.MinInt32,
-				SegmentDurationV1: math.MaxUint64,
-				MediaTimeV1:       math.MinInt64,
+	t.Run("ctts", func(t *testing.T) {
+		ctts := &Ctts{
+			Entries: []CttsEntry{
+				{SampleOffsetV0: math.MaxUint32, SampleOffsetV1: math.MinInt32},
+				{SampleOffsetV0: math.MaxUint32 - 1, SampleOffsetV1: math.MinInt32 + 1},
 			},
-			{
-				SegmentDurationV0: math.MaxUint32 - 1,
-				MediaTimeV0:       math.MinInt32 + 1,
-				SegmentDurationV1: math.MaxUint64 - 1,
-				MediaTimeV1:       math.MinInt64 + 1,
+		}
+		ctts.SetVersion(0)
+		assert.EqualValues(t, math.MaxUint32, ctts.GetSampleOffset(0))
+		assert.EqualValues(t, math.MaxUint32-1, ctts.GetSampleOffset(1))
+		ctts.SetVersion(1)
+		assert.EqualValues(t, math.MinInt32, ctts.GetSampleOffset(0))
+		assert.EqualValues(t, math.MinInt32+1, ctts.GetSampleOffset(1))
+	})
+
+	t.Run("elst", func(t *testing.T) {
+		elst := &Elst{
+			Entries: []ElstEntry{
+				{
+					SegmentDurationV0: math.MaxUint32,
+					MediaTimeV0:       math.MinInt32,
+					SegmentDurationV1: math.MaxUint64,
+					MediaTimeV1:       math.MinInt64,
+				},
+				{
+					SegmentDurationV0: math.MaxUint32 - 1,
+					MediaTimeV0:       math.MinInt32 + 1,
+					SegmentDurationV1: math.MaxUint64 - 1,
+					MediaTimeV1:       math.MinInt64 + 1,
+				},
 			},
-		},
-	}
-	elst.SetVersion(0)
-	assert.EqualValues(t, math.MaxUint32, elst.GetSegmentDuration(0))
-	assert.EqualValues(t, math.MaxUint32-1, elst.GetSegmentDuration(1))
-	assert.EqualValues(t, math.MinInt32, elst.GetMediaTime(0))
-	assert.EqualValues(t, math.MinInt32+1, elst.GetMediaTime(1))
-	elst.SetVersion(1)
-	assert.EqualValues(t, uint64(math.MaxUint64), elst.GetSegmentDuration(0))
-	assert.EqualValues(t, uint64(math.MaxUint64)-1, elst.GetSegmentDuration(1))
-	assert.EqualValues(t, math.MinInt64, elst.GetMediaTime(0))
-	assert.EqualValues(t, math.MinInt64+1, elst.GetMediaTime(1))
+		}
+		elst.SetVersion(0)
+		assert.EqualValues(t, math.MaxUint32, elst.GetSegmentDuration(0))
+		assert.EqualValues(t, math.MaxUint32-1, elst.GetSegmentDuration(1))
+		assert.EqualValues(t, math.MinInt32, elst.GetMediaTime(0))
+		assert.EqualValues(t, math.MinInt32+1, elst.GetMediaTime(1))
+		elst.SetVersion(1)
+		assert.EqualValues(t, uint64(math.MaxUint64), elst.GetSegmentDuration(0))
+		assert.EqualValues(t, uint64(math.MaxUint64)-1, elst.GetSegmentDuration(1))
+		assert.EqualValues(t, math.MinInt64, elst.GetMediaTime(0))
+		assert.EqualValues(t, math.MinInt64+1, elst.GetMediaTime(1))
+	})
 
-	mdhd := &Mdhd{
-		CreationTimeV0:     math.MaxUint32,
-		CreationTimeV1:     math.MaxUint64,
-		ModificationTimeV0: math.MaxUint32 - 1,
-		ModificationTimeV1: math.MaxUint64 - 1,
-		DurationV0:         math.MaxUint32 - 2,
-		DurationV1:         math.MaxUint64 - 2,
-	}
-	mdhd.SetVersion(0)
-	assert.EqualValues(t, math.MaxUint32, mdhd.GetCreationTime())
-	assert.EqualValues(t, math.MaxUint32-1, mdhd.GetModificationTime())
-	assert.EqualValues(t, math.MaxUint32-2, mdhd.GetDuration())
-	mdhd.SetVersion(1)
-	assert.EqualValues(t, uint64(math.MaxUint64), mdhd.GetCreationTime())
-	assert.EqualValues(t, uint64(math.MaxUint64)-1, mdhd.GetModificationTime())
-	assert.EqualValues(t, uint64(math.MaxUint64)-2, mdhd.GetDuration())
+	t.Run("mdhd", func(t *testing.T) {
+		mdhd := &Mdhd{
+			CreationTimeV0:     math.MaxUint32,
+			CreationTimeV1:     math.MaxUint64,
+			ModificationTimeV0: math.MaxUint32 - 1,
+			ModificationTimeV1: math.MaxUint64 - 1,
+			DurationV0:         math.MaxUint32 - 2,
+			DurationV1:         math.MaxUint64 - 2,
+		}
+		mdhd.SetVersion(0)
+		assert.EqualValues(t, math.MaxUint32, mdhd.GetCreationTime())
+		assert.EqualValues(t, math.MaxUint32-1, mdhd.GetModificationTime())
+		assert.EqualValues(t, math.MaxUint32-2, mdhd.GetDuration())
+		mdhd.SetVersion(1)
+		assert.EqualValues(t, uint64(math.MaxUint64), mdhd.GetCreationTime())
+		assert.EqualValues(t, uint64(math.MaxUint64)-1, mdhd.GetModificationTime())
+		assert.EqualValues(t, uint64(math.MaxUint64)-2, mdhd.GetDuration())
+	})
 
-	mehd := &Mehd{
-		FragmentDurationV0: math.MaxUint32,
-		FragmentDurationV1: math.MaxUint64,
-	}
-	mehd.SetVersion(0)
-	assert.EqualValues(t, math.MaxUint32, mehd.GetFragmentDuration())
-	mehd.SetVersion(1)
-	assert.EqualValues(t, uint64(math.MaxUint64), mehd.GetFragmentDuration())
+	t.Run("mehd", func(t *testing.T) {
+		mehd := &Mehd{
+			FragmentDurationV0: math.MaxUint32,
+			FragmentDurationV1: math.MaxUint64,
+		}
+		mehd.SetVersion(0)
+		assert.EqualValues(t, math.MaxUint32, mehd.GetFragmentDuration())
+		mehd.SetVersion(1)
+		assert.EqualValues(t, uint64(math.MaxUint64), mehd.GetFragmentDuration())
+	})
 
-	mvhd := &Mvhd{
-		CreationTimeV0:     math.MaxUint32,
-		ModificationTimeV0: math.MaxUint32 - 1,
-		CreationTimeV1:     math.MaxUint64,
-		ModificationTimeV1: math.MaxUint64 - 1,
-		DurationV0:         math.MaxUint32 - 2,
-		DurationV1:         math.MaxUint64 - 2,
-	}
-	mvhd.SetVersion(0)
-	assert.EqualValues(t, math.MaxUint32, mvhd.GetCreationTime())
-	assert.EqualValues(t, math.MaxUint32-1, mvhd.GetModificationTime())
-	assert.EqualValues(t, math.MaxUint32-2, mvhd.GetDuration())
-	mvhd.SetVersion(1)
-	assert.EqualValues(t, uint64(math.MaxUint64), mvhd.GetCreationTime())
-	assert.EqualValues(t, uint64(math.MaxUint64-1), mvhd.GetModificationTime())
-	assert.EqualValues(t, uint64(math.MaxUint64-2), mvhd.GetDuration())
+	t.Run("mvhd", func(t *testing.T) {
+		mvhd := &Mvhd{
+			CreationTimeV0:     math.MaxUint32,
+			ModificationTimeV0: math.MaxUint32 - 1,
+			CreationTimeV1:     math.MaxUint64,
+			ModificationTimeV1: math.MaxUint64 - 1,
+			DurationV0:         math.MaxUint32 - 2,
+			DurationV1:         math.MaxUint64 - 2,
+		}
+		mvhd.SetVersion(0)
+		assert.EqualValues(t, math.MaxUint32, mvhd.GetCreationTime())
+		assert.EqualValues(t, math.MaxUint32-1, mvhd.GetModificationTime())
+		assert.EqualValues(t, math.MaxUint32-2, mvhd.GetDuration())
+		mvhd.SetVersion(1)
+		assert.EqualValues(t, uint64(math.MaxUint64), mvhd.GetCreationTime())
+		assert.EqualValues(t, uint64(math.MaxUint64-1), mvhd.GetModificationTime())
+		assert.EqualValues(t, uint64(math.MaxUint64-2), mvhd.GetDuration())
+	})
 
-	saio := &Saio{
-		OffsetV0: []uint32{math.MaxUint32, math.MaxUint32 - 1},
-		OffsetV1: []uint64{math.MaxUint64, math.MaxUint64 - 1},
-	}
-	saio.SetVersion(0)
-	assert.EqualValues(t, math.MaxUint32, saio.GetOffset(0))
-	assert.EqualValues(t, math.MaxUint32-1, saio.GetOffset(1))
-	saio.SetVersion(1)
-	assert.EqualValues(t, uint64(math.MaxUint64), saio.GetOffset(0))
-	assert.EqualValues(t, uint64(math.MaxUint64)-1, saio.GetOffset(1))
+	t.Run("saio", func(t *testing.T) {
+		saio := &Saio{
+			OffsetV0: []uint32{math.MaxUint32, math.MaxUint32 - 1},
+			OffsetV1: []uint64{math.MaxUint64, math.MaxUint64 - 1},
+		}
+		saio.SetVersion(0)
+		assert.EqualValues(t, math.MaxUint32, saio.GetOffset(0))
+		assert.EqualValues(t, math.MaxUint32-1, saio.GetOffset(1))
+		saio.SetVersion(1)
+		assert.EqualValues(t, uint64(math.MaxUint64), saio.GetOffset(0))
+		assert.EqualValues(t, uint64(math.MaxUint64)-1, saio.GetOffset(1))
+	})
 
-	sidx := &Sidx{
-		EarliestPresentationTimeV0: math.MaxUint32,
-		FirstOffsetV0:              math.MaxUint32 - 1,
-		EarliestPresentationTimeV1: math.MaxUint64,
-		FirstOffsetV1:              math.MaxUint64 - 1,
-	}
-	sidx.SetVersion(0)
-	assert.EqualValues(t, math.MaxUint32, sidx.GetEarliestPresentationTime())
-	assert.EqualValues(t, math.MaxUint32-1, sidx.GetFirstOffset())
-	sidx.SetVersion(1)
-	assert.EqualValues(t, uint64(math.MaxUint64), sidx.GetEarliestPresentationTime())
-	assert.EqualValues(t, uint64(math.MaxUint64)-1, sidx.GetFirstOffset())
+	t.Run("sidx", func(t *testing.T) {
+		sidx := &Sidx{
+			EarliestPresentationTimeV0: math.MaxUint32,
+			FirstOffsetV0:              math.MaxUint32 - 1,
+			EarliestPresentationTimeV1: math.MaxUint64,
+			FirstOffsetV1:              math.MaxUint64 - 1,
+		}
+		sidx.SetVersion(0)
+		assert.EqualValues(t, math.MaxUint32, sidx.GetEarliestPresentationTime())
+		assert.EqualValues(t, math.MaxUint32-1, sidx.GetFirstOffset())
+		sidx.SetVersion(1)
+		assert.EqualValues(t, uint64(math.MaxUint64), sidx.GetEarliestPresentationTime())
+		assert.EqualValues(t, uint64(math.MaxUint64)-1, sidx.GetFirstOffset())
+	})
 
-	tfdt := &Tfdt{
-		BaseMediaDecodeTimeV0: math.MaxUint32,
-		BaseMediaDecodeTimeV1: math.MaxUint64,
-	}
-	tfdt.SetVersion(0)
-	assert.EqualValues(t, math.MaxUint32, tfdt.GetBaseMediaDecodeTime())
-	tfdt.SetVersion(1)
-	assert.EqualValues(t, uint64(math.MaxUint64), tfdt.GetBaseMediaDecodeTime())
+	t.Run("tfdt", func(t *testing.T) {
+		tfdt := &Tfdt{
+			BaseMediaDecodeTimeV0: math.MaxUint32,
+			BaseMediaDecodeTimeV1: math.MaxUint64,
+		}
+		tfdt.SetVersion(0)
+		assert.EqualValues(t, math.MaxUint32, tfdt.GetBaseMediaDecodeTime())
+		tfdt.SetVersion(1)
+		assert.EqualValues(t, uint64(math.MaxUint64), tfdt.GetBaseMediaDecodeTime())
+	})
 
-	tfra := &Tfra{
-		Entries: []TfraEntry{
-			{
-				TimeV0:       math.MaxUint32,
-				MoofOffsetV0: math.MaxUint32 - 1,
-				TimeV1:       math.MaxUint64,
-				MoofOffsetV1: math.MaxUint64 - 1,
+	t.Run("tfra", func(t *testing.T) {
+		tfra := &Tfra{
+			Entries: []TfraEntry{
+				{
+					TimeV0:       math.MaxUint32,
+					MoofOffsetV0: math.MaxUint32 - 1,
+					TimeV1:       math.MaxUint64,
+					MoofOffsetV1: math.MaxUint64 - 1,
+				},
+				{
+					TimeV0:       math.MaxUint32 - 2,
+					MoofOffsetV0: math.MaxUint32 - 3,
+					TimeV1:       math.MaxUint64 - 2,
+					MoofOffsetV1: math.MaxUint64 - 3,
+				},
 			},
-			{
-				TimeV0:       math.MaxUint32 - 2,
-				MoofOffsetV0: math.MaxUint32 - 3,
-				TimeV1:       math.MaxUint64 - 2,
-				MoofOffsetV1: math.MaxUint64 - 3,
-			},
-		},
-	}
-	tfra.SetVersion(0)
-	assert.EqualValues(t, math.MaxUint32, tfra.GetTime(0))
-	assert.EqualValues(t, math.MaxUint32-1, tfra.GetMoofOffset(0))
-	assert.EqualValues(t, math.MaxUint32-2, tfra.GetTime(1))
-	assert.EqualValues(t, math.MaxUint32-3, tfra.GetMoofOffset(1))
-	tfra.SetVersion(1)
-	assert.EqualValues(t, uint64(math.MaxUint64), tfra.GetTime(0))
-	assert.EqualValues(t, uint64(math.MaxUint64)-1, tfra.GetMoofOffset(0))
-	assert.EqualValues(t, uint64(math.MaxUint64)-2, tfra.GetTime(1))
-	assert.EqualValues(t, uint64(math.MaxUint64)-3, tfra.GetMoofOffset(1))
+		}
+		tfra.SetVersion(0)
+		assert.EqualValues(t, math.MaxUint32, tfra.GetTime(0))
+		assert.EqualValues(t, math.MaxUint32-1, tfra.GetMoofOffset(0))
+		assert.EqualValues(t, math.MaxUint32-2, tfra.GetTime(1))
+		assert.EqualValues(t, math.MaxUint32-3, tfra.GetMoofOffset(1))
+		tfra.SetVersion(1)
+		assert.EqualValues(t, uint64(math.MaxUint64), tfra.GetTime(0))
+		assert.EqualValues(t, uint64(math.MaxUint64)-1, tfra.GetMoofOffset(0))
+		assert.EqualValues(t, uint64(math.MaxUint64)-2, tfra.GetTime(1))
+		assert.EqualValues(t, uint64(math.MaxUint64)-3, tfra.GetMoofOffset(1))
+	})
 
-	tkhd := &Tkhd{
-		CreationTimeV0:     math.MaxUint32,
-		ModificationTimeV0: math.MaxUint32 - 1,
-		CreationTimeV1:     math.MaxUint64,
-		ModificationTimeV1: math.MaxUint64 - 1,
-		DurationV0:         math.MaxUint32 - 2,
-		DurationV1:         math.MaxUint64 - 2,
-	}
-	tkhd.SetVersion(0)
-	assert.EqualValues(t, math.MaxUint32, tkhd.GetCreationTime())
-	assert.EqualValues(t, math.MaxUint32-1, tkhd.GetModificationTime())
-	assert.EqualValues(t, math.MaxUint32-2, tkhd.GetDuration())
-	tkhd.SetVersion(1)
-	assert.EqualValues(t, uint64(math.MaxUint64), tkhd.GetCreationTime())
-	assert.EqualValues(t, uint64(math.MaxUint64)-1, tkhd.GetModificationTime())
-	assert.EqualValues(t, uint64(math.MaxUint64)-2, tkhd.GetDuration())
+	t.Run("tkhd", func(t *testing.T) {
+		tkhd := &Tkhd{
+			CreationTimeV0:     math.MaxUint32,
+			ModificationTimeV0: math.MaxUint32 - 1,
+			CreationTimeV1:     math.MaxUint64,
+			ModificationTimeV1: math.MaxUint64 - 1,
+			DurationV0:         math.MaxUint32 - 2,
+			DurationV1:         math.MaxUint64 - 2,
+		}
+		tkhd.SetVersion(0)
+		assert.EqualValues(t, math.MaxUint32, tkhd.GetCreationTime())
+		assert.EqualValues(t, math.MaxUint32-1, tkhd.GetModificationTime())
+		assert.EqualValues(t, math.MaxUint32-2, tkhd.GetDuration())
+		tkhd.SetVersion(1)
+		assert.EqualValues(t, uint64(math.MaxUint64), tkhd.GetCreationTime())
+		assert.EqualValues(t, uint64(math.MaxUint64)-1, tkhd.GetModificationTime())
+		assert.EqualValues(t, uint64(math.MaxUint64)-2, tkhd.GetDuration())
+	})
 
-	trun := &Trun{
-		Entries: []TrunEntry{
-			{
-				SampleCompositionTimeOffsetV0: math.MaxUint32,
-				SampleCompositionTimeOffsetV1: math.MinInt32,
+	t.Run("trun", func(t *testing.T) {
+		trun := &Trun{
+			Entries: []TrunEntry{
+				{
+					SampleCompositionTimeOffsetV0: math.MaxUint32,
+					SampleCompositionTimeOffsetV1: math.MinInt32,
+				},
+				{
+					SampleCompositionTimeOffsetV0: math.MaxUint32 - 1,
+					SampleCompositionTimeOffsetV1: math.MinInt32 + 1,
+				},
 			},
-			{
-				SampleCompositionTimeOffsetV0: math.MaxUint32 - 1,
-				SampleCompositionTimeOffsetV1: math.MinInt32 + 1,
-			},
-		},
-	}
-	trun.SetVersion(0)
-	assert.EqualValues(t, math.MaxUint32, trun.GetSampleCompositionTimeOffset(0))
-	assert.EqualValues(t, math.MaxUint32-1, trun.GetSampleCompositionTimeOffset(1))
-	trun.SetVersion(1)
-	assert.EqualValues(t, math.MinInt32, trun.GetSampleCompositionTimeOffset(0))
-	assert.EqualValues(t, math.MinInt32+1, trun.GetSampleCompositionTimeOffset(1))
+		}
+		trun.SetVersion(0)
+		assert.EqualValues(t, math.MaxUint32, trun.GetSampleCompositionTimeOffset(0))
+		assert.EqualValues(t, math.MaxUint32-1, trun.GetSampleCompositionTimeOffset(1))
+		trun.SetVersion(1)
+		assert.EqualValues(t, math.MinInt32, trun.GetSampleCompositionTimeOffset(0))
+		assert.EqualValues(t, math.MinInt32+1, trun.GetSampleCompositionTimeOffset(1))
+	})
+
+	t.Run("XMLSubtitleSampleEntry", func(t *testing.T) {
+		ase := &XMLSubtitleSampleEntry{
+			Namespace:          "http://foo.bar http://baz.qux",
+			SchemaLocation:     "foo bar baz",
+			AuxiliaryMIMETypes: "foo bar",
+		}
+		assert.Equal(t, []string{"http://foo.bar", "http://baz.qux"}, ase.GetNamespaceList())
+		assert.Equal(t, []string{"foo", "bar", "baz"}, ase.GetSchemaLocationList())
+		assert.Equal(t, []string{"foo", "bar"}, ase.GetAuxiliaryMIMETypesList())
+	})
 }
