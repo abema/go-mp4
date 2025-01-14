@@ -85,7 +85,7 @@ func (m *marshaller) marshal(v reflect.Value, fi *fieldInstance) error {
 	case reflect.Bool:
 		return m.marshalBool(v, fi)
 	case reflect.String:
-		return m.marshalString(v)
+		return m.marshalString(v, fi)
 	default:
 		return fmt.Errorf("unsupported type: %s", v.Type().Kind())
 	}
@@ -231,13 +231,16 @@ func (m *marshaller) marshalBool(v reflect.Value, fi *fieldInstance) error {
 	return nil
 }
 
-func (m *marshaller) marshalString(v reflect.Value) error {
+func (m *marshaller) marshalString(v reflect.Value, fi *fieldInstance) error {
 	data := []byte(v.String())
 	for _, b := range data {
 		if err := m.writer.WriteBits([]byte{b}, 8); err != nil {
 			return err
 		}
 		m.wbits += 8
+	}
+	if fi.is(fieldBoxString) {
+		return nil
 	}
 	// null character
 	if err := m.writer.WriteBits([]byte{0x00}, 8); err != nil {

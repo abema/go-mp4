@@ -14,7 +14,7 @@ func init() {
 
 type WebVTTConfigurationBox struct {
 	Box
-	Config string `mp4:"0,string"`
+	Config string `mp4:"0,boxstring"`
 }
 
 func (WebVTTConfigurationBox) GetType() BoxType {
@@ -23,7 +23,7 @@ func (WebVTTConfigurationBox) GetType() BoxType {
 
 type WebVTTSourceLabelBox struct {
 	Box
-	SourceLabel string `mp4:"0,string"`
+	SourceLabel string `mp4:"0,boxstring"`
 }
 
 func (WebVTTSourceLabelBox) GetType() BoxType {
@@ -75,7 +75,7 @@ func (CueSourceIDBox) GetType() BoxType {
 
 type CueTimeBox struct {
 	Box
-	CueCurrentTime string `mp4:"0,string"`
+	CueCurrentTime string `mp4:"0,boxstring"`
 }
 
 func (CueTimeBox) GetType() BoxType {
@@ -84,7 +84,7 @@ func (CueTimeBox) GetType() BoxType {
 
 type CueIDBox struct {
 	Box
-	CueId string `mp4:"0,string"`
+	CueId string `mp4:"0,boxstring"`
 }
 
 func (CueIDBox) GetType() BoxType {
@@ -93,7 +93,7 @@ func (CueIDBox) GetType() BoxType {
 
 type CueSettingsBox struct {
 	Box
-	Settings string `mp4:"0,string"`
+	Settings string `mp4:"0,boxstring"`
 }
 
 func (CueSettingsBox) GetType() BoxType {
@@ -102,7 +102,7 @@ func (CueSettingsBox) GetType() BoxType {
 
 type CuePayloadBox struct {
 	Box
-	CueText string `mp4:"0,string"`
+	CueText string `mp4:"0,boxstring"`
 }
 
 func (CuePayloadBox) GetType() BoxType {
@@ -119,7 +119,7 @@ func (VTTEmptyCueBox) GetType() BoxType {
 
 type VTTAdditionalTextBox struct {
 	Box
-	CueAdditionalText string `mp4:"0,string"`
+	CueAdditionalText string `mp4:"0,boxstring"`
 }
 
 func (VTTAdditionalTextBox) GetType() BoxType {
