@@ -1,5 +1,7 @@
 package mp4
 
+import "fmt"
+
 // https://www.etsi.org/deliver/etsi_ts/102300_102399/102366/01.04.01_60/ts_102366v010401p.pdf
 
 /*************************** ac-3 ****************************/
@@ -51,8 +53,13 @@ func init() {
 
 type Dec3 struct {
 	Box
-	DataRate  uint16 `mp4:"0,size=13"`
-	NumIndSub uint8  `mp4:"1,size=3"`
+	DataRate  uint16       `mp4:"0,size=13"`
+	NumIndSub uint8        `mp4:"1,size=3"`
+	IndSubs   []Dec3IndSub `mp4:"2,len=dynamic"`
+}
+
+type Dec3IndSub struct {
+	BaseCustomFieldObject
 	Fscod     uint8  `mp4:"2,size=2"`
 	Bsid      uint8  `mp4:"3,size=5"`
 	Reserved1 uint8  `mp4:"4,size=1,const=0"`
@@ -62,9 +69,29 @@ type Dec3 struct {
 	LfeOn     uint8  `mp4:"8,size=1"`
 	Reserved2 uint8  `mp4:"9,size=3,const=0"`
 	NumDepSub uint8  `mp4:"10,size=4"`
-	ChanLoc   uint16 `mp4:"11,size=9"`
+	ChanLoc   uint16 `mp4:"11,size=9,opt=dynamic"`
+	Reserved3 uint8  `mp4:"12,size=1,opt=dynamic,const=0"`
 }
 
 func (*Dec3) GetType() BoxType {
 	return BoxTypeDec3()
+}
+
+func (dec3 *Dec3) GetFieldLength(name string, ctx Context) uint {
+	switch name {
+	case "IndSubs":
+		return uint(dec3.NumIndSub)
+	}
+	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=dec3 fieldName=%s", name))
+}
+
+func (sub *Dec3IndSub) IsOptFieldEnabled(name string, ctx Context) bool {
+	switch name {
+	case "ChanLoc":
+		return sub.NumDepSub > 0
+	case "Reserved3":
+		return sub.NumDepSub == 0
+	default:
+		return false
+	}
 }
