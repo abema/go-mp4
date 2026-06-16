@@ -31,6 +31,38 @@ func TestBoxTypesETSI_TS_102_366(t *testing.T) {
 			bin: []byte{0x10, 0x3c, 0xe0},
 			str: `Fscod=0x0 Bsid=0x8 Bsmod=0x0 Acmod=0x7 LfeOn=0x1 BitRateCode=0x7`,
 		},
+		{
+			name: "dec3",
+			src: &Dec3{
+				DataRate:  0x1fff,
+				NumIndSub: 0x2,
+				IndSubs: []Dec3IndSub{
+					{
+						Fscod:     0x3,
+						Bsid:      0x1f,
+						Asvc:      0x1,
+						Bsmod:     0x7,
+						Acmod:     0x7,
+						LfeOn:     0x1,
+						NumDepSub: 0xf,
+						ChanLoc:   0x1ff,
+					},
+					{
+						Fscod:     0x3,
+						Bsid:      0x1f,
+						Asvc:      0x1,
+						Bsmod:     0x7,
+						Acmod:     0x7,
+						LfeOn:     0x1,
+						NumDepSub: 0,
+						Reserved3: 1,
+					},
+				},
+			},
+			dst: &Dec3{},
+			bin: []byte{0xff, 0xfa, 0xfe, 0xff, 0x1f, 0xff, 0xfe, 0xff, 0x1},
+			str: `DataRate=8191 NumIndSub=0x2 IndSubs=[{Fscod=0x3 Bsid=0x1f Asvc=0x1 Bsmod=0x7 Acmod=0x7 LfeOn=0x1 NumDepSub=0xf ChanLoc=511}, {Fscod=0x3 Bsid=0x1f Asvc=0x1 Bsmod=0x7 Acmod=0x7 LfeOn=0x1 NumDepSub=0x0}]`,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
