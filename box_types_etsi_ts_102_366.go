@@ -80,7 +80,7 @@ func (*Dec3) GetType() BoxType {
 func (dec3 *Dec3) GetFieldLength(name string, ctx Context) uint {
 	switch name {
 	case "IndSubs":
-		return uint(dec3.NumIndSub)
+		return uint(dec3.NumIndSub + 1)
 	}
 	panic(fmt.Errorf("invalid name of dynamic-length field: boxType=dec3 fieldName=%s", name))
 }
