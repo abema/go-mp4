@@ -352,6 +352,13 @@ func TestSamplesGetMaxBitrate(t *testing.T) {
 			{TimeDelta: 10, Size: 100},
 			{TimeDelta: 10, Size: 200},
 		}.GetMaxBitrate(100, 20))
+
+	// samples whose time deltas are all zero must not divide by zero
+	assert.Equal(t, uint64(0),
+		Samples{
+			{TimeDelta: 0, Size: 100},
+			{TimeDelta: 0, Size: 200},
+		}.GetMaxBitrate(100, 20))
 }
 
 func TestSegmentsGetBitrate(t *testing.T) {
