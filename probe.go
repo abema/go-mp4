@@ -645,9 +645,11 @@ func (samples Samples) GetMaxBitrate(timescale uint32, timeDelta uint64) uint64 
 				break
 			}
 		}
-		bitrate := 8 * size * uint64(timescale) / duration
-		if bitrate > maxBitrate {
-			maxBitrate = bitrate
+		if duration != 0 {
+			bitrate := 8 * size * uint64(timescale) / duration
+			if bitrate > maxBitrate {
+				maxBitrate = bitrate
+			}
 		}
 		for {
 			size -= uint64(samples[begin].Size)
