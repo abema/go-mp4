@@ -726,8 +726,8 @@ type HvcC struct {
 	BitDepthChromaMinus8        uint8           `mp4:"16,size=3"`
 	AvgFrameRate                uint16          `mp4:"17,size=16"`
 	ConstantFrameRate           uint8           `mp4:"18,size=2"`
-	NumTemporalLayers           uint8           `mp4:"19,size=2"`
-	TemporalIdNested            uint8           `mp4:"20,size=2"`
+	NumTemporalLayers           uint8           `mp4:"19,size=3"`
+	TemporalIdNested            uint8           `mp4:"20,size=1"`
 	LengthSizeMinusOne          uint8           `mp4:"21,size=2"`
 	NumOfNaluArrays             uint8           `mp4:"22,size=8"`
 	NaluArrays                  []HEVCNaluArray `mp4:"23,len=dynamic"`
