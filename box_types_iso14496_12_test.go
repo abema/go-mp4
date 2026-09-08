@@ -476,7 +476,8 @@ func TestBoxTypesISO14496_12(t *testing.T) {
 				ChromaFormatIdc:            1,
 				Reserved4:                  31,
 				Reserved5:                  31,
-				TemporalIdNested:           3,
+				NumTemporalLayers:          1,
+				TemporalIdNested:           1,
 				LengthSizeMinusOne:         3,
 				NumOfNaluArrays:            4,
 				NaluArrays: []HEVCNaluArray{
@@ -554,7 +555,7 @@ func TestBoxTypesISO14496_12(t *testing.T) {
 				`false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, ` +
 				`false, false, false, false, false, false] GeneralConstraintIndicator=[0x90, 0x0, 0x0, 0x0, 0x0, 0x0] GeneralLevelIdc=0x78 ` +
 				`MinSpatialSegmentationIdc=0 ParallelismType=0x0 ChromaFormatIdc=0x1 BitDepthLumaMinus8=0x0 BitDepthChromaMinus8=0x0 ` +
-				`AvgFrameRate=0 ConstantFrameRate=0x0 NumTemporalLayers=0x0 TemporalIdNested=0x3 LengthSizeMinusOne=0x3 NumOfNaluArrays=0x4 ` +
+				`AvgFrameRate=0 ConstantFrameRate=0x0 NumTemporalLayers=0x1 TemporalIdNested=0x1 LengthSizeMinusOne=0x3 NumOfNaluArrays=0x4 ` +
 				`NaluArrays=[{Completeness=false Reserved=false NaluType=0x20 NumNalus=1 Nalus=[{Length=24 NALUnit=[0x40, 0x1, 0xc, 0x1, ` +
 				`0xff, 0xff, 0x1, 0x60, 0x0, 0x0, 0x3, 0x0, 0x90, 0x0, 0x0, 0x3, 0x0, 0x0, 0x3, 0x0, 0x78, 0x99, 0x98, 0x9]}]}, ` +
 				`{Completeness=false Reserved=false NaluType=0x21 NumNalus=1 Nalus=[{Length=42 NALUnit=[0x6, 0x1, 0x1, 0x1, 0x60, 0x0, ` +
@@ -563,6 +564,52 @@ func TestBoxTypesISO14496_12(t *testing.T) {
 				`NaluType=0x22 NumNalus=1 Nalus=[{Length=7 NALUnit=[0x44, 0x1, 0xc1, 0x72, 0xb4, 0x62, 0x40]}]}, ` +
 				`{Completeness=false Reserved=false NaluType=0x27 NumNalus=1 Nalus=[{Length=11 NALUnit=[0x4e, 0x1, 0x5, 0xff, 0xff, 0xff, ` +
 				`0xa6, 0x2c, 0xa2, 0xde, 0x9]}]}]`,
+		},
+		{
+			// numTemporalLayers is 3 bits wide and temporalIdNested is 1 bit wide,
+			// so the byte after avgFrameRate splits as 2+3+1+2 bits.
+			name: "hvcC: numTemporalLayers",
+			src: &HvcC{
+				ConfigurationVersion:       1,
+				GeneralProfileIdc:          1,
+				GeneralConstraintIndicator: [6]uint8{144, 0, 0, 0, 0, 0},
+				GeneralLevelIdc:            120,
+				Reserved1:                  0xf,
+				Reserved2:                  0x3f,
+				Reserved3:                  0x3f,
+				ChromaFormatIdc:            1,
+				Reserved4:                  31,
+				Reserved5:                  31,
+				ConstantFrameRate:          0,
+				NumTemporalLayers:          4,
+				TemporalIdNested:           1,
+				LengthSizeMinusOne:         3,
+				NumOfNaluArrays:            0,
+				NaluArrays:                 []HEVCNaluArray{},
+			},
+			dst: &HvcC{},
+			bin: []byte{
+				0x01,                   // configurationVersion
+				0x01,                   // generalProfileSpace, generalTierFlag, generalProfileIdc
+				0x00, 0x00, 0x00, 0x00, // generalProfileCompatibility
+				0x90, 0x00, 0x00, 0x00, 0x00, 0x00, // generalConstraintIndicator
+				0x78,       // generalLevelIdc
+				0xf0, 0x00, // reserved, minSpatialSegmentationIdc
+				0xfc,       // reserved, parallelismType
+				0xfd,       // reserved, chromaFormatIdc
+				0xf8,       // reserved, bitDepthLumaMinus8
+				0xf8,       // reserved, bitDepthChromaMinus8
+				0x00, 0x00, // avgFrameRate
+				0x27, // constantFrameRate=0, numTemporalLayers=4, temporalIdNested=1, lengthSizeMinusOne=3
+				0x00, // numOfNaluArrays
+			},
+			str: `ConfigurationVersion=0x1 GeneralProfileSpace=0x0 GeneralTierFlag=false GeneralProfileIdc=0x1 ` +
+				`GeneralProfileCompatibility=[false, false, false, false, false, false, false, false, false, false, false, ` +
+				`false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, ` +
+				`false, false, false, false, false, false] GeneralConstraintIndicator=[0x90, 0x0, 0x0, 0x0, 0x0, 0x0] GeneralLevelIdc=0x78 ` +
+				`MinSpatialSegmentationIdc=0 ParallelismType=0x0 ChromaFormatIdc=0x1 BitDepthLumaMinus8=0x0 BitDepthChromaMinus8=0x0 ` +
+				`AvgFrameRate=0 ConstantFrameRate=0x0 NumTemporalLayers=0x4 TemporalIdNested=0x1 LengthSizeMinusOne=0x3 NumOfNaluArrays=0x0 ` +
+				`NaluArrays=[]`,
 		},
 		{
 			name: "mdat",
