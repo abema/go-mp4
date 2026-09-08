@@ -1,0 +1,12 @@
+version: "2"
+
+linters:
+  enable:
+    - asciicheck
+    - bidichk
+  disable:
+    - errcheck    # TODO: enable and fix codes
+    - govet       # TODO: enable and fix codes
+    - staticcheck # TODO: enable and fix codes
+  exclusions:
+    generated: disable
