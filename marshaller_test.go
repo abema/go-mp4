@@ -2,6 +2,7 @@ package mp4
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 
 	"github.com/abema/go-mp4/internal/bitio"
@@ -173,6 +174,84 @@ func TestMarshal(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(len(bin)), n)
 	assert.Equal(t, src, dst)
+}
+
+// failAfterWriter accepts limit bytes in total and fails the write that would
+// exceed it.
+type failAfterWriter struct {
+	limit   int
+	written int
+}
+
+func (w *failAfterWriter) Write(p []byte) (int, error) {
+	if w.written+len(p) > w.limit {
+		n := w.limit - w.written
+		w.written = w.limit
+		return n, errors.New("no space left")
+	}
+	w.written += len(p)
+	return len(p), nil
+}
+
+func TestMarshalError(t *testing.T) {
+	testCases := []struct {
+		name  string
+		src   IImmutableBox
+		limit int
+		err   string
+	}{
+		{
+			name: "writer fails on a slice element",
+			src: &Stts{
+				EntryCount: 4,
+				Entries: []SttsEntry{
+					{SampleCount: 0x01, SampleDelta: 0x02},
+					{SampleCount: 0x03, SampleDelta: 0x04},
+					{SampleCount: 0x05, SampleDelta: 0x06},
+					{SampleCount: 0x07, SampleDelta: 0x08},
+				},
+			},
+			limit: 10,
+			err:   "no space left",
+		},
+		{
+			name: "writer fails on a varint field",
+			src: &Esds{
+				Descriptors: []Descriptor{
+					{
+						Tag:          ESDescrTag,
+						Size:         0x03,
+						ESDescriptor: &ESDescriptor{ESID: 0x1234},
+					},
+				},
+			},
+			limit: 5,
+			err:   "no space left",
+		},
+		{
+			name: "slice element holds fewer bytes than its declared length",
+			src: &Keys{
+				EntryCount: 1,
+				Entries: []Key{
+					{
+						KeySize:      12,
+						KeyNamespace: []byte("mdta"),
+						KeyValue:     []byte{},
+					},
+				},
+			},
+			limit: 1024,
+			err:   "the slice has too few elements: required=4 actual=0",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := &failAfterWriter{limit: tc.limit}
+			n, err := Marshal(w, tc.src, Context{})
+			assert.EqualError(t, err, tc.err)
+			assert.Equal(t, uint64(0), n)
+		})
+	}
 }
 
 func TestUnsupportedBoxVersionErr(t *testing.T) {
