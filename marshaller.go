@@ -151,7 +151,9 @@ func (m *marshaller) marshalSlice(v reflect.Value, fi *fieldInstance) error {
 	}
 
 	for i := 0; i < int(length); i++ {
-		m.marshal(v.Index(i), fi)
+		if err := m.marshal(v.Index(i), fi); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -196,8 +198,7 @@ func (m *marshaller) marshalUint(v reflect.Value, fi *fieldInstance) error {
 	val := v.Uint()
 
 	if fi.is(fieldVarint) {
-		m.writeUvarint(val)
-		return nil
+		return m.writeUvarint(val)
 	}
 
 	for i := uint(0); i < fi.size; i += 8 {
