@@ -1727,6 +1727,41 @@ func TestBoxTypesISO14496_12(t *testing.T) {
 				`RollDistances=[4369, 8738]`,
 		},
 		{
+			name: "sgpd: version 1 roll no-default-length",
+			src: &Sgpd{
+				FullBox: FullBox{
+					Version: 1,
+					Flags:   [3]byte{0x00, 0x00, 0x00},
+				},
+				GroupingType:  [4]byte{'r', 'o', 'l', 'l'},
+				DefaultLength: 0,
+				EntryCount:    2,
+				RollDistancesL: []RollDistanceWithLength{
+					{DescriptionLength: 2, RollDistance: 0x1111},
+					{DescriptionLength: 2, RollDistance: 0x2222},
+				},
+			},
+			dst: &Sgpd{},
+			bin: []byte{
+				1,                // version
+				0x00, 0x00, 0x00, // flags
+				'r', 'o', 'l', 'l', // grouping type
+				0x00, 0x00, 0x00, 0x00, // default length
+				0x00, 0x00, 0x00, 0x02, // entry count
+				0x00, 0x00, 0x00, 0x02, // description length
+				0x11, 0x11, // roll distance
+				0x00, 0x00, 0x00, 0x02, // description length
+				0x22, 0x22, // roll distance
+			},
+			str: `Version=1 Flags=0x000000 ` +
+				`GroupingType="roll" ` +
+				`DefaultLength=0 ` +
+				`EntryCount=2 ` +
+				`RollDistancesL=[` +
+				`{DescriptionLength=2 RollDistance=4369}, ` +
+				`{DescriptionLength=2 RollDistance=8738}]`,
+		},
+		{
 			name: "sgpd: version 1 alst no-opts",
 			src: &Sgpd{
 				FullBox: FullBox{
