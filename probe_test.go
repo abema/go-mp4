@@ -164,6 +164,39 @@ func TestProbeWithFMP4(t *testing.T) {
 	assert.Equal(t, uint32(271), info.Segments[3].Size)
 }
 
+func TestProbeWithFMP4SeveralTrafs(t *testing.T) {
+	// two moof boxes, each with a traf for the video track and one for the audio track
+	f, err := os.Open("./testdata/sample_fragmented_muxed.mp4")
+	require.NoError(t, err)
+	defer f.Close()
+
+	info, err := Probe(f)
+	require.NoError(t, err)
+
+	require.Len(t, info.Segments, 4)
+	expected := []struct {
+		trackID             uint32
+		moofOffset          uint64
+		baseMediaDecodeTime uint64
+		sampleCount         uint32
+		duration            uint32
+		size                uint32
+	}{
+		{1, 1220, 0, 3, 4383, 1466},
+		{2, 1220, 0, 4, 4096, 1150},
+		{1, 4064, 4383, 3, 3072, 813},
+		{2, 4064, 4096, 2, 1728, 552},
+	}
+	for i, e := range expected {
+		assert.Equal(t, e.trackID, info.Segments[i].TrackID)
+		assert.Equal(t, e.moofOffset, info.Segments[i].MoofOffset)
+		assert.Equal(t, e.baseMediaDecodeTime, info.Segments[i].BaseMediaDecodeTime)
+		assert.Equal(t, e.sampleCount, info.Segments[i].SampleCount)
+		assert.Equal(t, e.duration, info.Segments[i].Duration)
+		assert.Equal(t, e.size, info.Segments[i].Size)
+	}
+}
+
 func TestProbeFra(t *testing.T) {
 	f, err := os.Open("./testdata/sample_fragmented.mp4")
 	require.NoError(t, err)

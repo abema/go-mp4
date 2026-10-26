@@ -165,11 +165,11 @@ func Probe(r io.ReadSeeker) (*ProbeInfo, error) {
 			}
 			probeInfo.Tracks = append(probeInfo.Tracks, track)
 		case BoxTypeMoof():
-			segment, err := probeMoof(r, bi)
+			segments, err := probeMoof(r, bi)
 			if err != nil {
 				return nil, err
 			}
-			probeInfo.Segments = append(probeInfo.Segments, segment)
+			probeInfo.Segments = append(probeInfo.Segments, segments...)
 		case BoxTypeMdat():
 			mdatAppeared = true
 		}
@@ -492,11 +492,30 @@ func getAudioObjectType(r bitio.Reader) (byte, int, error) {
 	return audioObjectType[0] + 32, 11, nil
 }
 
-func probeMoof(r io.ReadSeeker, bi *BoxInfo) (*Segment, error) {
+// probeMoof returns a segment for each track fragment of the moof box.
+func probeMoof(r io.ReadSeeker, bi *BoxInfo) ([]*Segment, error) {
+	trafs, err := ExtractBox(r, bi, BoxPath{BoxTypeTraf()})
+	if err != nil {
+		return nil, err
+	}
+
+	segments := make([]*Segment, 0, len(trafs))
+	for _, traf := range trafs {
+		segment, err := probeTraf(r, traf)
+		if err != nil {
+			return nil, err
+		}
+		segment.MoofOffset = bi.Offset
+		segments = append(segments, segment)
+	}
+	return segments, nil
+}
+
+func probeTraf(r io.ReadSeeker, bi *BoxInfo) (*Segment, error) {
 	bips, err := ExtractBoxesWithPayload(r, bi, []BoxPath{
-		{BoxTypeTraf(), BoxTypeTfhd()},
-		{BoxTypeTraf(), BoxTypeTfdt()},
-		{BoxTypeTraf(), BoxTypeTrun()},
+		{BoxTypeTfhd()},
+		{BoxTypeTfdt()},
+		{BoxTypeTrun()},
 	})
 	if err != nil {
 		return nil, err
@@ -506,9 +525,7 @@ func probeMoof(r io.ReadSeeker, bi *BoxInfo) (*Segment, error) {
 	var tfdt *Tfdt
 	var trun *Trun
 
-	segment := &Segment{
-		MoofOffset: bi.Offset,
-	}
+	segment := &Segment{}
 	for _, bip := range bips {
 		switch bip.Info.Type {
 		case BoxTypeTfhd():
