@@ -365,8 +365,15 @@ func probeTrak(r io.ReadSeeker, bi *BoxInfo) (*Track, error) {
 	}
 
 	if stsz != nil {
-		for i := 0; i < len(stsz.EntrySize) && i < len(track.Samples); i++ {
-			track.Samples[i].Size = stsz.EntrySize[i]
+		if stsz.SampleSize != 0 {
+			// all samples have the same size and the table is empty
+			for i := range track.Samples {
+				track.Samples[i].Size = stsz.SampleSize
+			}
+		} else {
+			for i := 0; i < len(stsz.EntrySize) && i < len(track.Samples); i++ {
+				track.Samples[i].Size = stsz.EntrySize[i]
+			}
 		}
 	}
 

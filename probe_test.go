@@ -74,6 +74,25 @@ func TestProbe(t *testing.T) {
 	assert.Equal(t, 0, idxs[0])
 }
 
+func TestProbeConstantSampleSize(t *testing.T) {
+	// AC-3 at 96 kbit/s: the stsz box gives one sample size for all samples
+	f, err := os.Open("./testdata/sample_ac3.mp4")
+	require.NoError(t, err)
+	defer f.Close()
+
+	info, err := Probe(f)
+	require.NoError(t, err)
+	require.Len(t, info.Tracks, 1)
+	require.Len(t, info.Tracks[0].Samples, 5)
+	for _, sample := range info.Tracks[0].Samples {
+		assert.Equal(t, uint32(384), sample.Size)
+		assert.Equal(t, uint32(1536), sample.TimeDelta)
+	}
+	require.Len(t, info.Tracks[0].Chunks, 1)
+	assert.Equal(t, uint64(48), info.Tracks[0].Chunks[0].DataOffset)
+	assert.Equal(t, uint32(5), info.Tracks[0].Chunks[0].SamplesPerChunk)
+}
+
 func TestProbeEncryptedVideo(t *testing.T) {
 	f, err := os.Open("./testdata/sample_init.encv.mp4")
 	require.NoError(t, err)
