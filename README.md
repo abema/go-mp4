@@ -74,8 +74,8 @@ fmt.Println("track num:", len(info.Tracks))
 
 ### Writing
 
-Writer helps you to write box tree.
-The following sample code edits emsg box and writes to another file.
+Writer helps you write a box tree.
+The following sample code edits an emsg box and writes the result to another file.
 
 ```go
 r := bufseekio.NewReadSeeker(inputFile, 128*1024, 4)
@@ -110,15 +110,15 @@ _, err = mp4.ReadBoxStructure(r, func(h *mp4.ReadHandle) (interface{}, error) {
 })
 ```
 
-Please note that the above sample code doesn't work for some MP4 files.
-If your MP4 files include specific box types (ex. stco, mfra), you should update those when offsets of mdat box changed.
-Next sample code adds an metadata box and updates chunk offsets in stco boxes.
+Please note that the sample code above may not work for some MP4 files.
+If your MP4 files contain certain box types (e.g., stco, mfra), you need to update them when the offset of the mdat box changes.
+The following sample code adds a metadata box and updates the chunk offsets in the stco boxes.
 
 [Sample Code: Insert Metadata and Update stco box](https://gist.github.com/sunfish-shogi/cccde016a38c66d32c07a0234368804e)
 
 ### User-defined Boxes
 
-You can create additional box definition as follows:
+You can define additional box types as follows:
 
 ```go
 func BoxTypeXxxx() BoxType { return mp4.StrToBoxType("xxxx") }
@@ -140,8 +140,8 @@ func (*Xxxx) GetType() BoxType {
 
 ### Buffering
 
-go-mp4 has no buffering feature for I/O.
-If you should reduce Read function calls, you can wrap the io.ReadSeeker by [bufseekio](https://github.com/sunfish-shogi/bufseekio).
+go-mp4 does not buffer I/O.
+If you need to reduce the number of Read calls, you can wrap your io.ReadSeeker with [bufseekio](https://github.com/sunfish-shogi/bufseekio).
 
 ## Command Line Tool
 
