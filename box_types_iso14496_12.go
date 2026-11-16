@@ -1376,13 +1376,16 @@ func (avcc *AVCDecoderConfiguration) IsOptFieldEnabled(name string, ctx Context)
 	return false
 }
 
+// avcHasHighProfileFields reports whether the avcC of this profile can carry the
+// chroma format and bit depth fields: every profile other than Baseline, Main and
+// Extended (ISO/IEC 14496-15), so also High 4:4:4 Predictive (244) and others.
+func avcHasHighProfileFields(profile uint8) bool {
+	return profile != AVCBaselineProfile && profile != AVCMainProfile && profile != AVCExtendedProfile
+}
+
 func (avcc *AVCDecoderConfiguration) OnReadField(name string, r bitio.ReadSeeker, leftBits uint64, ctx Context) (rbits uint64, override bool, err error) {
 	if name == "HighProfileFieldsEnabled" {
-		avcc.HighProfileFieldsEnabled = leftBits >= 32 &&
-			(avcc.Profile == AVCHighProfile ||
-				avcc.Profile == AVCHigh10Profile ||
-				avcc.Profile == AVCHigh422Profile ||
-				avcc.Profile == 144)
+		avcc.HighProfileFieldsEnabled = leftBits >= 32 && avcHasHighProfileFields(avcc.Profile)
 		return 0, true, nil
 	}
 	return 0, false, nil
@@ -1390,11 +1393,7 @@ func (avcc *AVCDecoderConfiguration) OnReadField(name string, r bitio.ReadSeeker
 
 func (avcc *AVCDecoderConfiguration) OnWriteField(name string, w bitio.Writer, ctx Context) (wbits uint64, override bool, err error) {
 	if name == "HighProfileFieldsEnabled" {
-		if avcc.HighProfileFieldsEnabled &&
-			avcc.Profile != AVCHighProfile &&
-			avcc.Profile != AVCHigh10Profile &&
-			avcc.Profile != AVCHigh422Profile &&
-			avcc.Profile != 144 {
+		if avcc.HighProfileFieldsEnabled && !avcHasHighProfileFields(avcc.Profile) {
 			return 0, false, errors.New("each values of Profile and HighProfileFieldsEnabled are inconsistent")
 		}
 		return 0, true, nil
