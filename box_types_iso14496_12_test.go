@@ -1470,6 +1470,87 @@ func TestBoxTypesISO14496_12(t *testing.T) {
 				`{Length=3 NALUnit=[0x12, 0x34, 0x56]}]`,
 		},
 		{
+			name: "AVCDecoderConfiguration high 4:4:4 predictive profile",
+			src: &AVCDecoderConfiguration{
+				AnyTypeBox:                 AnyTypeBox{Type: StrToBoxType("avcC")},
+				ConfigurationVersion:       0x12,
+				Profile:                    244,
+				ProfileCompatibility:       0x00,
+				Level:                      0x28,
+				Reserved:                   0x3f,
+				LengthSizeMinusOne:         0x2,
+				Reserved2:                  0x7,
+				NumOfSequenceParameterSets: 2,
+				SequenceParameterSets: []AVCParameterSet{
+					{Length: 2, NALUnit: []byte{0x12, 0x34}},
+					{Length: 3, NALUnit: []byte{0x12, 0x34, 0x56}},
+				},
+				NumOfPictureParameterSets: 2,
+				PictureParameterSets: []AVCParameterSet{
+					{Length: 2, NALUnit: []byte{0xab, 0xcd}},
+					{Length: 3, NALUnit: []byte{0xab, 0xcd, 0xef}},
+				},
+				HighProfileFieldsEnabled:     true,
+				Reserved3:                    0x3f,
+				ChromaFormat:                 0x1,
+				Reserved4:                    0x1f,
+				BitDepthLumaMinus8:           0x2,
+				Reserved5:                    0x1f,
+				BitDepthChromaMinus8:         0x3,
+				NumOfSequenceParameterSetExt: 2,
+				SequenceParameterSetsExt: []AVCParameterSet{
+					{Length: 2, NALUnit: []byte{0x12, 0x34}},
+					{Length: 3, NALUnit: []byte{0x12, 0x34, 0x56}},
+				},
+			},
+			dst: &AVCDecoderConfiguration{AnyTypeBox: AnyTypeBox{Type: StrToBoxType("avcC")}},
+			bin: []byte{
+				0x12,       // configuration version
+				0xf4,       // profile
+				0x00,       // profile compatibility
+				0x28,       // level
+				0xfe,       // reserved,  lengthSizeMinusOne
+				0xe2,       // reserved, numOfSequenceParameterSets
+				0x00, 0x02, // length
+				0x12, 0x34, // nalUnit
+				0x00, 0x03, // length
+				0x12, 0x34, 0x56, // nalUnit
+				0x02,       // numOfSequenceParameterSets
+				0x00, 0x02, // length
+				0xab, 0xcd, // nalUnit
+				0x00, 0x03, // length
+				0xab, 0xcd, 0xef, // nalUnit
+				0xfd,       // reserved, chromaFormat
+				0xfa,       // reserved, bitDepthLumaMinus8
+				0xfb,       // reserved, bitDepthChromaMinus8
+				0x02,       // numOfSequenceParameterSets
+				0x00, 0x02, // length
+				0x12, 0x34, // nalUnit
+				0x00, 0x03, // length
+				0x12, 0x34, 0x56, // nalUnit
+			},
+			str: `ConfigurationVersion=0x12 ` +
+				`Profile=0xf4 ` +
+				`ProfileCompatibility=0x0 ` +
+				`Level=0x28 ` +
+				`LengthSizeMinusOne=0x2 ` +
+				`NumOfSequenceParameterSets=0x2 ` +
+				`SequenceParameterSets=[` +
+				`{Length=2 NALUnit=[0x12, 0x34]}, ` +
+				`{Length=3 NALUnit=[0x12, 0x34, 0x56]}] ` +
+				`NumOfPictureParameterSets=0x2 ` +
+				`PictureParameterSets=[` +
+				`{Length=2 NALUnit=[0xab, 0xcd]}, ` +
+				`{Length=3 NALUnit=[0xab, 0xcd, 0xef]}] ` +
+				`ChromaFormat=0x1 ` +
+				`BitDepthLumaMinus8=0x2 ` +
+				`BitDepthChromaMinus8=0x3 ` +
+				`NumOfSequenceParameterSetExt=0x2 ` +
+				`SequenceParameterSetsExt=[` +
+				`{Length=2 NALUnit=[0x12, 0x34]}, ` +
+				`{Length=3 NALUnit=[0x12, 0x34, 0x56]}]`,
+		},
+		{
 			name: "PixelAspectRatioBox",
 			src: &PixelAspectRatioBox{
 				AnyTypeBox: AnyTypeBox{Type: StrToBoxType("pasp")},
